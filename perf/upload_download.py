@@ -8,7 +8,7 @@ test_size = 10**9
 def get_mock_file(dir, size):
     """
     Creates a mock file of size `size` (bytes) in directory `dir`
-    At the moment the function merely assumes that the file "sample.txt" exists in the current directory,
+    At the moment the function merely assumes that the file "sample.txt" exists in the directory of this script.
     it can be created with "openssl rand -out sample.txt -base64 $(( 2**30 * 3/4 ))" (takes a couple of seconds)
     """
     return "sample.txt"
