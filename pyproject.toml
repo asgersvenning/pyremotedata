@@ -8,6 +8,11 @@ requires = [
 ]
 build-backend = "hatchling.build"
 
+[tool.hatch.metadata]
+packages = [
+    { include="remote_data", from="src" },
+]
+
 [project]
 name = "pyRemoteData"
 version = "0.0.2"
