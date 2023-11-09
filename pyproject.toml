@@ -10,8 +10,8 @@ packages = [
 ]
 
 [project]
-name = "pyRemoteData"
-version = "0.0.10"
+name = "remote_data"
+version = "0.0.11"
 authors = [
   { name="Asger Svenning", email="asgersvenning@gmail.com" },
 ]

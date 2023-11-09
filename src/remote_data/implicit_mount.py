@@ -313,22 +313,28 @@ class ImplicitMount:
             if not isinstance(local_path, list):
                 raise TypeError("Expected list or str, got {}".format(type(local_path)))
             if remote_destination is None:
-                remote_destination = [os.path.basename(p) for p in local_path]
+                if isinstance(local_path, list):
+                    remote_destination = [os.path.basename(p) for p in local_path]
+                elif isinstance(local_path, str):
+                    remote_destination = os.path.basename(local_path)
+                else:
+                    raise TypeError("Expected list or str, got {}".format(type(local_path)))
             elif isinstance(remote_destination, str):
                 remote_destination = [remote_destination]
             if not isinstance(remote_destination, list):
                 raise TypeError("Expected list or str, got {}".format(type(remote_destination)))
             if len(local_path) != len(remote_destination):
                 raise ValueError("Expected local_path and remote_destination to have the same length, got {} and {} instead.".format(len(local_path), len(remote_destination)))
-            return " ".join([f"{l} -o {r}" for l, r in zip(local_path, remote_destination)])
+            return remote_destination, " ".join([f"{l} -o {r}" for l, r in zip(local_path, remote_destination)])
         
         if output is None:
             output = blocking
-        n = len(local_path) if isinstance(local_path, list) else 1
-        default_args = {"P" : n}
+        # OBS: The online manual for LFTP is invalid for put (at least on ERDA); the included "P" option for the put command does not exist
+        default_args = {}
         args = {**default_args, **kwargs}
         formatted_args = self.format_options(**args)
-        full_command = f"put {formatted_args} {source_destiation(local_path, remote_destination)}"
+        remote_destination, src_to_dst = source_destiation(local_path, remote_destination)
+        full_command = f"put {formatted_args} {src_to_dst}"
         exec_output = self.execute_command(
             full_command, 
             output=output, 
@@ -339,8 +345,9 @@ class ImplicitMount:
             return exec_output
         
         # Construct and return the absolute remote path
-        file_name = os.path.basename(local_path)
-        abs_remote_path = os.path.abspath(os.path.join(remote_destination, file_name))
+        file_name = os.path.basename(os.path.abspath(local_path))
+        rpwd = self.pwd()
+        abs_remote_path = [rpwd + "/" + r for r in remote_destination]
         return abs_remote_path
 
     def ls(self, path: str = ".", recursive: bool=False, use_cache: bool=True) -> List[str]:

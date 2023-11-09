@@ -7,7 +7,7 @@ def test_config():
         'PYREMOTEDATA_REMOTE_DIRECTORY': 'test',
         'PYREMOTEDATA_AUTO': 'yes'
     }):
-        import src.remote_data.config as config
+        import remote_data.config as config
         c = config.get_config()
         print(c)
         assert c is not None
