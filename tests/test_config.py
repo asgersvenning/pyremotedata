@@ -1,5 +1,4 @@
 from unittest.mock import patch
-import src.remote_data.config as config
 
 def test_config():
     with patch.dict('os.environ', {
@@ -8,6 +7,7 @@ def test_config():
         'PYREMOTEDATA_REMOTE_DIRECTORY': 'test',
         'PYREMOTEDATA_AUTO': 'yes'
     }):
+        import src.remote_data.config as config
         c = config.get_config()
         print(c)
         assert c is not None

@@ -6,10 +6,10 @@ def create_default_config():
     config_path = os.path.join(base_dir, 'pyremotedata_config.yaml')
 
     # Check for environment variables or ask for user input
-    remote_username = os.getenv('PYREMOTEDATA_REMOTE_USERNAME', input("Enter your remote name: "))
-    remote_uri = os.getenv('PYREMOTEDATA_REMOTE_URI', input("Enter your remote URI (leave empty for 'io.erda.au.dk'): ")) or "io.erda.au.dk"
+    remote_username = os.getenv('PYREMOTEDATA_REMOTE_USERNAME', None) or input("Enter your remote name: ")
+    remote_uri = os.getenv('PYREMOTEDATA_REMOTE_URI', None) or (input("Enter your remote URI (leave empty for 'io.erda.au.dk'): ") or 'io.erda.au.dk')
     local_dir = os.getenv('PYREMOTEDATA_LOCAL_DIR', "")
-    remote_directory = os.getenv('PYREMOTEDATA_REMOTE_DIRECTORY', input("Enter your remote directory: "))
+    remote_directory = os.getenv('PYREMOTEDATA_REMOTE_DIRECTORY', None) or input("Enter your remote directory: ")
     if isinstance(local_dir, str) and local_dir != "":
         local_dir = f'"{local_dir}"'
     if isinstance(remote_directory, str) and remote_directory != "":
