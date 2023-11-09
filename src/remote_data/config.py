@@ -1,5 +1,5 @@
-import yaml
 import os
+import yaml
 
 def get_config():
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

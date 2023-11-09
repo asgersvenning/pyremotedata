@@ -1,22 +1,26 @@
-import os, time
-
-import torch
-from torch import Tensor
-from torchvision.io import read_image
-from torchvision.io.image import ImageReadMode
-from torch.utils.data import DataLoader, IterableDataset, TensorDataset
-
-import h5py, hdf5plugin
-
-from implicit_mount import RemotePathIterator
-
+# Standard library imports
+import os
+import time
+import warnings
 from queue import Queue
 from threading import Thread
+from typing import Union
 
-import warnings
-from typing import Iterator, List, Tuple, Union
+# Dependency imports
+import h5py
+import torch
+from torch import Tensor
+from torch.utils.data import DataLoader, IterableDataset, TensorDataset
+from torchvision.io import read_image
+from torchvision.io.image import ImageReadMode
+
+# Backend imports
+from .implicit_mount import RemotePathIterator
 
 class RemotePathDataset(IterableDataset):
+    """
+    TODO: Add docstring
+    """
     def __init__(self, remote_path_iterator : "RemotePathIterator", prefetch: int=64, transform=None, target_transform=None, device: Union["torch.device", None]=None, dtype: Union[torch.dtype, None]=None, hierarchical: bool=False, return_remote_path: bool=False, return_local_path: bool=False, verbose: bool=False):
         # Check if remote_path_iterator is of type RemotePathIterator
         if not isinstance(remote_path_iterator, RemotePathIterator):
@@ -333,6 +337,9 @@ class RemotePathDataset(IterableDataset):
             return image, label
 
 class CustomDataLoader(DataLoader):
+    """
+    TODO: Add docstring and change the name of this class to something more appropriate
+    """
     def __init__(self, dataset: "RemotePathDataset", *args, **kwargs):
         # Snipe arguments from the user which would break the custom dataloader (e.g. sampler, shuffle, etc.)
         unsupported_kwargs = ['sampler', 'batch_sampler']
@@ -368,6 +375,9 @@ class CustomDataLoader(DataLoader):
 
 
 class HDF5Dataset(TensorDataset):
+    """
+    TODO: Add docstring and integrate with the currently missing functionality of cloning a remote dataset to a local HDF5 file
+    """
     def __init__(self, hdf5file, tensorname, classname, *args, **kwargs):
         self.hdf5 = h5py.File(hdf5file, 'r')
         self.tensors = self.hdf5[tensorname]

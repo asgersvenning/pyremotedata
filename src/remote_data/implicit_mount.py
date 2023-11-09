@@ -1,8 +1,21 @@
-import subprocess, os, warnings, tempfile, shutil, time, uuid, re, threading, queue
-from typing import List, Union, Set, Tuple
-from queue import Queue
+# Standard library imports
+import os
+import re
+import shutil
+import tempfile
+import time
+import uuid
+import warnings
 from random import shuffle
+from typing import List, Set, Tuple, Union
 
+# Threading and subprocess imports
+import queue
+import subprocess
+import threading
+from queue import Queue
+
+# Config import
 from .config import get_implicit_mount_config
 
 class ImplicitMount:
@@ -648,7 +661,7 @@ class IOHandler(ImplicitMount):
         self.cache["file_index"] = self.get_file_index(skip, nmax, override)
 
     def store_last(self, dst: str):
-        raise NotImplementedError("This function is not implemented yet.")
+        raise NotImplementedError("This function is not implemented yet.") # TODO: Remove or implement...
         # TODO: This function should really be split into two; 
         # 1) Handling the self.last_download/self.last_type variables
         # 2) Moving files/directories
@@ -976,7 +989,7 @@ class RemotePathIterator:
                 except:
                     pass
 
-            ## TODO: DOUBLE CHECK - THIS SHOULD NOT BE NECESSARY
+            ## TODO: DOUBLE CHECK - THIS SHOULD NOT BE NECESSARY (it is at the moment though!)
             # Check if the download thread is still running
             if self.download_thread is not None:
                 warnings.warn("Download thread is still running. This should not happen.")
