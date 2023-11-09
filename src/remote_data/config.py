@@ -1,15 +1,20 @@
 import os
 import yaml
 
-def create_default_config():
+def ask_user(question, interactive=True):
+    if not interactive:
+        raise RuntimeError("Cannot ask user for input when interactive=False")
+    return input(question)
+
+def create_default_config(interactive=True):
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     config_path = os.path.join(base_dir, 'pyremotedata_config.yaml')
 
     # Check for environment variables or ask for user input
-    remote_username = os.getenv('PYREMOTEDATA_REMOTE_USERNAME', None) or input("Enter your remote name: ")
-    remote_uri = os.getenv('PYREMOTEDATA_REMOTE_URI', None) or (input("Enter your remote URI (leave empty for 'io.erda.au.dk'): ") or 'io.erda.au.dk')
+    remote_username = os.getenv('PYREMOTEDATA_REMOTE_USERNAME', None) or ask_user("Enter your remote name: ", interactive)
+    remote_uri = os.getenv('PYREMOTEDATA_REMOTE_URI', None) or (ask_user("Enter your remote URI (leave empty for 'io.erda.au.dk'): ", interactive) or 'io.erda.au.dk')
     local_dir = os.getenv('PYREMOTEDATA_LOCAL_DIR', "")
-    remote_directory = os.getenv('PYREMOTEDATA_REMOTE_DIRECTORY', None) or input("Enter your remote directory: ")
+    remote_directory = os.getenv('PYREMOTEDATA_REMOTE_DIRECTORY', None) or ask_user("Enter your remote directory: ", interactive)
     if isinstance(local_dir, str) and local_dir != "":
         local_dir = f'"{local_dir}"'
     if isinstance(remote_directory, str) and remote_directory != "":
@@ -75,8 +80,9 @@ def get_config():
     config_path = os.path.join(base_dir, 'pyremotedata_config.yaml')
     
     if not os.path.exists(config_path):
-        if os.getenv("PYREMOTEDATA_AUTO", "no").lower().strip() == "yes" or input("Config file not found. Create default config file? (y/n): ").lower().strip() == 'y':
-            create_default_config()
+        interactive = os.getenv("PYREMOTEDATA_AUTO", "no").lower().strip() != "yes"
+        if not interactive or ask_user("Config file not found. Create default config file? (y/n): ", interactive).lower().strip() == 'y':
+            create_default_config(interactive)
         else:
             raise FileNotFoundError("Config file not found at {}".format(config_path))
 
