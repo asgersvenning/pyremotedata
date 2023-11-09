@@ -8,11 +8,11 @@ def create_default_config():
     # Check for environment variables or ask for user input
     remote_username = os.getenv('PYREMOTEDATA_REMOTE_USERNAME', input("Enter your remote name: "))
     remote_uri = os.getenv('PYREMOTEDATA_REMOTE_URI', input("Enter your remote URI (leave empty for 'io.erda.au.dk'): ")) or "io.erda.au.dk"
-    local_dir = os.getenv('PYREMOTEDATA_LOCAL_DIR', None)
+    local_dir = os.getenv('PYREMOTEDATA_LOCAL_DIR', "")
     remote_directory = os.getenv('PYREMOTEDATA_REMOTE_DIRECTORY', input("Enter your remote directory: "))
-    if isinstance(local_dir, str):
+    if isinstance(local_dir, str) and local_dir != "":
         local_dir = f'"{local_dir}"'
-    if isinstance(remote_directory, str):
+    if isinstance(remote_directory, str) and remote_directory != "":
         remote_directory = f'"{remote_directory}"'
 
 
@@ -74,7 +74,7 @@ def get_config():
     config_path = os.path.join(base_dir, 'pyremotedata_config.yaml')
     
     if not os.path.exists(config_path):
-        if input("Config file not found. Create default config file? (y/n): ").lower() == 'y':
+        if os.getenv("PYREMOTEDATA_AUTO", "no").lower().strip() == "yes" or input("Config file not found. Create default config file? (y/n): ").lower().strip() == 'y':
             create_default_config()
         else:
             raise FileNotFoundError("Config file not found at {}".format(config_path))
