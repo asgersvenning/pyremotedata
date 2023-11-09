@@ -25,14 +25,14 @@ classifiers = [
 ]
 
 dependencies = [
-  "PyYAML"
+  "PyYAML>=6.0.1"
 ]
 
 [project.optional-dependencies]
 full = [
-  "h5py",
-  "torch",
-  "torchvision"
+  "h5py>=3.10.0",
+  "torch>=2.0.1",
+  "torchvision>=0.15.2"
 ]
 
 [project.urls]
