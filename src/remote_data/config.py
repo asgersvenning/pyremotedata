@@ -8,8 +8,12 @@ def create_default_config():
     # Check for environment variables or ask for user input
     remote_username = os.getenv('PYREMOTEDATA_REMOTE_USERNAME', input("Enter your remote name: "))
     remote_uri = os.getenv('PYREMOTEDATA_REMOTE_URI', input("Enter your remote URI (leave empty for 'io.erda.au.dk'): ")) or "io.erda.au.dk"
-    local_dir = os.getenv('PYREMOTEDATA_LOCAL_DIR', input("Enter your local mount point (leave empty for temporary directory): ")) or None
+    local_dir = os.getenv('PYREMOTEDATA_LOCAL_DIR', None)
     remote_directory = os.getenv('PYREMOTEDATA_REMOTE_DIRECTORY', input("Enter your remote directory: "))
+    if isinstance(local_dir, str):
+        local_dir = f'"{local_dir}"'
+    if isinstance(remote_directory, str):
+        remote_directory = f'"{remote_directory}"'
 
 
     yaml_content = f"""
@@ -34,8 +38,8 @@ def create_default_config():
 
         implicit_mount:
             # Remote configuration
-            user: {remote_username}
-            remote: {remote_uri}
+            user: "{remote_username}"
+            remote: "{remote_uri}"
             local_dir: {local_dir} # Leave empty to use the default local directory
             default_remote_dir : {remote_directory}
 
