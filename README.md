@@ -9,7 +9,7 @@ If your storage facility supports SFTP and LFTP, and you need high-bandwidth dat
 Experience with SFTP or LFTP is not necessary, but you must be able to setup the required SSH configurations.
 
 ## Setup
-In order to use `pyRemoteData` you must have a `pyremotedata_config.yaml` in the directory of the script you are executing (TODO: Create a more flexible setup for configurations)
+A more user-friendly setup process, which facilitates both automated as well as interactive setup is currently in development. (**TODO**: Finish and describe the setup process)
 
 ## Issues
 This module is certainly not maximally efficient, and you may run into network- or OS-specific issues. Any and all feedback and contributions is highly appreciated.

@@ -1,10 +1,6 @@
 [build-system]
 requires = [
-  "hatchling",
-  "PyYAML",
-  "h5py",
-  "torch",
-  "torchvision"
+  "hatchling"
 ]
 build-backend = "hatchling.build"
 
@@ -30,6 +26,13 @@ classifiers = [
 
 dependencies = [
   "PyYAML"
+]
+
+[project.optional-dependencies]
+full = [
+  "h5py",
+  "torch",
+  "torchvision"
 ]
 
 [project.urls]
