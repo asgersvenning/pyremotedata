@@ -5,6 +5,12 @@ def get_config():
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     config_path = os.path.join(base_dir, 'pyremotedata_config.yaml')
     
+    if not os.path.exists(config_path):
+        if input("Config file not found. Create default config file? (y/n): ").lower() == 'y':
+            create_default_config()
+        else:
+            raise FileNotFoundError("Config file not found at {}".format(config_path))
+
     with open(config_path, 'r') as stream:
         try:
             config_data = yaml.safe_load(stream)

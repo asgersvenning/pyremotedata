@@ -15,7 +15,7 @@ packages = [
 
 [project]
 name = "pyRemoteData"
-version = "0.0.2"
+version = "0.0.3"
 authors = [
   { name="Asger Svenning", email="asgersvenning@gmail.com" },
 ]
@@ -26,6 +26,10 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
+]
+
+dependencies = [
+  "PyYAML"
 ]
 
 [project.urls]
