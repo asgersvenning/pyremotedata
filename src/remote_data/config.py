@@ -5,63 +5,65 @@ def create_default_config():
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     config_path = os.path.join(base_dir, 'pyremotedata_config.yaml')
 
-    yaml_content = """
-        # Mounting configuration
-        mount: {
+    # Check for environment variables or ask for user input
+    remote_username = os.getenv('PYREMOTEDATA_REMOTE_USERNAME', input("Enter your remote name: "))
+    remote_uri = os.getenv('PYREMOTEDATA_REMOTE_URI', input("Enter your remote URI (leave empty for 'io.erda.au.dk'): ")) or "io.erda.au.dk"
+    local_dir = os.getenv('PYREMOTEDATA_LOCAL_DIR', input("Enter your local mount point (leave empty for temporary directory): ")) or None
+    remote_directory = os.getenv('PYREMOTEDATA_REMOTE_DIRECTORY', input("Enter your remote directory: "))
+
+
+    yaml_content = f"""
+        # Mounting configuration (NOT USED AT THE MOMENT - TODO: Implement or remove)
+        mount:
             # Remote configuration
-            remote: "YOUR_REMOTE_NAME_HERE",
-            remote_subdir: "YOUR_REMOTE_DIRECTORY_HERE",
-            local: "YOUR_LOCAL_MOUNT_POINT_HERE",
+            remote: "YOUR_REMOTE_NAME_HERE"
+            remote_subdir: "YOUR_REMOTE_DIRECTORY_HERE"
+            local: "YOUR_LOCAL_MOUNT_POINT_HERE"
 
             # Rclone configuration (Can be left as-is)
-            rclone: {
-                vfs-cache-mode: "full",
-                vfs-read-chunk-size: "1M",
-                vfs-cache-max-age: "10h",
-                vfs-cache-max-size: "500G",
-                max-read-ahead: "1M",
-                dir-cache-time: "15m",
-                fast-list: true,
-                transfers: 10,
+            rclone:
+                vfs-cache-mode: "full"
+                vfs-read-chunk-size: "1M"
+                vfs-cache-max-age: "10h"
+                vfs-cache-max-size: "500G"
+                max-read-ahead: "1M"
+                dir-cache-time: "15m"
+                fast-list: true
+                transfers: 10
                 daemon: true
-            }
-        }
 
-        implicit_mount: {
+        implicit_mount:
             # Remote configuration
-            user: "YOUR_REMOTE_USERNAME_HERE",
-            remote: "YOUR_REMOTE_URI_HERE",
-            local_dir: , # Leave empty to use the default local directory
-            default_remote_dir : "YOUR_REMOTE_DIRECTORY_HERE",
+            user: {remote_username}
+            remote: {remote_uri}
+            local_dir: {local_dir} # Leave empty to use the default local directory
+            default_remote_dir : {remote_directory}
 
             # Lftp configuration (Can be left as-is)
-            lftp: {
-                'mirror:use-pget-n': 5, # Enable this to split a single file into multiple chunks and download them in parallel, when using mirror
-                'net:limit-rate': 0, # No limit on transfer rate, maximizing throughput.
-                'xfer:parallel': 5, # Enable this to split a single file into multiple chunks and download them in parallel
-                'mirror:parallel-directories': "on", # Enable this to download multiple directories in parallel
-                'ftp:sync-mode': 'off', # Enable this to disable synchronization mode, which is used to prevent data corruption when downloading multiple files in parallel
-                'cmd:parallel': 1,  # If you write bespoke scripts that execute multiple commands in parallel, you can increase this value.
-                'net:connection-limit': 0,  # No limit on connections, maximizing throughput.
-                'cmd:verify-path': "off",  # To reduce latency, we skip path verification.
-                'cmd:verify-host': "on",  # For initial security, it's good to verify the host.
-                'sftp:size-read': 0x5000,  # Increased block size for better read throughput.
-                'sftp:size-write': 0x5000,  # Increased block size for better write throughput.
-                'sftp:max-packets-in-flight' : 512,  # Increased number of packets in flight for better throughput.
-                'xfer:verify': "off",  # Disabling this for maximum speed.
-                'cmd:interactive': "false",  # Disabled for automated transfers.
-                'cmd:trace': "false",  # Disabled unless debugging is required.
-                'xfer:clobber': "true",  # Overwrite existing files.
-            }
-        }
-
+            lftp:
+                'mirror:use-pget-n': 5  # Enable this to split a single file into multiple chunks and download them in parallel, when using mirror
+                'net:limit-rate': 0  # No limit on transfer rate, maximizing throughput.
+                'xfer:parallel': 5  # Enable this to split a single file into multiple chunks and download them in parallel
+                'mirror:parallel-directories': "on"  # Enable this to download multiple directories in parallel
+                'ftp:sync-mode': 'off'  # Enable this to disable synchronization mode, which is used to prevent data corruption when downloading multiple files in parallel
+                'cmd:parallel': 1  # If you write bespoke scripts that execute multiple commands in parallel, you can increase this value.
+                'net:connection-limit': 0  # No limit on connections, maximizing throughput.
+                'cmd:verify-path': "off"  # To reduce latency, we skip path verification.
+                'cmd:verify-host': "on"  # For initial security, it's good to verify the host.
+                'sftp:size-read': 0x5000  # Increased block size for better read throughput.
+                'sftp:size-write': 0x5000  # Increased block size for better write throughput.
+                'sftp:max-packets-in-flight' : 512  # Increased number of packets in flight for better throughput.
+                'xfer:verify': "off"  # Disabling this for maximum speed.
+                'cmd:interactive': "false"  # Disabled for automated transfers.
+                'cmd:trace': "false"  # Disabled unless debugging is required.
+                'xfer:clobber': "true"  # Overwrite existing files.
         """
     
     with open(config_path, "w") as config_file:
         config_file.write(yaml_content)
     
     print("Created default config file at {}".format(config_path))
-    print("Please edit the config file and fill in the required fields.")
+    print("OBS: It is **strongly** recommended that you **check the config file** and make sure that it is correct before using pyRemoteData.")
 
 def get_config():
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
