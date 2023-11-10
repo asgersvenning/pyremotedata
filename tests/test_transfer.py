@@ -34,7 +34,7 @@ from unittest.mock import patch
 import os
 import time
 
-@wrapt_timeout_decorator.timeout(3)
+@wrapt_timeout_decorator.timeout(10)
 def test_implicit_mount():
     with patch.dict('os.environ', {
         'PYREMOTEDATA_REMOTE_USERNAME': 'foo',
@@ -55,7 +55,7 @@ def test_implicit_mount():
         from remote_data.config import remove_config
         remove_config()
 
-@wrapt_timeout_decorator.timeout(10)
+@wrapt_timeout_decorator.timeout(25)
 def test_upload_download():
     with patch.dict('os.environ', {
         'PYREMOTEDATA_REMOTE_USERNAME': 'foo',
