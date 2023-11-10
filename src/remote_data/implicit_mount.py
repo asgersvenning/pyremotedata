@@ -441,15 +441,16 @@ class ImplicitMount:
     def _get_current_files(self, dir_path: str) -> Set[str]:
         return self.lls(dir_path, R="")
 
-    def mirror(self, remote_path: str, local_destination: str, blocking: bool=True, execute: bool=True, **kwargs):
-         # Capture the state of the directory before the operation
-        pre_existing_files = self._get_current_files(local_destination)
-        if isinstance(pre_existing_files, str):
-            pre_existing_files = list(pre_existing_files)
-        if pre_existing_files:
-            pre_existing_files = set(pre_existing_files)
-        else:
-            pre_existing_files = set()
+    def mirror(self, remote_path: str, local_destination: str, blocking: bool=True, execute: bool=True, do_return: bool=True, **kwargs) -> Union[None, List[str]]:
+        if do_return:
+            # Capture the state of the directory before the operation
+            pre_existing_files = self._get_current_files(local_destination)
+            if isinstance(pre_existing_files, str):
+                pre_existing_files = list(pre_existing_files)
+            if pre_existing_files:
+                pre_existing_files = set(pre_existing_files)
+            else:
+                pre_existing_files = set()
 
         # Execute the mirror command
         default_args = {'P': 5, 'use-cache': None}
@@ -464,19 +465,22 @@ class ImplicitMount:
         if not execute:
             return exec_output
         
-        # Capture the state of the directory after the operation
-        post_download_files = self._get_current_files(local_destination)
-        if isinstance(post_download_files, str):
-            post_download_files = list(post_download_files)
-        if post_download_files:
-            post_download_files = set(post_download_files)
-        else:
-            post_download_files = set()
+        if do_return:
+            # Capture the state of the directory after the operation
+            post_download_files = self._get_current_files(local_destination)
+            if isinstance(post_download_files, str):
+                post_download_files = list(post_download_files)
+            if post_download_files:
+                post_download_files = set(post_download_files)
+            else:
+                post_download_files = set()
 
-        # Calculate the set difference to get the newly downloaded files
-        new_files = post_download_files - pre_existing_files
-        
-        return list(new_files)
+            # Calculate the set difference to get the newly downloaded files
+            new_files = post_download_files - pre_existing_files
+            
+            return list(new_files)
+        else:
+            return None
 
 class IOHandler(ImplicitMount):
     """
@@ -495,6 +499,7 @@ class IOHandler(ImplicitMount):
         iter(): Create a RemotePathIterator object for the given remote path.
         download(): Download the given remote path to the given local destination.
         multi_download(): Download the given remote paths to the given local destinations.
+        clone(): Clone the current remote directory to the given local destination.
         get_file_index(): Get a list of files in the current directory.
         cache_file_index(): Cache the file index for the current directory.
         store_last(): TODO: NOT IMPLEMENTED! Move the last downloaded file or directory to the given destination.
@@ -595,6 +600,7 @@ class IOHandler(ImplicitMount):
         return local_result
     
     def multi_download(self, remote_paths: List[str], local_destination: Union[str, List[str]], blocking: bool=True, n: int=5, **kwargs) -> List[str]:
+        # TODO: This function should really wrap an IOHandler.mget function, which should be implemented in the ImplicitMount class
         # Type checking and default argument configuration
         if not isinstance(remote_paths, list):
             raise TypeError("Expected list, got {}".format(type(remote_paths)))
@@ -628,6 +634,19 @@ class IOHandler(ImplicitMount):
         self.last_type = "multi"
         # Return the local paths of the downloaded files
         return local_destination
+
+    def clone(self, local_destination: Union[None, str], blocking: bool=True, **kwargs) -> str:
+        if not isinstance(local_destination, str) and local_destination is not None:
+            raise TypeError("Expected str or None, got {}".format(type(local_destination)))
+        if local_destination is None:
+            local_destination = self.lpwd()
+        local_destination = os.path.abspath(local_destination + os.sep + self.pwd().split("/")[-1])
+        if not os.path.exists(local_destination):
+            try:
+                os.makedirs(local_destination)
+            except FileExistsError:
+                pass
+        return self.mirror(".", local_destination, blocking, **kwargs)
     
     def get_file_index(self, skip: int=0, nmax: Union[int, None]=None, override: bool=False) -> List[str]:
         # Check if file index exists
@@ -729,6 +748,7 @@ class IOHandler(ImplicitMount):
                     print("\t" + "\n\t".join(files_in_dir))
             raise e
 
+    # TODO: Is this function useful?
     def clean_last(self):
         if self.last_download is None:
             warnings.warn("No last download to clean")

@@ -7,7 +7,7 @@ def ask_user(question, interactive=True):
     return input(question)
 
 def create_default_config(interactive=True):
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    base_dir = os.path.dirname(os.path.abspath(__file__))
     config_path = os.path.join(base_dir, 'pyremotedata_config.yaml')
 
     # Check for environment variables or ask for user input
@@ -76,7 +76,7 @@ implicit_mount:
     print("OBS: It is **strongly** recommended that you **check the config file** and make sure that it is correct before using pyRemoteData.")
 
 def get_config():
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    base_dir = os.path.dirname(os.path.abspath(__file__))
     config_path = os.path.join(base_dir, 'pyremotedata_config.yaml')
     
     if not os.path.exists(config_path):
@@ -135,3 +135,12 @@ def deparse_args(config, what):
         raise yaml.YAMLError("Error while parsing args: {}".format(e))
     
     return arg_str
+
+def remove_config():
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    config_path = os.path.join(base_dir, 'pyremotedata_config.yaml')
+    if os.path.exists(config_path):
+        os.remove(config_path)
+        print("Removed config file at {}".format(config_path))
+    else:
+        print("No config file found at {}".format(config_path))
