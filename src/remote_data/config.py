@@ -1,6 +1,8 @@
 import os
 import yaml
 
+config = None
+
 def ask_user(question, interactive=True):
     if not interactive:
         raise RuntimeError("Cannot ask user for input when interactive=False")
@@ -98,18 +100,25 @@ def get_config():
 config = get_config()
 
 def get_this_config(this):
+    global config
+    if not isinstance(this, str):
+        raise TypeError("Expected string, got {}".format(type(this)))
+    # Check if config is loaded
+    if config is None:
+        # Load config
+        config = get_config()
     if this not in config:
         raise ValueError("Key {} not found in config".format(this))
     return config[this]
 
 def get_mount_config():
-    return config['mount']
+    return get_this_config('mount')
 
 def get_dataloader_config():
-    return config['dataloader']
+    return get_this_config('dataloader')
 
 def get_implicit_mount_config():
-    return config['implicit_mount']
+    return get_this_config('implicit_mount')
 
 def deparse_args(config, what):
     if not isinstance(what, str):
@@ -137,6 +146,7 @@ def deparse_args(config, what):
     return arg_str
 
 def remove_config():
+    global config
     base_dir = os.path.dirname(os.path.abspath(__file__))
     config_path = os.path.join(base_dir, 'pyremotedata_config.yaml')
     if os.path.exists(config_path):
@@ -144,6 +154,8 @@ def remove_config():
         print("Removed config file at {}".format(config_path))
     else:
         print("No config file found at {}".format(config_path))
+    # Reset global config
+    config = None
 
 def config_path():
     base_dir = os.path.dirname(os.path.abspath(__file__))

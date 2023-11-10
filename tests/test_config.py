@@ -1,6 +1,7 @@
 from unittest.mock import patch
 
 def test_config():
+    print("Running config test.")
     with patch.dict('os.environ', {
         'PYREMOTEDATA_REMOTE_USERNAME': 'test',
         'PYREMOTEDATA_REMOTE_URI': 'test.com',
@@ -13,5 +14,6 @@ def test_config():
         assert c is not None
         # Cleanup
         config.remove_config()
+    print("Config test passed.")
 
 test_config()

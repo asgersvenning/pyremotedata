@@ -35,6 +35,7 @@ import os
 
 @wrapt_timeout_decorator.timeout(10)
 def test_implicit_mount():
+    print("Running basic functionality test.")
     with patch.dict('os.environ', {
         'PYREMOTEDATA_REMOTE_USERNAME': 'foo',
         'PYREMOTEDATA_REMOTE_URI': '0.0.0.0',
@@ -43,6 +44,10 @@ def test_implicit_mount():
     }):
         # Import the module
         from remote_data.implicit_mount import IOHandler
+        from remote_data.config import get_config
+        # Get the configuration
+        config = get_config()
+        print(config)
         # Open the connection
         handler = IOHandler()
         handler.start()
@@ -53,9 +58,11 @@ def test_implicit_mount():
         handler.stop()
         from remote_data.config import remove_config
         remove_config()
+    print("Basic functionality test passed.")
 
 @wrapt_timeout_decorator.timeout(25)
 def test_upload_download():
+    print("Running upload/download test.")
     with patch.dict('os.environ', {
         'PYREMOTEDATA_REMOTE_USERNAME': 'foo',
         'PYREMOTEDATA_REMOTE_URI': '0.0.0.0',
@@ -64,6 +71,10 @@ def test_upload_download():
     }):
         # Import the module
         from remote_data.implicit_mount import IOHandler
+        from remote_data.config import get_config
+        # Get the configuration
+        config = get_config()
+        print(config)
         # Open the connection
         handler = IOHandler()
         handler.start()
@@ -85,6 +96,7 @@ def test_upload_download():
         handler.stop()        
         from remote_data.config import remove_config
         remove_config()
+    print("Upload/download test passed.")
 
 try:
     test_implicit_mount()
