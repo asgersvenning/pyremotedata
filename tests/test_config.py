@@ -11,5 +11,7 @@ def test_config():
         c = config.get_config()
         print(c)
         assert c is not None
+        # Cleanup
+        config.remove_config()
 
 test_config()
