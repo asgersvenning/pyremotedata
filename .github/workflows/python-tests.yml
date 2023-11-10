@@ -43,6 +43,14 @@ jobs:
           -v /tmp/upload:/home/foo/upload \
           atmoz/sftp foo::1001
 
+    - name: Print Docker SFTP Server Logs
+      run: sudo docker logs mock_sftp_server
+
+    - name: Verify Docker Container and Volume Mounts
+      run: |
+        sudo docker ps -a
+        sudo docker inspect mock_sftp_server
+
     - name: Add SSH key
       run: |
         mkdir -p ~/.ssh
@@ -51,6 +59,15 @@ jobs:
           echo "Waiting for SFTP server to be ready..."
           sleep 1 # wait for 1 second before retrying
         done
+
+    - name: Verify Docker Container and Volume Mounts
+      run: |
+        sudo docker ps -a
+        sudo docker inspect mock_sftp_server
+
+    - name: Test SFTP Connection
+      run: |
+        sftp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i /tmp/temp_sftp_key -P 2222 foo@0.0.0.0
 
     - name: Run tests
       run: python3 -m unittest discover tests
