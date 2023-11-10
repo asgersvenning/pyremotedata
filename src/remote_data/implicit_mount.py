@@ -258,6 +258,7 @@ class ImplicitMount:
 
         # Execute the mount command on the lftp shell (connect to the remote directory)
         self.execute_command(lftp_mount_cmd, output=False, blocking=False)
+        self.cd(self.default_config['default_remote_dir'])
 
         if self.verbose:
             print("Waiting for connection...")

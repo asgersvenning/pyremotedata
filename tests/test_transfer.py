@@ -32,7 +32,6 @@
 import wrapt_timeout_decorator
 from unittest.mock import patch
 import os
-import time
 
 @wrapt_timeout_decorator.timeout(10)
 def test_implicit_mount():
@@ -68,6 +67,7 @@ def test_upload_download():
         # Open the connection
         handler = IOHandler()
         handler.start()
+        print(handler.pwd())
         # Upload a test file to the mock SFTP server
         upload_result = handler.put("https://link.testfile.org/15MB", "testfile.txt")
         # Download the test file from the mock SFTP server
@@ -78,9 +78,9 @@ def test_upload_download():
         local_file_exists = os.path.exists(os.path.join(local_directory, 'testfile.txt'))
         local_file_size = os.path.getsize(os.path.join(local_directory, 'testfile.txt')) / 10**6
         if not local_file_exists:
-            raise RunTimeError("Something went wrong with the download. The file does not exist locally.")
+            raise RuntimeError("Something went wrong with the download. The file does not exist locally.")
         if not (local_file_size > 10 and local_file_size < 20):
-            raise RunTimeError("Something went wrong with the download. The file size is not correct.")
+            raise RuntimeError("Something went wrong with the download. The file size is not correct.")
         # Cleanup
         handler.stop()        
         from remote_data.config import remove_config

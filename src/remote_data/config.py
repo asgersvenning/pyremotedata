@@ -144,3 +144,8 @@ def remove_config():
         print("Removed config file at {}".format(config_path))
     else:
         print("No config file found at {}".format(config_path))
+
+def config_path():
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    config_path = os.path.join(base_dir, 'pyremotedata_config.yaml')
+    return config_path
