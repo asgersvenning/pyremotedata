@@ -57,16 +57,20 @@ jobs:
           sleep 1 # wait for 1 second before retrying
         done
 
+    - name: Check SSH Directory and Key Permissions
+      run: |
+        sudo docker exec mock_sftp_server ls -la /home/foo/.ssh
+        sudo docker exec mock_sftp_server ls -la /home/foo/.ssh/keys
+
+    - name: List loaded SSH keys
+      run: ssh-add -l
+
     - name: Test LFTP connection
       run: |
         lftp -e "open -u foo, -p 2222 sftp://0.0.0.0; ls; bye"
 
     - name: Print Docker SFTP Server Logs
       run: sudo docker logs mock_sftp_server
-
-    # - name: Test SFTP Connection
-    #   run: |
-    #     sftp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i /tmp/temp_sftp_key -P 2222 foo@0.0.0.0
 
     - name: Run tests
       run: python3 -m unittest discover tests
