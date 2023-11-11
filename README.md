@@ -16,6 +16,12 @@ Experience with SFTP or LFTP is not necessary, but you must be able to setup the
 ## Setup
 A more user-friendly setup process, which facilitates both automated as well as interactive setup is currently in development. (**TODO**: Finish and describe the setup process)
 
+### Installation
+The package is available on PyPI, and can be installed using pip:
+```bash
+pip install pyremotedata
+```
+
 ### Interactive
 Simply follow the popup instructions that appear once you load the package for the first time.
 
