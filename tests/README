@@ -1,0 +1,29 @@
+### Strategy to setup a mock sftp server for testing
+### If you want to run these tests, you need to follow the following steps:
+ssh-keygen -t rsa -b 4096 -f /tmp/temp_sftp_key -q -N ""
+eval $(ssh-agent -s)
+mkdir -p /tmp
+ssh-add /tmp/temp_sftp_key
+# echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> $GITHUB_ENV # Needed for GitHub Actions, not for local testing
+
+mkdir -p /tmp/upload
+chmod ugo+rwx /tmp/upload
+sudo docker run --name mock_sftp_server -p 0.0.0.0:2222:22 -d \
+    -v /tmp/temp_sftp_key.pub:/home/foo/.ssh/keys/temp_sftp_key.pub:ro \
+    -v /tmp/upload:/home/foo/upload \
+    atmoz/sftp foo::1001
+for i in {1..10}; do # tries up to 10 times
+    ssh-keyscan -p 2222 -H 0.0.0.0 >> ~/.ssh/known_hosts && break
+    echo "Waiting for SFTP server to be ready..."
+    sleep 1 # wait for 1 second before retrying
+done
+
+python3 -m unittest discover tests
+
+ssh-keygen -R 0.0.0.0
+sudo docker stop mock_sftp_server
+sudo docker rm mock_sftp_server
+ssh-add -d /tmp/temp_sftp_key
+rm /tmp/temp_sftp_key /tmp/temp_sftp_key.pub
+eval "$(ssh-agent -k)"
+rm -rf /tmp/upload

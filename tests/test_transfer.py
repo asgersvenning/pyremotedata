@@ -1,31 +1,3 @@
-# ## Strategy to setup a mock sftp server for testing
-# ssh-keygen -t rsa -b 4096 -f /tmp/temp_sftp_key -q -N ""
-# eval $(ssh-agent -s)
-# mkdir -p /tmp
-# ssh-add /tmp/temp_sftp_key
-
-# mkdir -p /tmp/upload
-# chmod ugo+rwx /tmp/upload
-# sudo docker run --name mock_sftp_server -p 0.0.0.0:2222:22 -d \
-#     -v /tmp/temp_sftp_key.pub:/home/foo/.ssh/keys/temp_sftp_key.pub:ro \
-#     -v /tmp/upload:/home/foo/upload \
-#     atmoz/sftp foo::1001
-# for i in {1..10}; do # tries up to 10 times
-#     ssh-keyscan -p 2222 -H 0.0.0.0 >> ~/.ssh/known_hosts && break
-#     echo "Waiting for SFTP server to be ready..."
-#     sleep 1 # wait for 1 second before retrying
-# done
-
-# RUN TESTS
-
-# ssh-keygen -R 0.0.0.0
-# sudo docker stop mock_sftp_server
-# sudo docker rm mock_sftp_server
-# ssh-add -d /tmp/temp_sftp_key
-# rm /tmp/temp_sftp_key /tmp/temp_sftp_key.pub
-# eval "$(ssh-agent -k)"
-# rm -rf /tmp/upload
-
 ##### PSA: This test has external dependencies 'wrapt_timeout_decorator' and 'unittest' #####
 ##### OBS: I strongly discourage running this test on a production machine. #####
 
@@ -44,10 +16,6 @@ def test_implicit_mount():
     }):
         # Import the module
         from remote_data.implicit_mount import IOHandler
-        from remote_data.config import get_config
-        # Get the configuration
-        config = get_config()
-        print(config)
         # Open the connection
         handler = IOHandler()
         handler.start()
@@ -71,10 +39,6 @@ def test_upload_download():
     }):
         # Import the module
         from remote_data.implicit_mount import IOHandler
-        from remote_data.config import get_config
-        # Get the configuration
-        config = get_config()
-        print(config)
         # Open the connection
         handler = IOHandler()
         handler.start()
