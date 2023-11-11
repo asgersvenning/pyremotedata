@@ -1,6 +1,11 @@
 # `pyRemoteData`
 `pyRemoteData` is a module developed for scientific computation using the remote storage platform ERDA (Electronic Research Data Archive) provided by DeIC (Danish e-Infrastructure Consortium) as part of my PhD at the Department of Ecoscience at Aarhus University.
 
+It can be used with **any** passwordless SSH-enabled storage facility that supports SFTP and LFTP.
+
+If your facility requires a password, it should be very easy to modify the code to support this, in fact it is already implemented, but not exposed to the user.
+Merely change line 76 in src/remote_data/implicit_mount.py to fetch the password from the environment variable of your choice, or simply hardcode it. However, do this at your own risk, as I have not assessed the security implications.
+
 ## Capabilities
 In order to facility high-throughput computation in a cross-platform setting, `pyRemoteData` handles data transfer with multithreading and asynchronous data streaming using thread-safe buffers.
 
@@ -21,6 +26,31 @@ The automatic configuration setup relies on setting the correct environment vari
 * `PYREMOTEDATA_REMOTE_URI` : Should be set to the URI of the endpoint for your remote service (e.g. for ERDA it is "io.erda.au.dk").
 * `PYREMOTEDATA_REMOTE_DIRECTORY` : If you would like to set a default working directory, that is not the root of your remote storage, then set this to that (e.g. "/MY_PROJECT/DATASETS") otherwise simply set this to "/".
 * `PYREMOTEDATA_AUTO` : Should be **set to "yes"** to disable interactive mode. If this is not set, or set to anything other than "yes" (not case-sensitive though), while any of the prior environment variables are unset an error will be thrown.
+
+### Example
+If you want to test against a mock server simply follow the instructions in tests/README.
+
+If you have a remote storage facility that supports SFTP and LFTP, then you can use the following example to test the functionality of the module:
+```python
+# Set the environment variables (only necessary in a non-interactive setting)
+# If you are simply running this as a Python script, you can omit these lines and you will be prompted to set them interactively
+import os
+os.environ["PYREMOTEDATA_REMOTE_USERNAME"] = "username"
+os.environ["PYREMOTEDATA_REMOTE_URI"] = "storage.example.com"
+os.environ["PYREMOTEDATA_REMOTE_DIRECTORY"] = "/MY_PROJECT/DATASETS"
+os.environ["PYREMOTEDATA_AUTO"] = "yes"
+
+from remote_data.implicit_mount import IOHandler
+
+handler = IOHandler()
+
+with handler as io:
+    print(io.ls())
+
+# The configuration is persistent, but can be removed using the following:
+from remote_data.config import remove_config
+remove_config()
+```
 
 ## Issues
 This module is certainly not maximally efficient, and you may run into network- or OS-specific issues. Any and all feedback and contributions is highly appreciated.
