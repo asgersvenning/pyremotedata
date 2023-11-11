@@ -57,6 +57,10 @@ jobs:
           sleep 1 # wait for 1 second before retrying
         done
 
+    - name: Test LFTP connection
+      run: |
+        lftp -e "open -u foo, -p 2222 sftp://0.0.0.0; ls; bye"
+
     - name: Print Docker SFTP Server Logs
       run: sudo docker logs mock_sftp_server
 
