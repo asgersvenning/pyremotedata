@@ -1,4 +1,4 @@
-from remote_data.implicit_mount import *
+from pyremotedata.implicit_mount import *
 import time
 
 def perf_roundtrip():

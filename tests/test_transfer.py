@@ -15,7 +15,7 @@ def test_implicit_mount():
         'PYREMOTEDATA_AUTO': 'yes'
     }):
         # Import the module
-        from remote_data.implicit_mount import IOHandler
+        from pyremotedata.implicit_mount import IOHandler
         # Open the connection
         handler = IOHandler()
         handler.start()
@@ -24,7 +24,7 @@ def test_implicit_mount():
         print(handler.ls())
         # Cleanup
         handler.stop()
-        from remote_data.config import remove_config
+        from pyremotedata.config import remove_config
         remove_config()
     print("Basic functionality test passed.")
 
@@ -38,7 +38,7 @@ def test_upload_download():
         'PYREMOTEDATA_AUTO': 'yes'
     }):
         # Import the module
-        from remote_data.implicit_mount import IOHandler
+        from pyremotedata.implicit_mount import IOHandler
         # Open the connection
         handler = IOHandler()
         handler.start()
@@ -58,7 +58,7 @@ def test_upload_download():
             raise RuntimeError("Something went wrong with the download. The file size is not correct.")
         # Cleanup
         handler.stop()        
-        from remote_data.config import remove_config
+        from pyremotedata.config import remove_config
         remove_config()
     print("Upload/download test passed.")
 

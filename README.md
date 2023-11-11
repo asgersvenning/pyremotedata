@@ -33,14 +33,15 @@ If you want to test against a mock server simply follow the instructions in test
 If you have a remote storage facility that supports SFTP and LFTP, then you can use the following example to test the functionality of the module:
 ```python
 # Set the environment variables (only necessary in a non-interactive setting)
-# If you are simply running this as a Python script, you can omit these lines and you will be prompted to set them interactively
+# If you are simply running this as a Python script, 
+# you can omit these lines and you will be prompted to set them interactively
 import os
 os.environ["PYREMOTEDATA_REMOTE_USERNAME"] = "username"
 os.environ["PYREMOTEDATA_REMOTE_URI"] = "storage.example.com"
 os.environ["PYREMOTEDATA_REMOTE_DIRECTORY"] = "/MY_PROJECT/DATASETS"
 os.environ["PYREMOTEDATA_AUTO"] = "yes"
 
-from remote_data.implicit_mount import IOHandler
+from pyremotedata.implicit_mount import IOHandler
 
 handler = IOHandler()
 
@@ -48,7 +49,7 @@ with handler as io:
     print(io.ls())
 
 # The configuration is persistent, but can be removed using the following:
-from remote_data.config import remove_config
+from pyremotedata.config import remove_config
 remove_config()
 ```
 

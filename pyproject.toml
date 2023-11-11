@@ -6,12 +6,12 @@ build-backend = "hatchling.build"
 
 [tool.hatch.metadata]
 packages = [
-    { include="remote_data", from="src" },
+    { include="pyremotedata", from="src" },
 ]
 
 [project]
-name = "remote_data"
-version = "0.0.11"
+name = "pyremotedata"
+version = "0.0.12"
 authors = [
   { name="Asger Svenning", email="asgersvenning@gmail.com" },
 ]
