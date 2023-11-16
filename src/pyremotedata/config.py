@@ -22,7 +22,7 @@ def create_default_config(interactive=True):
     if isinstance(remote_directory, str) and remote_directory != "":
         remote_directory = f'"{remote_directory}"'
 
-
+    # TODO: Remove unnecessary config options!
     yaml_content = f"""
 # Mounting configuration (NOT USED AT THE MOMENT - TODO: Implement or remove)
 mount:

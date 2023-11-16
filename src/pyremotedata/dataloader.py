@@ -1,3 +1,5 @@
+## PSA: This script is not ready for general use, as it still hardcoded to the specific use case of the project it was developed for.
+
 # Standard library imports
 import os
 import time
