@@ -44,7 +44,7 @@ def test_upload_download():
         handler.start()
         print(handler.pwd())
         # Upload a test file to the mock SFTP server
-        os.system("openssl rand -out localfile.txt -base64 $(( 2**27 * 9/16 ))")
+        os.system(f"openssl rand -out {handler.lpwd()}{os.sep}localfile.txt -base64 $(( 2**27 * 9/16 ))")
         start_upload = time.time()
         upload_result = handler.put("localfile.txt", "testfile.txt")
         end_upload = time.time()
