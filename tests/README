@@ -27,3 +27,4 @@ ssh-add -d /tmp/temp_sftp_key
 rm /tmp/temp_sftp_key /tmp/temp_sftp_key.pub
 eval "$(ssh-agent -k)"
 rm -rf /tmp/upload
+rm -fR tests/__pycache__
