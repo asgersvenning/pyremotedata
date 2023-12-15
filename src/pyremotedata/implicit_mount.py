@@ -32,13 +32,13 @@ class ImplicitMount:
         remote (str): The remote server to connect to.
         TODO: port (int): The port to use for connecting to the remote directory.
         TODO: other important arguments to pass to the LFTP shell.
-        TODO: password (?): How to handle passwords? (currently assumes passwordless SFTP)
+        TODO: password (?): How to handle passwords? (currently assumes passwordless - NOT keyless - SFTP)
         verbose (bool): If True, print the commands executed by the class.
 
     Attributes:
-        Shouldn't be used unless for debugging or advanced use cases.
+        Shouldn't be used unless for debugging or advanced use cases, in which case you should read the source code.
 
-    Functions:
+    Methods:
         format_options(): Format a dictionary of options into a string of command line arguments.
         execute_command(): Execute a command on the LFTP shell.
         mount(): Mount the remote directory.
@@ -649,28 +649,51 @@ class IOHandler(ImplicitMount):
                 pass
         return self.mirror(".", local_destination, blocking, **kwargs)
     
-    def get_file_index(self, skip: int=0, nmax: Union[int, None]=None, override: bool=False) -> List[str]:
+    def get_file_index(self, skip: int=0, nmax: Union[int, None]=None, override: bool=False, store: bool=True, pattern : Union[None, str]= None) -> List[str]:
+        """
+        Get a list of files in the current remote directory.
+
+        Args:
+            skip (int): The number of files to skip.
+            nmax (int): The maximum number of files to include.
+            override (bool): If True, the file index will be overridden if it already exists.
+            store (bool): If True, the file index will be stored on the remote directory.
+            pattern (str): A regular expression pattern to filter the file names by, e.g. "\.txt$" to only include files with the ".txt" extension.
+        Returns:
+            A list of files in the current remote directory.
+        """
+        if override and not store:
+            raise ValueError("override cannot be 'True' if store is 'False'!")
         # Check if file index exists
         file_index_exists = self.execute_command('glob -f --exist *folder_index.txt && echo "YES" || echo "NO"') == "YES"
         if not file_index_exists:
             print(f"Folder index does not exist in {self.pwd()}")
         # If override is True, delete the file index if it exists
         if override and file_index_exists:
+            assert store is False, RuntimeError(f"'override' is '{override}' and 'store' is '{store}', this is not allowed and should not happen!")
             self.execute_command("rm folder_index.txt")
             # Now the file index does not exist (duh)
             file_index_exists = False
         # If the file index does not exist, create it
         if not file_index_exists:
             print("Creating folder index...")
+            # Traverse the remote directory and write the file index to a file
             files = self.ls(recursive=True)
-            with open(f"{self.lpwd()}folder_index.txt", "w") as f:
+            local_index_path = f"{self.lpwd()}folder_index.txt"
+            with open(local_index_path, "w") as f:
                 for file in files:
                     f.write(file + "\n")
-            self.put("folder_index.txt")
-            os.remove("folder_index.txt")
+            # Store the file index on the remote if 'store' is True, otherwise delete it
+            if store:
+                # Self has an implicit reference to the local working directory, however the scripts does not necessarily have the same working directory
+                self.put("folder_index.txt")
+                os.remove(local_index_path)
         
-        # Download the file index
-        file_index_path = self.download("folder_index.txt")
+        # Download the file index if 'store' is True or it already exists on the remote, otherwise read it from the local directory
+        if store or file_index_exists:
+            file_index_path = self.download("folder_index.txt")
+        else:
+            file_index_path = local_index_path
         # Read the file index
         file_index = []
         with open(file_index_path, "r") as f:
@@ -681,7 +704,12 @@ class IOHandler(ImplicitMount):
                     break
                 if len(line) < 3 or "folder_index.txt" == line[:16]:
                     continue
+                if pattern is not None and re.search(pattern, line) is None:
+                    continue
                 file_index.append(line.strip())
+        # Delete the file index if 'store' is True, otherwise return the path to the file index
+        if not store:
+            os.remove(file_index_path)
         return file_index
     
     def cache_file_index(self, skip: int=0, nmax: Union[int, None]=None, override: bool=False) -> None:
@@ -800,7 +828,7 @@ class RemotePathIterator:
         max_queued_batches (int): The batches are processed sequentially from a queue, which is filled on request. This parameter specifies the maximum number of batches in the queue. Larger values can ensure a stable streaming rate, but may require more files to be stored locally.
         n_local_files (int): The number of files to store locally. OBS: This MUST be larger than batch_size * max_queued_batches (I suggest twice that), otherwise files may be deleted before they are consumed. 
         clear_local (bool): If True, the local directory will be cleared after the iterator is stopped.
-        **kwargs: Keyword arguments to pass to the IOHandler.get_file_index() function.
+        **kwargs: Keyword arguments to pass to the IOHandler.get_file_index() function. Set 'store' to False to avoid altering the remote directory (this is much slower if you intent to use the iterator multiple times, however it may be necessary if the remote directory is read-only). PSA: If 'store' is False, 'override' must also be False.
 
     Attributes:
         Shouldn't be used unless for debugging or advanced use cases.
@@ -944,6 +972,9 @@ class RemotePathIterator:
         return len(self.remote_paths)
 
     def __next__(self) -> Tuple[str, str]:
+        """
+        Returns the next item in the iterator, which is a tuple of the local path and the remote path.
+        """
         # Handle stop request and end of iteration
         if self.stop_requested or self.idx >= len(self.remote_paths):
             if self.clear_local:
