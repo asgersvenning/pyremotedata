@@ -9,7 +9,6 @@ from threading import Thread
 from typing import Union
 
 # Dependency imports
-import h5py
 import torch
 from torch import Tensor
 from torch.utils.data import DataLoader, IterableDataset, TensorDataset
@@ -23,7 +22,7 @@ class RemotePathDataset(IterableDataset):
     """
     TODO: Add docstring
     """
-    def __init__(self, remote_path_iterator : "RemotePathIterator", prefetch: int=64, transform=None, target_transform=None, device: Union["torch.device", None]=None, dtype: Union[torch.dtype, None]=None, hierarchical: bool=False, return_remote_path: bool=False, return_local_path: bool=False, verbose: bool=False):
+    def __init__(self, remote_path_iterator : "RemotePathIterator", prefetch: int=64, transform=None, target_transform=None, device: Union["torch.device", None]=None, dtype: Union[torch.dtype, None]=None, hierarchical: bool=False, gbif: bool=True, return_remote_path: bool=False, return_local_path: bool=False, verbose: bool=False):
         # Check if remote_path_iterator is of type RemotePathIterator
         if not isinstance(remote_path_iterator, RemotePathIterator):
             raise ValueError("Argument remote_path_iterator must be of type RemotePathIterator.")
@@ -36,26 +35,29 @@ class RemotePathDataset(IterableDataset):
 
         ## General parameters
         assert isinstance(verbose, bool), ValueError("Argument verbose must be a boolean.")
-        self.verbose = verbose
+        self.verbose : bool = verbose
+        assert isinstance(gbif, bool), ValueError("Argument gbif must be a boolean.")
+        self.gbif : bool = gbif
         
         ## PyTorch specific parameters 
         # Get the classes and their indices
-        if not hierarchical:
-            self.classes = sorted(list(set([path.split('/')[-2] for path in remote_path_iterator.remote_paths])))
-            self.n_classes = len(self.classes)
-            self.class_to_idx = {self.classes[i]: i for i in range(len(self.classes))}
-            self.idx_to_class = {i: self.classes[i] for i in range(len(self.classes))}
-        else:
-            self.classes = [[],[],[]]
-            self.n_classes = [0,0,0]
-            self.class_to_idx = [{}, {}, {}]
-            self.idx_to_class = [{}, {}, {}]
-            for level in range(3):
-                self.classes[level] = sorted(list(set([path.split('/')[-2-level] for path in remote_path_iterator.remote_paths])))
-                self.n_classes[level] = len(self.classes[level])
-                self.class_to_idx[level] = {self.classes[level][i]: i for i in range(len(self.classes[level]))}
-                self.idx_to_class[level] = {i: self.classes[level][i] for i in range(len(self.classes[level]))}
-        self.hierarchical = hierarchical
+        if self.gbif:
+            if not hierarchical:
+                self.classes = sorted(list(set([path.split('/')[-2] for path in remote_path_iterator.remote_paths])))
+                self.n_classes = len(self.classes)
+                self.class_to_idx = {self.classes[i]: i for i in range(len(self.classes))}
+                self.idx_to_class = {i: self.classes[i] for i in range(len(self.classes))}
+            else:
+                self.classes = [[],[],[]]
+                self.n_classes = [0,0,0]
+                self.class_to_idx = [{}, {}, {}]
+                self.idx_to_class = [{}, {}, {}]
+                for level in range(3):
+                    self.classes[level] = sorted(list(set([path.split('/')[-2-level] for path in remote_path_iterator.remote_paths])))
+                    self.n_classes[level] = len(self.classes[level])
+                    self.class_to_idx[level] = {self.classes[level][i]: i for i in range(len(self.classes[level]))}
+                    self.idx_to_class[level] = {i: self.classes[level][i] for i in range(len(self.classes[level]))}
+            self.hierarchical : bool = hierarchical
 
         # Set the transforms
         self.transform = transform
@@ -311,15 +313,18 @@ class RemotePathDataset(IterableDataset):
         if self.device is not None:
             image = image.to(device=self.device)
         
-        ## Label processing
-        # Get the label by parsing the remote path
-        family, genus, species = remote_path.split('/')[-4:-1]
-        # TODO: Use the family and genus information (or add a "species only" flag)
-        # Transform the species name to the label index
-        if not self.hierarchical:
-            label = self.class_to_idx[species]
+        if self.gbif:
+            ## Label processing
+            # Get the label by parsing the remote path
+            family, genus, species = remote_path.split('/')[-4:-1]
+            # TODO: Use the family and genus information (or add a "species only" flag)
+            # Transform the species name to the label index
+            if not self.hierarchical:
+                label = self.class_to_idx[species]
+            else:
+                label = [self.class_to_idx[level][cls] for level, cls in enumerate([species, genus, family])]
         else:
-            label = [self.class_to_idx[level][cls] for level, cls in enumerate([species, genus, family])]
+            label = remote_path
 
         # Apply label transforms
         if self.target_transform:
@@ -381,6 +386,7 @@ class HDF5Dataset(TensorDataset):
     TODO: Add docstring and integrate with the currently missing functionality of cloning a remote dataset to a local HDF5 file
     """
     def __init__(self, hdf5file, tensorname, classname, *args, **kwargs):
+        import h5py
         self.hdf5 = h5py.File(hdf5file, 'r')
         self.tensors = self.hdf5[tensorname]
         self.classes = self.hdf5[classname]

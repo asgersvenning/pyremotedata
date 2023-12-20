@@ -821,6 +821,9 @@ class RemotePathIterator:
     This function provides a high-level buffered iterator for downloading files from a remote directory.
     All heavy computation is done in a separate thread, to avoid blocking the main thread unnecessarily.
 
+    Yields:
+        Tuple[str, str]: A tuple containing the local path and the remote path of the downloaded file.
+
     Args:
         io_handler (IOHandler): A backend object of class "IOHandler" to use for downloading files.
         batch_size (int): The number of files to download in each batch. Larger batches are more efficient, but may cause memory issues.
