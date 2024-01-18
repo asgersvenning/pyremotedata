@@ -1,6 +1,11 @@
-##### PSA: This test has external dependencies 'wrapt_timeout_decorator' and 'unittest' #####
+#################################################################################
+#####                                                                       #####
 ##### OBS: I strongly discourage running this test on a production machine. #####
+#####                                                                       #####
+#################################################################################
 
+
+## PSA: This test has external dependencies 'wrapt_timeout_decorator' and 'unittest' ##
 import wrapt_timeout_decorator
 from unittest.mock import patch
 import os, time

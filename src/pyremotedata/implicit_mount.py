@@ -292,7 +292,7 @@ class ImplicitMount:
         default_args = {'n': 5}
         args = {**default_args, **kwargs}
         formatted_args = self.format_options(**args)
-        full_command = f"pget {formatted_args} {remote_path} -o {local_destination}"
+        full_command = f'pget {formatted_args} "{remote_path}" -o "{local_destination}"'
         exec_output = self.execute_command(
             full_command, 
             output=output, 
@@ -326,7 +326,7 @@ class ImplicitMount:
                 raise TypeError("Expected list or str, got {}".format(type(remote_destination)))
             if len(local_path) != len(remote_destination):
                 raise ValueError("Expected local_path and remote_destination to have the same length, got {} and {} instead.".format(len(local_path), len(remote_destination)))
-            return remote_destination, " ".join([f"{l} -o {r}" for l, r in zip(local_path, remote_destination)])
+            return remote_destination, " ".join([f'"{l}" -o "{r}""'for l, r in zip(local_path, remote_destination)])
         
         if output is None:
             output = blocking
@@ -385,7 +385,7 @@ class ImplicitMount:
         # which is determined by checking if the permission starts with "d"
         if recursive:
             recls = "" if use_cache else "re"
-            this_level = self.execute_command(f"{recls}cls {path} -1 --perm")
+            this_level = self.execute_command(f'{recls}cls "{path}" -1 --perm')
             if isinstance(this_level, str):
                 this_level = [this_level]
             output = []
@@ -400,7 +400,7 @@ class ImplicitMount:
             return output
         # Non-recursive case
         else:
-            cls_output = self.execute_command(f"cls {path} -1")
+            cls_output = self.execute_command(f'cls "{path}" -1')
 
         # Sanitize output and return
         output = []
@@ -424,11 +424,11 @@ class ImplicitMount:
         if "R" in kwargs or "recursive" in kwargs:
             if local_path == "":
                 local_path = "."
-            return self.execute_command(f"!find {local_path} -type f -exec realpath --relative-to={local_path} {{}} \;")
-        return self.execute_command(f"!ls {local_path}", **kwargs)
+            return self.execute_command(f'!find "{local_path}" -type f -exec realpath --relative-to="{local_path}" {{}} \;')
+        return self.execute_command(f'!ls "{local_path}"', **kwargs)
 
     def cd(self, remote_path: str, **kwargs):
-        self.execute_command(f"cd {remote_path}", output=False, **kwargs)
+        self.execute_command(f'cd "{remote_path}"', output=False, **kwargs)
 
     def pwd(self) -> str:
         return self.execute_command("pwd")
@@ -456,7 +456,7 @@ class ImplicitMount:
         # Execute the mirror command
         default_args = {'P': 5, 'use-cache': None}
         exec_output = self.execute_command(
-            f"mirror {remote_path} {local_destination}", 
+            f'mirror "{remote_path}" "{local_destination}"', 
             output=blocking, 
             blocking=blocking, 
             execute=execute,
@@ -618,11 +618,11 @@ class IOHandler(ImplicitMount):
             raise ValueError("Local and remote file extensions must match.")
         
         # Assemble the mget arguments
-        single_commands = []
-        for r, l in zip(remote_paths, local_destination):
-            single_commands += [l + " -o " + r]
+        # single_commands = []
+        # for r, l in zip(remote_paths, local_destination):
+        #     single_commands += [l + " -o " + r]
         # Assemble the mget command, options and arguments
-        multi_command = f"mget -P {n} " + " ".join(remote_paths)
+        multi_command = f'mget -P {n} ' + ' '.join([f'"{r}"' for r in remote_paths])
         # Execute the mget command
         self.execute_command(multi_command, output=blocking, blocking=blocking)
         # Check if the files were downloaded TODO: is this too slow? Should we just assume that the files were downloaded for efficiency?
