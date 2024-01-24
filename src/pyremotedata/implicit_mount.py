@@ -364,21 +364,25 @@ class ImplicitMount:
         # Folder index files should be used instead of ls in most cases, 
         # but this function is still useful for debugging and for creating the folder index files
         def sanitize_path(l, path) -> None:
+            # Empty case (base case 1)
             if not path:
-                return
-            if isinstance(path, str):
-                path = [path]
-            if not isinstance(path, list):
-                raise TypeError("Expected list, str or None, got {}".format(type(path)))
-            for p in path:
+                pass
+            # Single path case (base case 2)
+            elif isinstance(path, str):
                 # Skip "." and ".." paths and folder index files (these are created by the folder index command, and should be treated as hidden files)
-                if len(p) < 2 or "folder_index.txt" in p:
-                    continue
-                # Remove leading "./" from paths
-                if p.startswith("."):
-                    p = p[2:]
-                # Append path to list (this a mutative operation)
-                l += [p]
+                if len(path) >= 2 and not "folder_index.txt" in path:
+                    # Remove leading "./" from paths
+                    if path.startswith("."):
+                        path = path[2:]
+                    # Append path to list (this a mutative operation)
+                    l += [path]
+            # Multiple paths case (recursive case)
+            elif isinstance(path, list):
+                for p in path:
+                    sanitize_path(l, p)
+            else:
+                raise TypeError("Expected list, str or None, got {}".format(type(path)))
+            return l
         
         # Recursive ls is implemented by using the "cls" command, which returns a list of permissions and paths
         # and then recursively calling ls on each of the paths that are directories, 
@@ -386,8 +390,9 @@ class ImplicitMount:
         if recursive:
             recls = "" if use_cache else "re"
             this_level = self.execute_command(f'{recls}cls "{path}" -1 --perm')
-            if isinstance(this_level, str):
-                this_level = [this_level]
+            # If the directory contains one or no files
+            if isinstance(this_level, str) or this_level is None:
+                this_level = sanitize_path([], this_level)
             output = []
             for perm_path in this_level:
                 if not " " in perm_path:
