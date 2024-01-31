@@ -1,0 +1,46 @@
+
+# Mounting configuration (NOT USED AT THE MOMENT - TODO: Implement or remove)
+mount:
+    # Remote configuration
+    remote: "YOUR_REMOTE_NAME_HERE"
+    remote_subdir: "YOUR_REMOTE_DIRECTORY_HERE"
+    local: "YOUR_LOCAL_MOUNT_POINT_HERE"
+
+    # Rclone configuration (Can be left as-is)
+    rclone:
+        vfs-cache-mode: "full"
+        vfs-read-chunk-size: "1M"
+        vfs-cache-max-age: "10h"
+        vfs-cache-max-size: "500G"
+        max-read-ahead: "1M"
+        dir-cache-time: "15m"
+        fast-list: true
+        transfers: 10
+        daemon: true
+
+implicit_mount:
+    # Remote configuration
+    user: "asgersvenning@ecos.au.dk"
+    remote: "io.erda.au.dk"
+    local_dir:  # Leave empty to use the default local directory
+    default_remote_dir : "/"
+
+    # Lftp configuration (Can be left as-is)
+    lftp:
+        'mirror:use-pget-n': 5  # Enable this to split a single file into multiple chunks and download them in parallel, when using mirror
+        'net:limit-rate': 0  # No limit on transfer rate, maximizing throughput.
+        'xfer:parallel': 5  # Enable this to split a single file into multiple chunks and download them in parallel
+        'mirror:parallel-directories': "on"  # Enable this to download multiple directories in parallel
+        'ftp:sync-mode': 'off'  # Enable this to disable synchronization mode, which is used to prevent data corruption when downloading multiple files in parallel
+        'cmd:parallel': 1  # If you write bespoke scripts that execute multiple commands in parallel, you can increase this value.
+        'net:connection-limit': 0  # No limit on connections, maximizing throughput.
+        'cmd:verify-path': "off"  # To reduce latency, we skip path verification.
+        'cmd:verify-host': "on"  # For initial security, it's good to verify the host.
+        'sftp:size-read': 0x5000  # Increased block size for better read throughput.
+        'sftp:size-write': 0x5000  # Increased block size for better write throughput.
+        'sftp:max-packets-in-flight' : 512  # Increased number of packets in flight for better throughput.
+        'xfer:verify': "off"  # Disabling this for maximum speed.
+        'cmd:interactive': "false"  # Disabled for automated transfers.
+        'cmd:trace': "false"  # Disabled unless debugging is required.
+        'xfer:clobber': "true"  # Overwrite existing files.
+

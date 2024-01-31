@@ -1,3 +1,15 @@
+"""
+This module provides a pythonic interface for downloading files from a remote directory using the SFTP protocol.
+
+The main functionality of this package is provided through the use of the ImplicitMount, IOHandler and RemotePathIterator classes:
+
+* The **ImplicitMount** class provides a low-level wrapper for the LFTP shell, which is used to communicate with the remote directory, and should only be used directly by advanced users.
+
+* The **IOHandler** class provides a high-level wrapper for the ImplicitMount class, which provides human-friendly methods for downloading files from a remote directory without the need to have technical knowledge on how to use LFTP.
+
+* The **RemotePathIterator** class provides a high-level wrapper for the IOHandler class, and handles asynchronous streaming of files from a remote directory to a local directory using thread-safe buffers.
+"""
+
 # Standard library imports
 import os
 import re
@@ -24,20 +36,19 @@ class ImplicitMount:
     It provides a robust and efficient backend for communicating with a remote storage server using the SFTP protocol, using a persistent LFTP shell handled in the background by a subprocess.
     It is designed to be used as a base class for higher-level wrappers, such as the IOHandler class, or as a standalone class for users familiar with LFTP.
 
+    OBS: The attributes of this method should not be used unless for development or advanced use cases, all responsibility in this case is on the user.
+
     TODO: This class relies on a proper SSH setup on your machine (and the remote server) for passwordless SFTP. 
     Thoroughly test this on a fresh install, and add instructions, and the possibility for automatic setup, for setting up passwordless SFTP and SSH keys, as well as proper error handling for when this is not set up correctly.
+
+    TODO: Add further arguments such as port, password, etc. to the constructor.
 
     Args:
         user (str): The username to use for connecting to the remote directory.
         remote (str): The remote server to connect to.
-        TODO: port (int): The port to use for connecting to the remote directory.
-        TODO: other important arguments to pass to the LFTP shell.
-        TODO: password (?): How to handle passwords? (currently assumes passwordless - NOT keyless - SFTP)
         verbose (bool): If True, print the commands executed by the class.
 
-    Attributes:
-        Shouldn't be used unless for debugging or advanced use cases, in which case you should read the source code.
-
+    .. <Sphinx comment
     Methods:
         format_options(): Format a dictionary of options into a string of command line arguments.
         execute_command(): Execute a command on the LFTP shell.
@@ -52,6 +63,7 @@ class ImplicitMount:
         lcd(): Change the current directory (locally).
         lpwd(): Get the current directory (locally).
         mirror(): Download a directory from the remote.
+    .. Sphinx comment>
     """
 
     time_stamp_pattern = re.compile(r"^\s*(\S+\s+){8}") # This is used to strip the timestamp from the output of the lftp shell
@@ -84,6 +96,15 @@ class ImplicitMount:
 
     @staticmethod
     def format_options(**kwargs) -> str:
+        """
+        Takes a dictionary of options and formats them into a string of command line arguments suitable for LFTP.
+
+        Args:
+            **kwargs: Keyword arguments to format.
+
+        Returns:
+            str: The formatted arguments.
+        """
         options = []
         for key, value in kwargs.items():
             # print(f'key: |{key}|, value: |{value}|')
@@ -137,6 +158,20 @@ class ImplicitMount:
         return ''.join(errors)
     
     def execute_command(self, command: str, output: bool=True, blocking: bool=True, execute: bool=True, default_args: Union[dict, None]=None, **kwargs) -> Union[str, List[str], None]:
+        """
+        Executes a command on the LFTP shell.
+
+        Args:
+            command (str): The command to execute.
+            output (bool): If True, the function will return the output of the command. 
+            blocking (bool): If True, the function will block until the command is complete. If output is True, blocking must also be True.
+            execute (bool): If True, the function will execute the command, otherwise it will return the command as a string.
+            default_args (Union[dict, None]): A dictionary of default arguments to use for the command. If None, no default arguments will be used.
+            **kwargs: Keyword arguments to pass to the command.
+
+        Returns:
+            Union[str, List[str], None]: If execute is False, the function will return the command as a string. If output is True, returns a string, list or None depending of the number of output lines, otherwise returns None.
+        """
         # Merge default arguments and keyword arguments. Keyword arguments will override default arguments.
         if not isinstance(default_args, dict) and default_args is not None:
             raise TypeError("Expected dict or None, got {}".format(type(default_args)))
@@ -167,6 +202,7 @@ class ImplicitMount:
             return full_command
         else:
             output = self._execute_command(full_command, output=output, blocking=blocking, uuid_str=uuid_str)
+            # TODO: As with the mirror command, it should probably just return a list no matter what, this would make the function much more type consistent
             if isinstance(output, list):
                 if len(output) == 0:
                     return None
@@ -177,7 +213,21 @@ class ImplicitMount:
             else:
                 return None
 
-    def _execute_command(self, command: str, output: bool=True, blocking: bool=True, uuid_str: Union[str, None]=None) -> Union[List[str], None]:
+    def _execute_command(self, command: str, output: bool=True, blocking: bool=True, uuid_str: str=None) -> Union[List[str], None]:
+        """
+        ## DO NOT USE THIS FUNCTION DIRECTLY, USE `ImplicitMount.execute_command` INSTEAD.
+
+        Executes a command on the LFTP shell.
+
+        Args:
+            command (str): The command to execute.
+            output (bool): If True, the function will return the output of the command. 
+            blocking (bool): If True, the function will block until the command is complete. If output is True, blocking must also be True.
+            uuid_str (str): A unique identifier for the command. Must be specified if output is True.
+
+        Returns:
+            Union[List[str], None]: If output is True, the function will return a list of strings each containing one line of the output of the command, otherwise it will return None.
+        """
         if output and not blocking:
             raise ValueError("Non-blocking output is not supported.")
         if uuid_str is None and (blocking or output):
@@ -188,6 +238,8 @@ class ImplicitMount:
         if self.verbose:
             print(f"Executing command: {command}")
         with self.lock: 
+            # TODO: It seems unsafe to execute the command separately from end of output echo command, which logically would imply that the command doesn't finish before the end of output echo command is executed. 
+            #       This hasn't been a problem in practice, but it should probably be fixed.
             # Execute command
             self.lftp_shell.stdin.write(command)
             self.lftp_shell.stdin.flush()
@@ -211,6 +263,16 @@ class ImplicitMount:
                 return None
 
     def mount(self, lftp_settings: Union[dict, None]=None) -> None:
+        """
+        Mount the remote directory.
+
+        Args:
+            lftp_settings (Union[dict, None]): A dictionary of LFTP settings to use for mounting the remote directory. If None, the default settings will be used.
+
+        Raises:
+            Exception: If the subprocess fails to start.
+            RuntimeError: If the connection to the remote directory fails.
+        """
         # set mirror:use-pget-n 5;set net:limit-rate 0;set xfer:parallel 5;set mirror:parallel-directories true;set ftp:sync-mode off;"
         # Merge default settings and user settings. User settings will override default settings.
         lftp_settings = {**self.default_config['lftp'], **lftp_settings} if lftp_settings is not None else self.default_config['lftp']
@@ -236,6 +298,7 @@ class ImplicitMount:
                 bufsize=0,
             )
         except Exception as e:
+            # TODO: The exception should probably be a bit more specific
             raise Exception("Failed to start subprocess.") from e
 
         # Start the stdout and stderr reader threads
@@ -270,6 +333,12 @@ class ImplicitMount:
             raise RuntimeError(f"Failed to connect. Check internet connection or if {self.remote} is online.")
 
     def unmount(self, timeout: float = 1) -> None:
+        """
+        Unmount the remote directory.
+
+        Args:
+            timeout (float): The maximum time to wait for the lftp shell to terminate. If the timeout is exceeded, the lftp shell will be forcefully terminated.
+        """
         # Close Popen streams explicitly
         self.execute_command("exit kill top", output=False, blocking=False)
         waited = 0
@@ -287,6 +356,19 @@ class ImplicitMount:
         self.lftp_shell = None
 
     def pget(self, remote_path: str, local_destination: str, blocking: bool=True, execute: bool=True, output: Union[bool, None]=None, **kwargs):
+        """
+        Download a single file from the remote directory using the LFTP command `pget`.
+
+        Args:
+            remote_path (str): The remote file to download.
+            local_destination (str): The local destination to download the file to.
+            blocking (bool): If True, the function will block until the download is complete.
+            execute (bool): If True, the function will execute the pget command, otherwise it will return the command as a string.
+            output (Union[bool, None]): If True, the function will return the absolute local path of the downloaded file, otherwise it will return None.
+
+        Returns:
+            Union[None, str]: If output is True, the function will return the absolute local path of the downloaded file, otherwise it will return None.
+        """
         if output is None:
             output = blocking
         default_args = {'n': 5}
@@ -308,6 +390,19 @@ class ImplicitMount:
         return abs_local_path
     
     def put(self, local_path: str, remote_destination: Union[str, None]=None, blocking: bool=True, execute: bool=True, output: Union[bool, None]=None, **kwargs):
+        """
+        Upload a single file to the remote directory using the LFTP command `put`.
+
+        TODO: Is it really just a single file?
+
+        Args:
+            local_path (str): The local file to upload.
+            remote_destination (str, optional): The remote destination to upload the file to. If None, the file will be uploaded to the current remote directory.
+            blocking (bool): If True, the function will block until the upload is complete.
+            execute (bool): If True, the function will execute the put command, otherwise it will return the command as a string.
+            output (Union[bool, None]): If True, the function will return the absolute remote path of the uploaded file, otherwise it will return None.
+            **kwargs: Keyword arguments to pass to the put command.
+        """
         def source_destiation(local_path: Union[str, List[str]], remote_destination: Union[str, List[str], None]=None) -> str:
             if isinstance(local_path, str):
                 local_path = [local_path]
@@ -351,7 +446,17 @@ class ImplicitMount:
         abs_remote_path = [rpwd + "/" + r for r in remote_destination]
         return abs_remote_path
 
-    def ls(self, path: str = ".", recursive: bool=False, use_cache: bool=True) -> List[str]:
+    def ls(self, path: str = ".", recursive: bool=False, use_cache: bool=True) -> Union[None, str, List[str]]:
+        """
+        Find all files in the given remote directory using the LFTP command `cls`. Can be used recursively, even though LFTP does not support recursive listing with the `cls` command.
+
+        Args:
+            path (str): The remote directory to search in.
+            recursive (bool): If True, the function will search recursively.
+
+        Returns:
+            Union[None, str, List[str]]: If the directory is empty, the function will return None, if the directory contains one file, the function will return a string, otherwise it will return a list of strings.
+        """
         if path.startswith(".."):
             raise NotImplementedError("ls does not support relative backtracing paths yet.")
         elif path.startswith("./"):
@@ -413,6 +518,7 @@ class ImplicitMount:
         if not isinstance(output, list):
             TypeError("Expected list, got {}".format(type(output)))
         
+        # TODO: It should probably just return a list no matter what, this would make the function much more type consistent
         # Return cases (empty => None, single element => str, multiple elements => list)
         if len(output) == 0:
             return None
@@ -422,6 +528,11 @@ class ImplicitMount:
             return output
     
     def lls(self, local_path: str, **kwargs):
+        """
+        Find all files in the given local directory using the LFTP command `!ls` or `!find`.
+
+        OBS: This function should probably not be used, just use the standard OS commands instead.
+        """
         # TODO: Make the recursive option more user friendly and type safe:
         # currently the value of the "R" or "recursive" argument is ignored, 
         # the recursive version is always used if either of these arguments are specified
@@ -436,18 +547,50 @@ class ImplicitMount:
         self.execute_command(f'cd "{remote_path}"', output=False, **kwargs)
 
     def pwd(self) -> str:
+        """
+        Get the current remote directory using the LFTP command `pwd`.
+
+        Returns:
+            str: The current remote directory.
+        """
         return self.execute_command("pwd")
 
     def lcd(self, local_path: str) -> str:
+        """
+        Changes the current local directory using the LFTP command `lcd`.
+
+        Args:
+            local_path (str): The local directory to change to.
+        """
         self.execute_command(f"lcd {local_path}", output=False)
 
     def lpwd(self) -> str:
+        """
+        Get the current local directory using the LFTP command `lpwd`.
+
+        Returns:
+            str: The current local directory.
+        """
         return self.execute_command("lpwd")
     
     def _get_current_files(self, dir_path: str) -> Set[str]:
         return self.lls(dir_path, R="")
 
     def mirror(self, remote_path: str, local_destination: str, blocking: bool=True, execute: bool=True, do_return: bool=True, **kwargs) -> Union[None, List[str]]:
+        """
+        Download a directory from the remote directory to the given local destination using the LFTP mirror command.
+
+        Args:
+            remote_path (str): The remote directory to download.
+            local_destination (str): The local destination to download the directory to.
+            blocking (bool): If True, the function will block until the download is complete.
+            execute (bool): If True, the function will execute the mirror command, otherwise it will return the command as a string.
+            do_return (bool): If True, the function will return a list of the newly downloaded files.
+            **kwargs: Keyword arguments to pass to the mirror command.
+
+        Returns:
+            Union[None, List[str]]: If do_return is True, the function will return a list of the newly downloaded files, otherwise it will return None.
+        """
         if do_return:
             # Capture the state of the directory before the operation
             pre_existing_files = self._get_current_files(local_destination)
@@ -492,17 +635,16 @@ class IOHandler(ImplicitMount):
     """
     This is a high-level wrapper for the ImplicitMount class, which provides human-friendly methods for downloading files from a remote directory without the need to have technical knowledge on how to use LFTP.
 
+    OBS: The attributes of this method should not be used unless for development or advanced use cases, all responsibility in this case is on the user.
+
     Args:
         local_dir (str): The local directory to use for downloading files. If None, a temporary directory will be used (suggested, unless truly necessary).
         user_confirmation (bool): If True, the user will be asked for confirmation before deleting files. (strongly suggested for debugging and testing)
         clean (bool): If True, the local directory will be cleaned after the context manager is exited. (suggested, if not it may lead to rapid exhaustion of disk space)
         **kwargs: Keyword arguments to pass to the ImplicitMount constructor.
 
-    Attributes:
-        Shouldn't be used unless for debugging or advanced use cases.
-
-    Functions:
-        iter(): Create a RemotePathIterator object for the given remote path.
+    .. <Sphinx comment
+    Methods:
         download(): Download the given remote path to the given local destination.
         multi_download(): Download the given remote paths to the given local destinations.
         clone(): Clone the current remote directory to the given local destination.
@@ -511,6 +653,7 @@ class IOHandler(ImplicitMount):
         store_last(): TODO: NOT IMPLEMENTED! Move the last downloaded file or directory to the given destination.
         clean(): Clean the local directory.
         clean_last(): Clean the last downloaded file or directory.
+    .. Sphinx comment>
     """
     def __init__(self, local_dir: Union[str, None]=None, user_confirmation: bool=False, clean: Union[bool, None]=None, **kwargs):
         super().__init__(**kwargs)
@@ -528,10 +671,6 @@ class IOHandler(ImplicitMount):
         self.last_download = None
         self.last_type = None
         self.cache = {}
-
-    def iter(self, remote_path: Union[str, List[str]]) -> "RemotePathIterator":
-        iter_temp_dir = tempfile.TemporaryDirectory()
-        return RemotePathIterator(self, remote_path, iter_temp_dir)
 
     def __enter__(self) -> "IOHandler":
         self.mount()
@@ -553,14 +692,34 @@ class IOHandler(ImplicitMount):
 
     # Methods for using the IOHandler without context management
     def start(self) -> None:
+        """
+        Initialize the connection to the remote directory.
+
+        Very useful for interactive use, but shouldn't be used in scripts, using a context manager is safer and does the same.
+        """
         self.__enter__()
         print("IOHandler.start() is unsafe. Use IOHandler.__enter__() instead if possible.")
         print("OBS: Remember to call IOHandler.stop() when you are done.")
 
     def stop(self) -> None:
+        """
+        Close the connection to the remote directory.
+        """
         self.__exit__()
 
     def download(self, remote_path: Union[str, List[str]], local_destination: Union[str, List[str], None]=None, blocking: bool=True, **kwargs) -> Union[str, List[str]]:
+        """
+        Downloads one or more files or a directory from the remote directory to the given local destination.
+
+        Args:
+            remote_path (Union[str, List[str]]): The remote path(s) to download.
+            local_destination (Union[str, List[str]]): The local destination to download the file(s) to. If None, the file(s) will be downloaded to the current local directory.
+            blocking (bool): If True, the function will block until the download is complete.
+            **kwargs: Extra keyword arguments are passed to the IOHandler.multi_download, IOHandler.pget or IOHandler.mirror functions depending on the type of the remote path(s).
+
+        Returns:
+            (List of) The local path of the downloaded file(s) or directory.
+        """
         # If multiple remote paths are specified, use multi_download instead of download, 
         # this function is more flexible than mirror (works for files from different directories) and much faster than executing multiple pget commands
         if not isinstance(remote_path, str) and len(remote_path) > 1:
@@ -606,6 +765,19 @@ class IOHandler(ImplicitMount):
         return local_result
     
     def multi_download(self, remote_paths: List[str], local_destination: Union[str, List[str]], blocking: bool=True, n: int=5, **kwargs) -> List[str]:
+        """
+        Downloads a list of files from the remote directory to the given local destination.
+
+        Args:
+            remote_paths (List[str]): A list of remote paths to download.
+            local_destination (Union[str, List[str]]): The local destination to download the files to. If None, the files will be downloaded to the current local directory.
+            blocking (bool): If True, the function will block until the download is complete.
+            n (int): The number of connections to use for downloading each file.
+            **kwargs: Extra keyword arguments are ignored.
+        
+        Returns:
+            A list of the local paths of the downloaded files.
+        """
         # TODO: This function should really wrap an IOHandler.mget function, which should be implemented in the ImplicitMount class
         # Type checking and default argument configuration
         if not isinstance(remote_paths, list):
@@ -622,10 +794,6 @@ class IOHandler(ImplicitMount):
         if any([os.path.splitext(l)[1] != os.path.splitext(r)[1] for l, r in zip(local_destination, remote_paths)]):
             raise ValueError("Local and remote file extensions must match.")
         
-        # Assemble the mget arguments
-        # single_commands = []
-        # for r, l in zip(remote_paths, local_destination):
-        #     single_commands += [l + " -o " + r]
         # Assemble the mget command, options and arguments
         multi_command = f'mget -P {n} ' + ' '.join([f'"{r}"' for r in remote_paths])
         # Execute the mget command
@@ -641,7 +809,18 @@ class IOHandler(ImplicitMount):
         # Return the local paths of the downloaded files
         return local_destination
 
-    def clone(self, local_destination: Union[None, str], blocking: bool=True, **kwargs) -> str:
+    def clone(self, local_destination: Union[None, str], blocking: bool=True, **kwargs) -> any:
+        """
+        Clones the current remote directory to the given local destination.
+
+        Args:
+            local_destination (str): The local destination to clone the current remote directory to.
+            blocking (bool): If True, the function will block until the download is complete.
+            **kwargs: Keyword arguments to pass to the mirror function.
+        
+        Returns:
+            The output of ImplicitMount.mirror, which depend on the arguments passed to the function. Most likely a list of the newly downloaded files.
+        """
         if not isinstance(local_destination, str) and local_destination is not None:
             raise TypeError("Expected str or None, got {}".format(type(local_destination)))
         if local_destination is None:
@@ -826,8 +1005,7 @@ class RemotePathIterator:
     This function provides a high-level buffered iterator for downloading files from a remote directory.
     All heavy computation is done in a separate thread, to avoid blocking the main thread unnecessarily.
 
-    Yields:
-        Tuple[str, str]: A tuple containing the local path and the remote path of the downloaded file.
+    OBS: The attributes of this method should not be used unless for development or advanced use cases, all responsibility in this case is on the user.
 
     Args:
         io_handler (IOHandler): A backend object of class "IOHandler" to use for downloading files.
@@ -838,14 +1016,16 @@ class RemotePathIterator:
         clear_local (bool): If True, the local directory will be cleared after the iterator is stopped.
         **kwargs: Keyword arguments to pass to the IOHandler.get_file_index() function. Set 'store' to False to avoid altering the remote directory (this is much slower if you intent to use the iterator multiple times, however it may be necessary if the remote directory is read-only). PSA: If 'store' is False, 'override' must also be False.
 
-    Attributes:
-        Shouldn't be used unless for debugging or advanced use cases.
+    Yields:
+        Tuple[str, str]: A tuple containing the local path and the remote path of the downloaded file.
 
-    Functions:
+    .. <Sphinx comment
+    Methods:
         shuffle(): Shuffle the remote paths.
-        subset(indices: List[int]): Subset the remote paths.
-        split(proportion: Union[float, None]=None, indices: Union[List[List[int]], None]=None): Split the remote paths into multiple iterators, that share the same backend. These CANNOT be used in parallel. TODO: Can they be used concurrently?
+        subset(): Subset the remote paths.
+        split(): Split the remote paths into multiple iterators, that share the same backend. These CANNOT be used in parallel. TODO: Can they be used concurrently?
         download_files(): Download files in batches.
+    .. Sphinx comment> 
     """
     def __init__(self, io_handler: "IOHandler", batch_size: int=64, batch_parallel: int=10, max_queued_batches: int=3, n_local_files: int=2*3*64, clear_local: bool=False, **kwargs):
         self.io_handler = io_handler
@@ -876,16 +1056,42 @@ class RemotePathIterator:
         self.consumed_files = 0
 
     def shuffle(self) -> None:
+        """
+        Shuffle the remote paths.
+
+        Shuffles the remote paths in-place. This function should not be called while iterating.
+        """
         if self.download_thread is not None:
             raise RuntimeError("Cannot shuffle while iterating.")
         shuffle(self.remote_paths)
 
     def subset(self, indices: List[int]) -> None:
+        """
+        Subset the remote paths.
+
+        Subsets the remote paths in-place. This function should not be called while iterating.
+
+        Args:
+            indices (List[int]): A list of indices to keep.
+        """
         if self.download_thread is not None:
             raise RuntimeError("Cannot subset while iterating.")
+        # TODO: It is fine that this works with a list of indices, but it should also work with a single index or a slice.
         self.remote_paths = [self.remote_paths[i] for i in indices]
 
     def split(self, proportion: Union[float, None]=None, indices: Union[List[List[int]], None]=None) -> List["RemotePathIterator"]:
+        """
+        Split the remote paths into multiple iterators, that share the same backend. These CANNOT be used in parallel. 
+
+        Either, but not both, of proportion and indices must be specified.
+
+        Args:
+            proportion (Union[float, None]): A list of proportions to split the remote paths into. If None, indices must be specified.
+            indices (Union[List[List[int]], None]): A list of lists of indices to split the remote paths into. If None, proportion must be specified.
+
+        Returns:
+            List[RemotePathIterator]: A list of RemotePathIterator objects.
+        """
         if self.download_thread is not None:
             raise RuntimeError("Cannot split while iterating.")
         if proportion is None and indices is None:
@@ -930,6 +1136,11 @@ class RemotePathIterator:
         return iterators
 
     def download_files(self):
+        """
+        Download the entire list of remote paths in batches, and stores the local paths in a queue (self.download_queue).
+
+        The function is not intended to be called directly, but there is no good reason why it should not and useful for debugging and testing.
+        """
         queued_batches = 0
         for i in range(0, len(self.remote_paths), self.batch_size):
             if self.stop_requested:
@@ -957,6 +1168,11 @@ class RemotePathIterator:
             # Deletion logic moved to __next__ to maintain minimal queued files
 
     def start_download_queue(self) -> None:
+        """
+        Creates a new thread and call the self.download_files() function in the new thread.
+
+        Ensures non-blocking download of the files in self.remote_paths.
+        """
         self.download_thread = threading.Thread(target=self.download_files)
         self.download_thread.start()
 
@@ -981,7 +1197,8 @@ class RemotePathIterator:
 
     def __next__(self) -> Tuple[str, str]:
         """
-        Returns the next item in the iterator, which is a tuple of the local path and the remote path.
+        Returns: 
+            Tuple[str, str]: Tuple of the local path and the remote path.
         """
         # Handle stop request and end of iteration
         if self.stop_requested or self.idx >= len(self.remote_paths):
