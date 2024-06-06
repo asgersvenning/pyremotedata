@@ -25,6 +25,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install hatch
         pip install setuptools wheel twine
+        pip install build
         pip install sphinx
     
     - name: Bump version
