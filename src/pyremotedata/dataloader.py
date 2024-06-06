@@ -50,11 +50,11 @@ class RemotePathDataset(IterableDataset):
         verbose (bool, optional): Whether to print verbose output. Default: False.
 
     Yields:
-        Tuple[torch.Tensor, Union[str, List[int]]]: A tuple containing the image as a tensor and the label as the remote path or class indices.
-            or 
-        Tuple[torch.Tensor, Union[str, List[int]], str]: A tuple containing the image as a tensor, the label as the remote path or class indices, and the local or remote path.
-            or
-        Tuple[torch.Tensor, Union[str, List[int]], str, str]: A tuple containing the image as a tensor, the label as the remote path or class indices, the local path, and the remote path.
+        tuple: A tuple containing the following elements:
+            - torch.Tensor: The image as a tensor.
+            - Union[str, List[int]]: The label as the remote path or as a list of class indices.
+            - Optional[str]: The local path, if `return_local_path` is True.
+            - Optional[str]: The remote path, if `return_remote_path` is True.
     '''
     def __init__(
             self, 
@@ -378,13 +378,10 @@ class RemotePathDataset(IterableDataset):
             ## Label processing
             # Get the label by parsing the remote path
             hierarchy = self.parse_hierarchy(remote_path)
-            # TODO: Use the family and genus information (or add a "species only" flag)
             # Transform the species name to the label index
             label = [self.class_to_idx[level][cls] for level, cls in enumerate(hierarchy)]
             if len(label) == 0:
                 raise ValueError(f"Error parsing label from {remote_path}.")
-            elif len(label) == 1:
-                label = label[0]
         else:
             label = remote_path
 
