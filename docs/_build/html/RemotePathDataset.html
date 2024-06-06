@@ -77,14 +77,16 @@
 </ul>
 </dd>
 <dt class="field-even">Yields<span class="colon">:</span></dt>
-<dd class="field-even"><p><em>Tuple[torch.Tensor, Union[str, List[int]]]</em> –</p>
+<dd class="field-even"><p><em>tuple</em> –</p>
 <dl class="simple">
-<dt>A tuple containing the image as a tensor and the label as the remote path or class indices.</dt><dd><p>or</p>
-</dd>
-<dt>Tuple[torch.Tensor, Union[str, List[int]], str]: A tuple containing the image as a tensor, the label as the remote path or class indices, and the local or remote path.</dt><dd><p>or</p>
+<dt>A tuple containing the following elements:</dt><dd><ul class="simple">
+<li><p>torch.Tensor: The image as a tensor.</p></li>
+<li><p>Union[str, List[int]]: The label as the remote path or as a list of class indices.</p></li>
+<li><p>Optional[str]: The local path, if <cite>return_local_path</cite> is True.</p></li>
+<li><p>Optional[str]: The remote path, if <cite>return_remote_path</cite> is True.</p></li>
+</ul>
 </dd>
 </dl>
-<p>Tuple[torch.Tensor, Union[str, List[int]], str, str]: A tuple containing the image as a tensor, the label as the remote path or class indices, the local path, and the remote path.</p>
 </dd>
 </dl>
 </dd></dl>
