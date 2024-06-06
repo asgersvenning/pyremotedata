@@ -34,7 +34,9 @@ jobs:
     
     - name: Get new version
       id: get_new_version
-      run: echo "new_version=$(cat new_version.txt)" >> $GITHUB_ENV
+      run: |
+        echo "new_version=$(cat new_version.txt)" >> $GITHUB_ENV
+        rm new_version.txt
     
     - name: Build the package
       run: |
@@ -50,14 +52,17 @@ jobs:
     - name: Build Sphinx documentation
       run: |
         make -f Makefile html
-    
-    - name: Deploy documentation to GitHub Pages
+
+    - name: Stash changes and switch to gh-pages branch
       run: |
-        git config --global user.name 'github-actions[bot]'
-        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+        git stash -u
         git fetch origin
         git switch --orphan gh-pages
+    
+    - name: Apply and deploy new documentation to GitHub Pages
+      run: |
         git rm -rf .
+        git stash pop
         cp -r docs/_build/html/* .
         touch .nojekyll
         git add .
