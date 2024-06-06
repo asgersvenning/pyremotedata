@@ -3,7 +3,6 @@ name: Rebuild and Publish to PyPI
 on:
   push:
     branches:
-        - main
         - master
   
 jobs:
@@ -13,10 +12,12 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
+      with:
+        ref: master
     
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
         python-version: '3.10'
     
@@ -57,7 +58,8 @@ jobs:
       run: |
         git config --global user.name 'github-actions[bot]'
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-        git checkout main
-        git add pyproject.toml docs/_build
+        git fetch origin
+        git checkout master
+        git add pyproject.toml docs/_build/html
         git commit -m "Bump version to ${{ env.new_version }} and update documentation [skip ci]"
-        git push origin main
+        git push origin master
