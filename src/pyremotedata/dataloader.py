@@ -397,7 +397,7 @@ class RemotePathDataset(IterableDataset):
         else:
             return image, label
 
-class RemoteDataLoader(DataLoader):
+class RemotePathDataLoader(DataLoader):
     """
     A custom DataLoader for RemotePathDatasets.
 
@@ -429,7 +429,7 @@ class RemoteDataLoader(DataLoader):
             raise ValueError("Argument dataset must be of type RemotePathDataset.")
 
         # Initialize the dataloader
-        super(RemoteDataLoader, self).__init__(
+        super(RemotePathDataLoader, self).__init__(
             shuffle=False,
             sampler=None,
             batch_sampler=None,
