@@ -24,14 +24,17 @@ class RemotePathDataset(IterableDataset):
 
     By default the dataset will return the image as a tensor and the remote path as a string. 
     
-    """""""""""""""""""""
     **Hierarchical mode**
-    """""""""""""""""""""
-    |   If `hierarchical` >= 1, the dataset is in "Hierarchical mode" and will return the image as a tensor and the label as a list of integers (class indices for each level in the hierarchy).
-    |   The `class_handles` property can be used to get the class-idx mappings for the dataset.
-    |   By default the dataset will use a parser which assumes that the hierarchical levels are encoded in the remote path as directories like so:
-    |   `.../level_n/.../level_1/level_0/image.jpg`
-    |   Where `n = (hierarchical - 1)` and `level_0` is the leaf level.
+
+    If `hierarchical` >= 1, the dataset is in "Hierarchical mode" and will return the image as a tensor and the label as a list of integers (class indices for each level in the hierarchy).
+    
+    The `class_handles` property can be used to get the class-idx mappings for the dataset.
+    
+    By default the dataset will use a parser which assumes that the hierarchical levels are encoded in the remote path as directories like so:
+    
+    `.../level_n/.../level_1/level_0/image.jpg`
+    
+    Where `n = (hierarchical - 1)` and `level_0` is the leaf level.
 
     Args:
         remote_path_iterator (RemotePathIterator): The remote path iterator to create the dataset from.
