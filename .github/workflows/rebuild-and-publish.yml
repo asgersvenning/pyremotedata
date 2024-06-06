@@ -53,27 +53,11 @@ jobs:
       run: |
         make -f Makefile html
 
-    - name: Stash changes and switch to gh-pages branch
-      run: |
-        git stash -u
-        git fetch origin
-        git switch --orphan gh-pages
-    
-    - name: Apply and deploy new documentation to GitHub Pages
-      run: |
-        git rm -rf .
-        git stash pop
-        cp -r docs/_build/html/* .
-        touch .nojekyll
-        git add .
-        git commit -m "Update documentation to version ${{ env.new_version }} [skip ci]"
-        git push --force origin gh-pages
-    
     - name: Commit updated version
       run: |
         git config --global user.name 'github-actions[bot]'
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
         git checkout main
-        git add pyproject.toml
-        git commit -m "Bump version to ${{ env.new_version }} [skip ci]"
+        git add pyproject.toml docs/_build
+        git commit -m "Bump version to ${{ env.new_version }} and update documentation [skip ci]"
         git push origin main
