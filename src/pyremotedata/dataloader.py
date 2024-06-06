@@ -6,12 +6,12 @@ import time
 import warnings
 from queue import Queue
 from threading import Thread
-from typing import Union
+from typing import Union, Optional, Tuple, Callable
 
 # Dependency imports
 import torch
 from torch import Tensor
-from torch.utils.data import DataLoader, IterableDataset, TensorDataset
+from torch.utils.data import DataLoader, IterableDataset#, TensorDataset
 from torchvision.io import read_image
 from torchvision.io.image import ImageReadMode
 
@@ -20,9 +20,49 @@ from .implicit_mount import RemotePathIterator
 
 class RemotePathDataset(IterableDataset):
     """
-    TODO: Add docstring
+    Creates a PyTorch dataset from a RemotePathIterator.
+
+    By default the dataset will return the image as a tensor and the remote path as a string. 
+
+    ### Hierarchical mode
+    If `hierarchical` >= 1, the dataset is in "Hierarchical mode" and will return the image as a tensor and the label as a list of integers (class indices for each level in the hierarchy).
+    
+    The `class_handles` property can be used to get the class-idx mappings for the dataset.
+
+    By default the dataset will use a parser which assumes that the hierarchical levels are encoded in the remote path as directories like so:
+    
+    `.../level_n/.../level_1/level_0/image.jpg`
+
+    Where `n = (hierarchical - 1)` and `level_0` is the leaf level.
+
+    Args:
+        remote_path_iterator (RemotePathIterator): The remote path iterator to create the dataset from.
+        prefetch (int): The number of items to prefetch from the remote path iterator.
+        transform (callable, optional): A function/transform that takes in an image as a `torch.Tensor` and returns a transformed version.
+        target_transform (callable, optional): A function/transform that takes in the label (after potential parsing by `parse_hierarchical`) and transforms it.
+        device (torch.device, optional): The device to move the tensors to.
+        dtype (torch.dtype, optional): The data type to convert the tensors to.
+        hierarchical (int, optional): The number of hierarchical levels to use for the labels. Default: 0, i.e. no hierarchy.
+        hierarchy_parser (callable, optional): A function to parse the hierarchical levels from the remote path. Default: None, i.e. use the default parser.
+        return_remote_path (bool, optional): Whether to return the remote path. Default: False.
+        return_local_path (bool, optional): Whether to return the local path. Default: False.
+        verbose (bool, optional): Whether to print verbose output. Default: False.
     """
-    def __init__(self, remote_path_iterator : "RemotePathIterator", prefetch: int=64, transform=None, target_transform=None, device: Union["torch.device", None]=None, dtype: Union[torch.dtype, None]=None, hierarchical: bool=False, gbif: bool=True, return_remote_path: bool=False, return_local_path: bool=False, verbose: bool=False):
+    def __init__(
+            self, 
+            remote_path_iterator : "RemotePathIterator", 
+            prefetch: int=64, 
+            transform : Optional[Callable]=None, 
+            target_transform : Optional[Callable]=None, 
+            device: Union["torch.device", None]=None, 
+            dtype: Union[torch.dtype, None]=None, 
+            hierarchical: int=0, 
+            hierarchy_parser: Optional[Callable]=None,
+            shuffle: bool=False,
+            return_remote_path: bool=False, 
+            return_local_path: bool=False, 
+            verbose: bool=False
+        ):
         # Check if remote_path_iterator is of type RemotePathIterator
         if not isinstance(remote_path_iterator, RemotePathIterator):
             raise ValueError("Argument remote_path_iterator must be of type RemotePathIterator.")
@@ -36,28 +76,40 @@ class RemotePathDataset(IterableDataset):
         ## General parameters
         assert isinstance(verbose, bool), ValueError("Argument verbose must be a boolean.")
         self.verbose : bool = verbose
-        assert isinstance(gbif, bool), ValueError("Argument gbif must be a boolean.")
-        self.gbif : bool = gbif
         
         ## PyTorch specific parameters 
         # Get the classes and their indices
-        if self.gbif:
-            if not hierarchical:
-                self.classes = sorted(list(set([path.split('/')[-2] for path in remote_path_iterator.remote_paths])))
-                self.n_classes = len(self.classes)
-                self.class_to_idx = {self.classes[i]: i for i in range(len(self.classes))}
-                self.idx_to_class = {i: self.classes[i] for i in range(len(self.classes))}
+        self.hierarchical : int = hierarchical
+        if self.hierarchical < 1:
+            self.hierarchical = False
+            def error_hierarchy(*args, **kwargs):
+                raise ValueError("Hierarchical mode disabled (`hierarchical` < 1), but `RemotePathDataset.parse_hierarchy` function was called.")
+            self.parse_hierarchy = error_hierarchy
+        else:
+            if hierarchy_parser is None:
+                self.parse_hierarchy = lambda path: path.split('/')[-(1 + self.hierarchical):-1]
+            elif callable(hierarchy_parser):
+                self.parse_hierarchy = hierarchy_parser
             else:
-                self.classes = [[],[],[]]
-                self.n_classes = [0,0,0]
-                self.class_to_idx = [{}, {}, {}]
-                self.idx_to_class = [{}, {}, {}]
-                for level in range(3):
-                    self.classes[level] = sorted(list(set([path.split('/')[-2-level] for path in remote_path_iterator.remote_paths])))
-                    self.n_classes[level] = len(self.classes[level])
-                    self.class_to_idx[level] = {self.classes[level][i]: i for i in range(len(self.classes[level]))}
-                    self.idx_to_class[level] = {i: self.classes[level][i] for i in range(len(self.classes[level]))}
-            self.hierarchical : bool = hierarchical
+                raise ValueError("Argument `hierarchy_parser` must be a callable or None.")
+            self.classes = [[] for _ in range(self.hierarchical)]
+            self.n_classes = [0 for _ in range(self.hierarchical)]
+            self.class_to_idx = [{} for _ in range(self.hierarchical)]
+            self.idx_to_class = [{} for _ in range(self.hierarchical)]
+            for path in remote_path_iterator.remote_paths:
+                for level, cls in enumerate(reversed(self.parse_hierarchy(path))):
+                    if cls in self.classes[level]:
+                        continue
+                    if level >= self.hierarchical:
+                        raise ValueError(f"Error parsing class from {path}. Got {cls} at level {level}, but the number of specified hierarchical levels is {self.hierarchical} with levels 0-{self.hierarchical-1}.")
+                    self.classes[level].append(cls)
+            for level in range(self.hierarchical):
+                # self.classes[level] = sorted(list(set([path.split('/')[-2-level] for path in remote_path_iterator.remote_paths])))
+                self.classes[level] = sorted(self.classes[level])
+                self.n_classes[level] = len(self.classes[level])
+                self.class_to_idx[level] = {self.classes[level][i]: i for i in range(len(self.classes[level]))}
+                self.idx_to_class[level] = {i: self.classes[level][i] for i in range(len(self.classes[level]))}
+
 
         # Set the transforms
         self.transform = transform
@@ -72,7 +124,7 @@ class RemotePathDataset(IterableDataset):
         self.remote_path_iterator = remote_path_iterator
         self.return_remote_path = return_remote_path
         self.return_local_path = return_local_path
-        self.shuffle = False
+        self.shuffle = shuffle
 
         ## Multi-threading parameters
         # Set the number of workers (threads) for (multi)processing
@@ -106,17 +158,18 @@ class RemotePathDataset(IterableDataset):
         }
     
     @class_handles.setter
-    def class_handles(self, value):
+    def class_handles(self, value : dict):
         if not isinstance(value, dict):
             raise ValueError("Argument value must be a dictionary.")
         if value["hierarchical"]:
-            assert isinstance(value['classes'], list), ValueError("Argument value['classes'] must be a list.")
+            assert isinstance(value['classes'], list), ValueError("Argument value['classes'] must be a list, when hierarchical is True.")
         else:
-            assert not isinstance(value['classes'], list), ValueError("Argument value['classes'] must not be a list.")
+            assert not isinstance(value['classes'], list), ValueError("Argument value['classes'] must not be a list, when hierarchical is False.")
         self.classes = value['classes']
         self.n_classes = value['n_classes']
         self.class_to_idx = value['class_to_idx']
         self.idx_to_class = value['idx_to_class']
+        self.hierarchical = value['hierarchical']
 
     def _shuffle(self):
         if not self.shuffle:
@@ -286,7 +339,7 @@ class RemotePathDataset(IterableDataset):
     def __len__(self):
         return len(self.remote_path_iterator)
     
-    def parse_item(self, local_path, remote_path):
+    def parse_item(self, local_path : str, remote_path : str) -> Union[Tuple[Union[str, torch.Tensor], str], Tuple[Union[str, torch.Tensor], str, str], Tuple[Union[str, torch.Tensor], str, str, str]]:
         ## Image processing
         # Check if image format is supported (jpeg/jpg/png)
         image_type = os.path.splitext(local_path)[-1]
@@ -313,16 +366,17 @@ class RemotePathDataset(IterableDataset):
         if self.device is not None:
             image = image.to(device=self.device)
         
-        if self.gbif:
+        if self.hierarchical:
             ## Label processing
             # Get the label by parsing the remote path
-            family, genus, species = remote_path.split('/')[-4:-1]
+            hierarchy = self.parse_hierarchy(remote_path)
             # TODO: Use the family and genus information (or add a "species only" flag)
             # Transform the species name to the label index
-            if not self.hierarchical:
-                label = self.class_to_idx[species]
-            else:
-                label = [self.class_to_idx[level][cls] for level, cls in enumerate([species, genus, family])]
+            label = [self.class_to_idx[level][cls] for level, cls in enumerate(hierarchy)]
+            if len(label) == 0:
+                raise ValueError(f"Error parsing label from {remote_path}.")
+            elif len(label) == 1:
+                label = label[0]
         else:
             label = remote_path
 
@@ -343,11 +397,22 @@ class RemotePathDataset(IterableDataset):
         else:
             return image, label
 
-class CustomDataLoader(DataLoader):
+class RemoteDataLoader(DataLoader):
     """
-    TODO: Add docstring and change the name of this class to something more appropriate
+    A custom DataLoader for RemotePathDatasets.
+
+    This DataLoader is designed to work with RemotePathDatasets and does not support all the arguments of the standard DataLoader.
+
+    Unsupported arguments:
+    - sampler
+    - batch_sampler
+
+    Args:
+        dataset (RemotePathDataset): The `RemotePathDataset` dataset to load from.
+        num_workers (int, optional): The number of worker threads to use for loading. Default: 0. Must be greater than 0.
+        shuffle (bool, optional): Whether to shuffle the dataset between epochs. Default: False.
     """
-    def __init__(self, dataset: "RemotePathDataset", *args, **kwargs):
+    def __init__(self, dataset: "RemotePathDataset", num_workers : int=0, shuffle : bool=False, *args, **kwargs):
         # Snipe arguments from the user which would break the custom dataloader (e.g. sampler, shuffle, etc.)
         unsupported_kwargs = ['sampler', 'batch_sampler']
         for unzkw in unsupported_kwargs:
@@ -356,15 +421,15 @@ class CustomDataLoader(DataLoader):
                 warnings.warn(f"Argument {unzkw} is not supported in this custom DataLoader. {unzkw}={value} will be ignored.")
 
         # Override the num_workers argument handling (default is 0)
-        dataset.num_workers = kwargs.pop('num_workers', 0)
+        dataset.num_workers = num_workers
         # Override the shuffle argument handling (default is False)
-        dataset.shuffle = kwargs.pop('shuffle', False)
+        dataset.shuffle = shuffle
         
         if not isinstance(dataset, RemotePathDataset):
             raise ValueError("Argument dataset must be of type RemotePathDataset.")
 
         # Initialize the dataloader
-        super(CustomDataLoader, self).__init__(
+        super(RemoteDataLoader, self).__init__(
             shuffle=False,
             sampler=None,
             batch_sampler=None,
@@ -381,20 +446,20 @@ class CustomDataLoader(DataLoader):
     #     super(CustomDataLoader, self).__setattr__(name, value)
 
 
-class HDF5Dataset(TensorDataset):
-    """
-    TODO: Add docstring and integrate with the currently missing functionality of cloning a remote dataset to a local HDF5 file
-    """
-    def __init__(self, hdf5file, tensorname, classname, *args, **kwargs):
-        import h5py
-        self.hdf5 = h5py.File(hdf5file, 'r')
-        self.tensors = self.hdf5[tensorname]
-        self.classes = self.hdf5[classname]
-        self.class_set = sorted(list(set(self.classes)))
-        self.n_classes = len(self.class_set)
-        self.class_to_idx = {self.class_set[i]: i for i in range(len(self.class_set))}
-        self.idx_to_class = {i: self.class_set[i] for i in range(len(self.class_set))}
-        super(HDF5Dataset, self).__init__(self.tensors, *args, **kwargs)
+# class HDF5Dataset(TensorDataset):
+#     """
+#     TODO: Add docstring and integrate with the currently missing functionality of cloning a remote dataset to a local HDF5 file
+#     """
+#     def __init__(self, hdf5file, tensorname, classname, *args, **kwargs):
+#         import h5py
+#         self.hdf5 = h5py.File(hdf5file, 'r')
+#         self.tensors = self.hdf5[tensorname]
+#         self.classes = self.hdf5[classname]
+#         self.class_set = sorted(list(set(self.classes)))
+#         self.n_classes = len(self.class_set)
+#         self.class_to_idx = {self.class_set[i]: i for i in range(len(self.class_set))}
+#         self.idx_to_class = {i: self.class_set[i] for i in range(len(self.class_set))}
+#         super(HDF5Dataset, self).__init__(self.tensors, *args, **kwargs)
 
-    def __getitem__(self, index):
-        return super().__getitem__(index), self.class_to_idx[self.classes[index]]
+#     def __getitem__(self, index):
+#         return super().__getitem__(index), self.class_to_idx[self.classes[index]]

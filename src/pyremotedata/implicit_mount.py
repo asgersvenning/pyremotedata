@@ -202,16 +202,12 @@ class ImplicitMount:
             return full_command
         else:
             output = self._execute_command(full_command, output=output, blocking=blocking, uuid_str=uuid_str)
-            # TODO: As with the mirror command, it should probably just return a list no matter what, this would make the function much more type consistent
             if isinstance(output, list):
-                if len(output) == 0:
-                    return None
-                elif len(output) == 1:
-                    return output[0]
-                else:
-                    return output
+                return output
+            elif output is None:
+                return []
             else:
-                return None
+                raise TypeError("Expected list or None, got {}".format(type(output)))
 
     def _execute_command(self, command: str, output: bool=True, blocking: bool=True, uuid_str: str=None) -> Union[List[str], None]:
         """
@@ -235,27 +231,20 @@ class ImplicitMount:
             # raise ValueError("uuid_str must be specified if output is True.")
         if not command.endswith("\n"):
             command += "\n"
-        if self.verbose:
-            print(f"Executing command: {command}")
         with self.lock: 
-            # TODO: It seems unsafe to execute the command separately from end of output echo command, which logically would imply that the command doesn't finish before the end of output echo command is executed. 
-            #       This hasn't been a problem in practice, but it should probably be fixed.
-            # Execute command
-            self.lftp_shell.stdin.write(command)
-            self.lftp_shell.stdin.flush()
-
+            # TODO: Is it safe to assume that the order of the output is the same as the order of the commands? Why is it "<command> <end_of_output> wait" and not "<command> wait <end_of_output>"?
+            ## Assemble command
             # Blocking and end of output logic
             if blocking or output:
-                EoU_cmd = f"echo {self.END_OF_OUTPUT.format(uuid=uuid_str)}\n"
-                if self.verbose:
-                    print(f"Executing command: {EoU_cmd}")
-                self.lftp_shell.stdin.write(EoU_cmd)
-                self.lftp_shell.stdin.flush()
+                command += f"echo {self.END_OF_OUTPUT.format(uuid=uuid_str)}\n"
             if blocking:
-                if self.verbose:
-                    print("Executing command: wait")
-                self.lftp_shell.stdin.write("wait\n")
-                self.lftp_shell.stdin.flush()
+                command += "wait\n"
+            # Execute command
+            if self.verbose:
+                print(f"Executing command: {command}")
+            self.lftp_shell.stdin.write(command)
+            self.lftp_shell.stdin.flush()
+            # Read output
             if output:
                 return self._read_stdout(uuid_str=uuid_str)
             elif blocking:
@@ -446,13 +435,14 @@ class ImplicitMount:
         abs_remote_path = [rpwd + "/" + r for r in remote_destination]
         return abs_remote_path
 
-    def ls(self, path: str = ".", recursive: bool=False, use_cache: bool=True) -> Union[None, str, List[str]]:
+    def ls(self, path: str = ".", recursive: bool=False, use_cache: bool=True) -> List[str]:
         """
         Find all files in the given remote directory using the LFTP command `cls`. Can be used recursively, even though LFTP does not support recursive listing with the `cls` command.
 
         Args:
             path (str): The remote directory to search in.
             recursive (bool): If True, the function will search recursively.
+            use_cache (bool): If True, the function will use `cls`, otherwise it will use `recls`. `recls` forces a refresh of the cache.
 
         Returns:
             Union[None, str, List[str]]: If the directory is empty, the function will return None, if the directory contains one file, the function will return a string, otherwise it will return a list of strings.
@@ -507,41 +497,35 @@ class ImplicitMount:
                     output += self.ls(path, recursive=True)
                 else:
                     sanitize_path(output, path)
-            return output
         # Non-recursive case
         else:
-            cls_output = self.execute_command(f'cls "{path}" -1')
+            output = sanitize_path([], self.execute_command(f'cls "{path}" -1'))
 
-        # Sanitize output and return
-        output = []
-        sanitize_path(output, cls_output)
+        # Check if the output is a list
         if not isinstance(output, list):
             TypeError("Expected list, got {}".format(type(output)))
         
-        # TODO: It should probably just return a list no matter what, this would make the function much more type consistent
-        # Return cases (empty => None, single element => str, multiple elements => list)
-        if len(output) == 0:
-            return None
-        elif len(output) == 1:
-            return output[0]
-        else:
-            return output
+        return output
     
-    def lls(self, local_path: str, **kwargs):
+    def lls(self, local_path: str, **kwargs) -> List[str]:
         """
         Find all files in the given local directory using the LFTP command `!ls` or `!find`.
 
         OBS: This function should probably not be used, just use the standard OS commands instead.
         """
-        # TODO: Make the recursive option more user friendly and type safe:
-        # currently the value of the "R" or "recursive" argument is ignored, 
-        # the recursive version is always used if either of these arguments are specified
-        # (and the non-recursive version is always used if neither of these arguments are specified)
-        if "R" in kwargs or "recursive" in kwargs:
+        recursive = kwargs.get("R", kwargs.get("recursive", False))
+        if recursive:
             if local_path == "":
                 local_path = "."
-            return self.execute_command(f'!find "{local_path}" -type f -exec realpath --relative-to="{local_path}" {{}} \;')
-        return self.execute_command(f'!ls "{local_path}"', **kwargs)
+            output = self.execute_command(f'!find "{local_path}" -type f -exec realpath --relative-to="{local_path}" {{}} \;')
+        else: 
+            output = self.execute_command(f'!ls "{local_path}"', **kwargs)
+        
+        # Check if the output is a list
+        if not isinstance(output, list):
+            raise TypeError("Expected list, got {}".format(type(output)))
+        
+        return output
 
     def cd(self, remote_path: str, **kwargs):
         self.execute_command(f'cd "{remote_path}"', output=False, **kwargs)
@@ -553,7 +537,11 @@ class ImplicitMount:
         Returns:
             str: The current remote directory.
         """
-        return self.execute_command("pwd")
+        output = self.execute_command("pwd")
+        if isinstance(output, list) and len(output) == 1:
+            return output[0]
+        else:
+            raise TypeError("Expected list of length 1, got {}: {}".format(type(output), output))
 
     def lcd(self, local_path: str) -> str:
         """
@@ -571,9 +559,13 @@ class ImplicitMount:
         Returns:
             str: The current local directory.
         """
-        return self.execute_command("lpwd")
+        output = self.execute_command("lpwd")
+        if isinstance(output, list) and len(output) == 1:
+            return output[0]
+        else:
+            raise TypeError("Expected list of length 1, got {}: {}".format(type(output), output))
     
-    def _get_current_files(self, dir_path: str) -> Set[str]:
+    def _get_current_files(self, dir_path: str) -> List[str]:
         return self.lls(dir_path, R="")
 
     def mirror(self, remote_path: str, local_destination: str, blocking: bool=True, execute: bool=True, do_return: bool=True, **kwargs) -> Union[None, List[str]]:
@@ -594,12 +586,8 @@ class ImplicitMount:
         if do_return:
             # Capture the state of the directory before the operation
             pre_existing_files = self._get_current_files(local_destination)
-            if isinstance(pre_existing_files, str):
-                pre_existing_files = list(pre_existing_files)
-            if pre_existing_files:
-                pre_existing_files = set(pre_existing_files)
-            else:
-                pre_existing_files = set()
+            # Ensure that the pre_existing_files list is unique
+            pre_existing_files = set(pre_existing_files)
 
         # Execute the mirror command
         default_args = {'P': 5, 'use-cache': None}
@@ -617,12 +605,8 @@ class ImplicitMount:
         if do_return:
             # Capture the state of the directory after the operation
             post_download_files = self._get_current_files(local_destination)
-            if isinstance(post_download_files, str):
-                post_download_files = list(post_download_files)
-            if post_download_files:
-                post_download_files = set(post_download_files)
-            else:
-                post_download_files = set()
+            # Ensure that the post_download_files list is unique
+            post_download_files = set(post_download_files)
 
             # Calculate the set difference to get the newly downloaded files
             new_files = post_download_files - pre_existing_files
@@ -655,7 +639,7 @@ class IOHandler(ImplicitMount):
         clean_last(): Clean the last downloaded file or directory.
     .. Sphinx comment>
     """
-    def __init__(self, local_dir: Union[str, None]=None, user_confirmation: bool=False, clean: Union[bool, None]=None, **kwargs):
+    def __init__(self, local_dir: Union[str, None]=None, user_confirmation: bool=False, clean: bool=False, **kwargs):
         super().__init__(**kwargs)
         if local_dir is None:
             if self.default_config['local_dir'] is None:
@@ -667,7 +651,7 @@ class IOHandler(ImplicitMount):
         self.original_local_dir = os.path.abspath(local_dir)
         self.local_dir = local_dir
         self.user_confirmation = user_confirmation
-        self.do_clean = clean if clean is not None else True
+        self.do_clean = clean
         self.last_download = None
         self.last_type = None
         self.cache = {}
@@ -862,7 +846,7 @@ class IOHandler(ImplicitMount):
         if not file_index_exists:
             print("Creating folder index...")
             # Traverse the remote directory and write the file index to a file
-            files = self.ls(recursive=True)
+            files = self.ls(recursive=True, use_cache=False)
             local_index_path = f"{self.lpwd()}folder_index.txt"
             with open(local_index_path, "w") as f:
                 for file in files:
