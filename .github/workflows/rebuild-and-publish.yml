@@ -63,3 +63,5 @@ jobs:
         git add pyproject.toml docs/_build/html
         git commit -m "Bump version to ${{ env.new_version }} and update documentation [skip ci]"
         git push origin master
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
