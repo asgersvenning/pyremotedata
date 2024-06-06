@@ -54,29 +54,94 @@
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">IterableDataset</span></code></p>
 <p>Creates a PyTorch dataset from a RemotePathIterator.</p>
 <p>By default the dataset will return the image as a tensor and the remote path as a string.</p>
-<p>### Hierarchical mode
-If <cite>hierarchical</cite> &gt;= 1, the dataset is in “Hierarchical mode” and will return the image as a tensor and the label as a list of integers (class indices for each level in the hierarchy).</p>
-<p>The <cite>class_handles</cite> property can be used to get the class-idx mappings for the dataset.</p>
-<p>By default the dataset will use a parser which assumes that the hierarchical levels are encoded in the remote path as directories like so:</p>
-<p><cite>…/level_n/…/level_1/level_0/image.jpg</cite></p>
-<p>Where <cite>n = (hierarchical - 1)</cite> and <cite>level_0</cite> is the leaf level.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>remote_path_iterator</strong> (<em>RemotePathIterator</em>) – The remote path iterator to create the dataset from.</p></li>
-<li><p><strong>prefetch</strong> (<em>int</em>) – The number of items to prefetch from the remote path iterator.</p></li>
-<li><p><strong>transform</strong> (<em>callable</em><em>, </em><em>optional</em>) – A function/transform that takes in an image as a <cite>torch.Tensor</cite> and returns a transformed version.</p></li>
-<li><p><strong>target_transform</strong> (<em>callable</em><em>, </em><em>optional</em>) – A function/transform that takes in the label (after potential parsing by <cite>parse_hierarchical</cite>) and transforms it.</p></li>
-<li><p><strong>device</strong> (<em>torch.device</em><em>, </em><em>optional</em>) – The device to move the tensors to.</p></li>
-<li><p><strong>dtype</strong> (<em>torch.dtype</em><em>, </em><em>optional</em>) – The data type to convert the tensors to.</p></li>
-<li><p><strong>hierarchical</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of hierarchical levels to use for the labels. Default: 0, i.e. no hierarchy.</p></li>
-<li><p><strong>hierarchy_parser</strong> (<em>callable</em><em>, </em><em>optional</em>) – A function to parse the hierarchical levels from the remote path. Default: None, i.e. use the default parser.</p></li>
-<li><p><strong>return_remote_path</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to return the remote path. Default: False.</p></li>
-<li><p><strong>return_local_path</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to return the local path. Default: False.</p></li>
-<li><p><strong>verbose</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to print verbose output. Default: False.</p></li>
-</ul>
+<section id="hierarchical-mode">
+<h2><strong>Hierarchical mode</strong><a class="headerlink" href="#hierarchical-mode" title="Link to this heading">¶</a></h2>
+<div class="line-block">
+<div class="line">If <cite>hierarchical</cite> &gt;= 1, the dataset is in “Hierarchical mode” and will return the image as a tensor and the label as a list of integers (class indices for each level in the hierarchy).</div>
+<div class="line">The <cite>class_handles</cite> property can be used to get the class-idx mappings for the dataset.</div>
+<div class="line">By default the dataset will use a parser which assumes that the hierarchical levels are encoded in the remote path as directories like so:</div>
+<div class="line"><cite>…/level_n/…/level_1/level_0/image.jpg</cite></div>
+<div class="line">Where <cite>n = (hierarchical - 1)</cite> and <cite>level_0</cite> is the leaf level.</div>
+</div>
+<dl class="field-list">
+<dt class="field-odd">param remote_path_iterator<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The remote path iterator to create the dataset from.</p>
+</dd>
+<dt class="field-even">type remote_path_iterator<span class="colon">:</span></dt>
+<dd class="field-even"><p>RemotePathIterator</p>
+</dd>
+<dt class="field-odd">param prefetch<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The number of items to prefetch from the remote path iterator.</p>
+</dd>
+<dt class="field-even">type prefetch<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+<dt class="field-odd">param transform<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A function/transform that takes in an image as a <cite>torch.Tensor</cite> and returns a transformed version.</p>
+</dd>
+<dt class="field-even">type transform<span class="colon">:</span></dt>
+<dd class="field-even"><p>callable, optional</p>
+</dd>
+<dt class="field-odd">param target_transform<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A function/transform that takes in the label (after potential parsing by <cite>parse_hierarchical</cite>) and transforms it.</p>
+</dd>
+<dt class="field-even">type target_transform<span class="colon">:</span></dt>
+<dd class="field-even"><p>callable, optional</p>
+</dd>
+<dt class="field-odd">param device<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The device to move the tensors to.</p>
+</dd>
+<dt class="field-even">type device<span class="colon">:</span></dt>
+<dd class="field-even"><p>torch.device, optional</p>
+</dd>
+<dt class="field-odd">param dtype<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The data type to convert the tensors to.</p>
+</dd>
+<dt class="field-even">type dtype<span class="colon">:</span></dt>
+<dd class="field-even"><p>torch.dtype, optional</p>
+</dd>
+<dt class="field-odd">param hierarchical<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The number of hierarchical levels to use for the labels. Default: 0, i.e. no hierarchy.</p>
+</dd>
+<dt class="field-even">type hierarchical<span class="colon">:</span></dt>
+<dd class="field-even"><p>int, optional</p>
+</dd>
+<dt class="field-odd">param hierarchy_parser<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A function to parse the hierarchical levels from the remote path. Default: None, i.e. use the default parser.</p>
+</dd>
+<dt class="field-even">type hierarchy_parser<span class="colon">:</span></dt>
+<dd class="field-even"><p>callable, optional</p>
+</dd>
+<dt class="field-odd">param return_remote_path<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Whether to return the remote path. Default: False.</p>
+</dd>
+<dt class="field-even">type return_remote_path<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool, optional</p>
+</dd>
+<dt class="field-odd">param return_local_path<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Whether to return the local path. Default: False.</p>
+</dd>
+<dt class="field-even">type return_local_path<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool, optional</p>
+</dd>
+<dt class="field-odd">param verbose<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Whether to print verbose output. Default: False.</p>
+</dd>
+<dt class="field-even">type verbose<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool, optional</p>
+</dd>
+<dt class="field-odd">Yields<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>Tuple[torch.Tensor, Union[str, List[int]]]</em> –</p>
+<dl class="simple">
+<dt>A tuple containing the image as a tensor and the label as the remote path or class indices.</dt><dd><p>or</p>
+</dd>
+<dt>Tuple[torch.Tensor, Union[str, List[int]], str]: A tuple containing the image as a tensor, the label as the remote path or class indices, and the local or remote path.</dt><dd><p>or</p>
 </dd>
 </dl>
+<p>Tuple[torch.Tensor, Union[str, List[int]], str, str]: A tuple containing the image as a tensor, the label as the remote path or class indices, the local path, and the remote path.</p>
+</dd>
+</dl>
+</section>
 </dd></dl>
 
 </section>

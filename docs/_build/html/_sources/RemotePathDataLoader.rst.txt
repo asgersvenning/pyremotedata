@@ -1,5 +1,5 @@
 RemotePathDataLoader
-=============
+====================
 
 .. autoclass:: pyremotedata.dataloader.RemotePathDataLoader
    :show-inheritance:
