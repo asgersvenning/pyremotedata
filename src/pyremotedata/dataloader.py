@@ -6,7 +6,7 @@ import time
 import warnings
 from queue import Queue
 from threading import Thread
-from typing import Union, Optional, Tuple, Callable
+from typing import Union, Optional, Tuple, List, Callable
 
 # Dependency imports
 import torch
@@ -19,21 +19,19 @@ from torchvision.io.image import ImageReadMode
 from .implicit_mount import RemotePathIterator
 
 class RemotePathDataset(IterableDataset):
-    """
+    '''
     Creates a PyTorch dataset from a RemotePathIterator.
 
     By default the dataset will return the image as a tensor and the remote path as a string. 
-
-    ### Hierarchical mode
-    If `hierarchical` >= 1, the dataset is in "Hierarchical mode" and will return the image as a tensor and the label as a list of integers (class indices for each level in the hierarchy).
     
-    The `class_handles` property can be used to get the class-idx mappings for the dataset.
-
-    By default the dataset will use a parser which assumes that the hierarchical levels are encoded in the remote path as directories like so:
-    
-    `.../level_n/.../level_1/level_0/image.jpg`
-
-    Where `n = (hierarchical - 1)` and `level_0` is the leaf level.
+    """""""""""""""""""""
+    **Hierarchical mode**
+    """""""""""""""""""""
+    |   If `hierarchical` >= 1, the dataset is in "Hierarchical mode" and will return the image as a tensor and the label as a list of integers (class indices for each level in the hierarchy).
+    |   The `class_handles` property can be used to get the class-idx mappings for the dataset.
+    |   By default the dataset will use a parser which assumes that the hierarchical levels are encoded in the remote path as directories like so:
+    |   `.../level_n/.../level_1/level_0/image.jpg`
+    |   Where `n = (hierarchical - 1)` and `level_0` is the leaf level.
 
     Args:
         remote_path_iterator (RemotePathIterator): The remote path iterator to create the dataset from.
@@ -47,7 +45,14 @@ class RemotePathDataset(IterableDataset):
         return_remote_path (bool, optional): Whether to return the remote path. Default: False.
         return_local_path (bool, optional): Whether to return the local path. Default: False.
         verbose (bool, optional): Whether to print verbose output. Default: False.
-    """
+
+    Yields:
+        Tuple[torch.Tensor, Union[str, List[int]]]: A tuple containing the image as a tensor and the label as the remote path or class indices.
+            or 
+        Tuple[torch.Tensor, Union[str, List[int]], str]: A tuple containing the image as a tensor, the label as the remote path or class indices, and the local or remote path.
+            or
+        Tuple[torch.Tensor, Union[str, List[int]], str, str]: A tuple containing the image as a tensor, the label as the remote path or class indices, the local path, and the remote path.
+    '''
     def __init__(
             self, 
             remote_path_iterator : "RemotePathIterator", 
@@ -339,7 +344,7 @@ class RemotePathDataset(IterableDataset):
     def __len__(self):
         return len(self.remote_path_iterator)
     
-    def parse_item(self, local_path : str, remote_path : str) -> Union[Tuple[Union[str, torch.Tensor], str], Tuple[Union[str, torch.Tensor], str, str], Tuple[Union[str, torch.Tensor], str, str, str]]:
+    def parse_item(self, local_path : str, remote_path : str) -> Union[Tuple[torch.Tensor, Union[str, List[int]]], Tuple[torch.Tensor, Union[str, List[int]], str], Tuple[torch.Tensor, Union[str, List[int]], str, str]]:
         ## Image processing
         # Check if image format is supported (jpeg/jpg/png)
         image_type = os.path.splitext(local_path)[-1]

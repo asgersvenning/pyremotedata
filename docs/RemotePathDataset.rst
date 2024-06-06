@@ -1,5 +1,5 @@
 RemotePathDataset
-=============
+=================
 
 .. autoclass:: pyremotedata.dataloader.RemotePathDataset
    :show-inheritance:
