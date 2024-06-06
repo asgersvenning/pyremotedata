@@ -28,6 +28,7 @@ jobs:
         pip install setuptools wheel twine
         pip install build
         pip install sphinx
+        pip install -e .
     
     - name: Bump version
       run: |
