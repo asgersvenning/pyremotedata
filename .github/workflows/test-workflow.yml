@@ -1,0 +1,25 @@
+name: Test Workflow
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Print message
+      run: |
+        echo "Hello, GitHub Actions!"
+
+    - name: Print commit message
+      run: |
+        echo "Commit message: ${{ github.event.head_commit.message }}"
+
+    - name: Check if commit message contains [skip ci]
+      run: |
+        echo "Commit message contains [skip ci]: ${{ contains(github.event.head_commit.message, '[skip ci]') }}"
