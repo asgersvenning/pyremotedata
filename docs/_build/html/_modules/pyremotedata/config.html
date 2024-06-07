@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <meta name="lang:clipboard.copy" content="Copy to clipboard">
+  <meta name="lang:clipboard.copied" content="Copied to clipboard">
+  <meta name="lang:search.language" content="en">
+  <meta name="lang:search.pipeline.stopwords" content="True">
+  <meta name="lang:search.pipeline.trimmer" content="True">
+  <meta name="lang:search.result.none" content="No matching documents">
+  <meta name="lang:search.result.one" content="1 matching document">
+  <meta name="lang:search.result.other" content="# matching documents">
+  <meta name="lang:search.tokenizer" content="[\s\-]+">
+
+  
+    <link href="https://fonts.gstatic.com/" rel="preconnect" crossorigin>
+    <link href="https://fonts.googleapis.com/css?family=Roboto+Mono:400,500,700|Roboto:300,400,400i,700&display=fallback" rel="stylesheet">
+
+    <style>
+      body,
+      input {
+        font-family: "Roboto", "Helvetica Neue", Helvetica, Arial, sans-serif
+      }
+
+      code,
+      kbd,
+      pre {
+        font-family: "Roboto Mono", "Courier New", Courier, monospace
+      }
+    </style>
+  
+
+  <link rel="stylesheet" href="../../_static/stylesheets/application.css"/>
+  <link rel="stylesheet" href="../../_static/stylesheets/application-palette.css"/>
+  <link rel="stylesheet" href="../../_static/stylesheets/application-fixes.css"/>
+  
+  <link rel="stylesheet" href="../../_static/fonts/material-icons.css"/>
+  
+  <meta name="theme-color" content="#3f51b5">
+  <script src="../../_static/javascripts/modernizr.js"></script>
+  
+  
+  
+    <title>pyremotedata.config &#8212; PyRemoteData 0.0.16 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=83e35b93" />
+    <link rel="stylesheet" type="text/css" href="../../_static/material.css?v=79c92029" />
+    <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=fb6b2637" />
+    <script src="../../_static/documentation_options.js?v=c7cdf6fe"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="canonical" href="_build/html/_modules/pyremotedata/config.html" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+  
+   
+
+  </head>
+  <body dir=ltr
+        data-md-color-primary=blue-grey data-md-color-accent=blue>
+  
+  <svg class="md-svg">
+    <defs data-children-count="0">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" width="416" height="448" viewBox="0 0 416 448" id="__github"><path fill="currentColor" d="M160 304q0 10-3.125 20.5t-10.75 19T128 352t-18.125-8.5-10.75-19T96 304t3.125-20.5 10.75-19T128 256t18.125 8.5 10.75 19T160 304zm160 0q0 10-3.125 20.5t-10.75 19T288 352t-18.125-8.5-10.75-19T256 304t3.125-20.5 10.75-19T288 256t18.125 8.5 10.75 19T320 304zm40 0q0-30-17.25-51T296 232q-10.25 0-48.75 5.25Q229.5 240 208 240t-39.25-2.75Q130.75 232 120 232q-29.5 0-46.75 21T56 304q0 22 8 38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0 37.25-1.75t35-7.375 30.5-15 20.25-25.75T360 304zm56-44q0 51.75-15.25 82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5T212 416q-19.5 0-35.5-.75t-36.875-3.125-38.125-7.5-34.25-12.875T37 371.5t-21.5-28.75Q0 312 0 260q0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25 30.875Q171.5 96 212 96q37 0 70 8 26.25-20.5 46.75-30.25T376 64q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34 99.5z"/></svg>
+      
+    </defs>
+  </svg>
+  
+  <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer">
+  <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search">
+  <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
+  <a href="#_modules/pyremotedata/config" tabindex="1" class="md-skip"> Skip to content </a>
+  <header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid">
+    <div class="md-flex navheader">
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <a href="../../index.html" title="PyRemoteData 0.0.16 documentation"
+           class="md-header-nav__button md-logo">
+          
+            &nbsp;
+          
+        </a>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <label class="md-icon md-icon--menu md-header-nav__button" for="__drawer"></label>
+      </div>
+      <div class="md-flex__cell md-flex__cell--stretch">
+        <div class="md-flex__ellipsis md-header-nav__title" data-md-component="title">
+          <span class="md-header-nav__topic">PyRemoteData 0.0.16 documentation</span>
+          <span class="md-header-nav__topic"> pyremotedata.config </span>
+        </div>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <label class="md-icon md-icon--search md-header-nav__button" for="__search"></label>
+        
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" action="../../search.html" method="get" name="search">
+      <input type="text" class="md-search__input" name="q" placeholder=""Search""
+             autocapitalize="off" autocomplete="off" spellcheck="false"
+             data-md-component="query" data-md-state="active">
+      <label class="md-icon md-search__icon" for="__search"></label>
+      <button type="reset" class="md-icon md-search__icon" data-md-component="reset" tabindex="-1">
+        &#xE5CD;
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="result">
+          <div class="md-search-result__meta">
+            Type to start searching
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+      </div>
+      
+      
+  
+  <script src="../../_static/javascripts/version_dropdown.js"></script>
+  <script>
+    var json_loc = "../../"versions.json"",
+        target_loc = "../../../",
+        text = "Versions";
+    $( document ).ready( add_version_dropdown(json_loc, target_loc, text));
+  </script>
+  
+
+    </div>
+  </nav>
+</header>
+
+  
+  <div class="md-container">
+    
+    
+    
+  <nav class="md-tabs" data-md-component="tabs">
+    <div class="md-tabs__inner md-grid">
+      <ul class="md-tabs__list">
+          <li class="md-tabs__item"><a href="../../index.html" class="md-tabs__link">PyRemoteData 0.0.16 documentation</a></li>
+          <li class="md-tabs__item"><a href="../index.html" class="md-tabs__link">Module code</a></li>
+      </ul>
+    </div>
+  </nav>
+    <main class="md-main">
+      <div class="md-main__inner md-grid" data-md-component="container">
+        
+          <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+            <div class="md-sidebar__scrollwrap">
+              <div class="md-sidebar__inner">
+                <nav class="md-nav md-nav--primary" data-md-level="0">
+  <label class="md-nav__title md-nav__title--site" for="__drawer">
+    <a href="../../index.html" title="PyRemoteData 0.0.16 documentation" class="md-nav__button md-logo">
+      
+        <img src="../../_static/" alt=" logo" width="48" height="48">
+      
+    </a>
+    <a href="../../index.html"
+       title="PyRemoteData 0.0.16 documentation">PyRemoteData 0.0.16 documentation</a>
+  </label>
+  
+
+</nav>
+              </div>
+            </div>
+          </div>
+          <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+            <div class="md-sidebar__scrollwrap">
+              <div class="md-sidebar__inner">
+                
+<nav class="md-nav md-nav--secondary">
+  <ul class="md-nav__list" data-md-scrollfix="">
+    
+
+<li id="searchbox" class="md-nav__item"></li>
+
+  </ul>
+</nav>
+              </div>
+            </div>
+          </div>
+        
+        <div class="md-content">
+          <article class="md-content__inner md-typeset" role="main">
+            
+  <h1 id="modules-pyremotedata-config--page-root">Source code for pyremotedata.config</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">yaml</span>
+
+<span class="n">config</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="ask_user">
+<a class="viewcode-back" href="../../config.html#pyremotedata.config.ask_user">[docs]</a>
+<span class="k">def</span> <span class="nf">ask_user</span><span class="p">(</span><span class="n">question</span><span class="p">,</span> <span class="n">interactive</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">interactive</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Cannot ask user for input when interactive=False"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">input</span><span class="p">(</span><span class="n">question</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="create_default_config">
+<a class="viewcode-back" href="../../config.html#pyremotedata.config.create_default_config">[docs]</a>
+<span class="k">def</span> <span class="nf">create_default_config</span><span class="p">(</span><span class="n">interactive</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="n">base_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span>
+    <span class="n">config_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_dir</span><span class="p">,</span> <span class="s1">'pyremotedata_config.yaml'</span><span class="p">)</span>
+
+    <span class="c1"># Check for environment variables or ask for user input</span>
+    <span class="n">remote_username</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">'PYREMOTEDATA_REMOTE_USERNAME'</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">ask_user</span><span class="p">(</span><span class="s2">"Enter your remote name: "</span><span class="p">,</span> <span class="n">interactive</span><span class="p">)</span>
+    <span class="n">remote_uri</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">'PYREMOTEDATA_REMOTE_URI'</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">ask_user</span><span class="p">(</span><span class="s2">"Enter your remote URI (leave empty for 'io.erda.au.dk'): "</span><span class="p">,</span> <span class="n">interactive</span><span class="p">)</span> <span class="ow">or</span> <span class="s1">'io.erda.au.dk'</span><span class="p">)</span>
+    <span class="n">local_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">'PYREMOTEDATA_LOCAL_DIR'</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
+    <span class="n">remote_directory</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">'PYREMOTEDATA_REMOTE_DIRECTORY'</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">ask_user</span><span class="p">(</span><span class="s2">"Enter your remote directory: "</span><span class="p">,</span> <span class="n">interactive</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">local_dir</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">local_dir</span> <span class="o">!=</span> <span class="s2">""</span><span class="p">:</span>
+        <span class="n">local_dir</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">'"</span><span class="si">{</span><span class="n">local_dir</span><span class="si">}</span><span class="s1">"'</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">remote_directory</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">remote_directory</span> <span class="o">!=</span> <span class="s2">""</span><span class="p">:</span>
+        <span class="n">remote_directory</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">'"</span><span class="si">{</span><span class="n">remote_directory</span><span class="si">}</span><span class="s1">"'</span>
+
+    <span class="c1"># TODO: Remove unnecessary config options!</span>
+    <span class="n">yaml_content</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"""</span>
+<span class="s2"># Mounting configuration (NOT USED AT THE MOMENT - TODO: Implement or remove)</span>
+<span class="s2">mount:</span>
+<span class="s2">    # Remote configuration</span>
+<span class="s2">    remote: "YOUR_REMOTE_NAME_HERE"</span>
+<span class="s2">    remote_subdir: "YOUR_REMOTE_DIRECTORY_HERE"</span>
+<span class="s2">    local: "YOUR_LOCAL_MOUNT_POINT_HERE"</span>
+
+<span class="s2">    # Rclone configuration (Can be left as-is)</span>
+<span class="s2">    rclone:</span>
+<span class="s2">        vfs-cache-mode: "full"</span>
+<span class="s2">        vfs-read-chunk-size: "1M"</span>
+<span class="s2">        vfs-cache-max-age: "10h"</span>
+<span class="s2">        vfs-cache-max-size: "500G"</span>
+<span class="s2">        max-read-ahead: "1M"</span>
+<span class="s2">        dir-cache-time: "15m"</span>
+<span class="s2">        fast-list: true</span>
+<span class="s2">        transfers: 10</span>
+<span class="s2">        daemon: true</span>
+
+<span class="s2">implicit_mount:</span>
+<span class="s2">    # Remote configuration</span>
+<span class="s2">    user: "</span><span class="si">{</span><span class="n">remote_username</span><span class="si">}</span><span class="s2">"</span>
+<span class="s2">    remote: "</span><span class="si">{</span><span class="n">remote_uri</span><span class="si">}</span><span class="s2">"</span>
+<span class="s2">    local_dir: </span><span class="si">{</span><span class="n">local_dir</span><span class="si">}</span><span class="s2"> # Leave empty to use the default local directory</span>
+<span class="s2">    default_remote_dir : </span><span class="si">{</span><span class="n">remote_directory</span><span class="si">}</span>
+
+<span class="s2">    # Lftp configuration (Can be left as-is)</span>
+<span class="s2">    lftp:</span>
+<span class="s2">        'mirror:use-pget-n': 5  # Enable this to split a single file into multiple chunks and download them in parallel, when using mirror</span>
+<span class="s2">        'net:limit-rate': 0  # No limit on transfer rate, maximizing throughput.</span>
+<span class="s2">        'xfer:parallel': 5  # Enable this to split a single file into multiple chunks and download them in parallel</span>
+<span class="s2">        'mirror:parallel-directories': "on"  # Enable this to download multiple directories in parallel</span>
+<span class="s2">        'ftp:sync-mode': 'off'  # Enable this to disable synchronization mode, which is used to prevent data corruption when downloading multiple files in parallel</span>
+<span class="s2">        'cmd:parallel': 1  # If you write bespoke scripts that execute multiple commands in parallel, you can increase this value.</span>
+<span class="s2">        'net:connection-limit': 0  # No limit on connections, maximizing throughput.</span>
+<span class="s2">        'cmd:verify-path': "off"  # To reduce latency, we skip path verification.</span>
+<span class="s2">        'cmd:verify-host': "on"  # For initial security, it's good to verify the host.</span>
+<span class="s2">        'sftp:size-read': 0x5000  # Increased block size for better read throughput.</span>
+<span class="s2">        'sftp:size-write': 0x5000  # Increased block size for better write throughput.</span>
+<span class="s2">        'sftp:max-packets-in-flight' : 512  # Increased number of packets in flight for better throughput.</span>
+<span class="s2">        'xfer:verify': "off"  # Disabling this for maximum speed.</span>
+<span class="s2">        'cmd:interactive': "false"  # Disabled for automated transfers.</span>
+<span class="s2">        'cmd:trace': "false"  # Disabled unless debugging is required.</span>
+<span class="s2">        'xfer:clobber': "true"  # Overwrite existing files.</span>
+
+<span class="s2">"""</span>
+    
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_path</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">config_file</span><span class="p">:</span>
+        <span class="n">config_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">yaml_content</span><span class="p">)</span>
+    
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Created default config file at </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">config_path</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"OBS: It is **strongly** recommended that you **check the config file** and make sure that it is correct before using pyRemoteData."</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_config">
+<a class="viewcode-back" href="../../config.html#pyremotedata.config.get_config">[docs]</a>
+<span class="k">def</span> <span class="nf">get_config</span><span class="p">():</span>
+    <span class="n">base_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span>
+    <span class="n">config_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_dir</span><span class="p">,</span> <span class="s1">'pyremotedata_config.yaml'</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">config_path</span><span class="p">):</span>
+        <span class="n">interactive</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">"PYREMOTEDATA_AUTO"</span><span class="p">,</span> <span class="s2">"no"</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">!=</span> <span class="s2">"yes"</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">interactive</span> <span class="ow">or</span> <span class="n">ask_user</span><span class="p">(</span><span class="s2">"Config file not found. Create default config file? (y/n): "</span><span class="p">,</span> <span class="n">interactive</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">==</span> <span class="s1">'y'</span><span class="p">:</span>
+            <span class="n">create_default_config</span><span class="p">(</span><span class="n">interactive</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="s2">"Config file not found at </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">config_path</span><span class="p">))</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_path</span><span class="p">,</span> <span class="s1">'r'</span><span class="p">)</span> <span class="k">as</span> <span class="n">stream</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">config_data</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">yaml</span><span class="o">.</span><span class="n">YAMLError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+    
+    <span class="k">return</span> <span class="n">config_data</span></div>
+
+
+<span class="n">config</span> <span class="o">=</span> <span class="n">get_config</span><span class="p">()</span>
+
+<div class="viewcode-block" id="get_this_config">
+<a class="viewcode-back" href="../../config.html#pyremotedata.config.get_this_config">[docs]</a>
+<span class="k">def</span> <span class="nf">get_this_config</span><span class="p">(</span><span class="n">this</span><span class="p">):</span>
+    <span class="k">global</span> <span class="n">config</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">this</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"Expected string, got </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">this</span><span class="p">)))</span>
+    <span class="c1"># Check if config is loaded</span>
+    <span class="k">if</span> <span class="n">config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Load config</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="n">get_config</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">this</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Key </span><span class="si">{}</span><span class="s2"> not found in config"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">this</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">config</span><span class="p">[</span><span class="n">this</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="get_mount_config">
+<a class="viewcode-back" href="../../config.html#pyremotedata.config.get_mount_config">[docs]</a>
+<span class="k">def</span> <span class="nf">get_mount_config</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">get_this_config</span><span class="p">(</span><span class="s1">'mount'</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_dataloader_config">
+<a class="viewcode-back" href="../../config.html#pyremotedata.config.get_dataloader_config">[docs]</a>
+<span class="k">def</span> <span class="nf">get_dataloader_config</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">get_this_config</span><span class="p">(</span><span class="s1">'dataloader'</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_implicit_mount_config">
+<a class="viewcode-back" href="../../config.html#pyremotedata.config.get_implicit_mount_config">[docs]</a>
+<span class="k">def</span> <span class="nf">get_implicit_mount_config</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">get_this_config</span><span class="p">(</span><span class="s1">'implicit_mount'</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="deparse_args">
+<a class="viewcode-back" href="../../config.html#pyremotedata.config.deparse_args">[docs]</a>
+<span class="k">def</span> <span class="nf">deparse_args</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">what</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">what</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"Expected string, got </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">what</span><span class="p">)))</span>
+    <span class="k">if</span> <span class="n">what</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Key </span><span class="si">{}</span><span class="s2"> not found in config"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">what</span><span class="p">))</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="n">what</span><span class="p">]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"Expected dict, got </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">args</span><span class="p">)))</span>
+    
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">arg_str</span> <span class="o">=</span> <span class="s2">""</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">args</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"Expected string, got </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">key</span><span class="p">)))</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+                <span class="n">arg_str</span> <span class="o">+=</span> <span class="s2">" --</span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
+                <span class="n">arg_str</span> <span class="o">+=</span> <span class="s2">" --</span><span class="si">{}</span><span class="s2"> </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"Expected string, int, float or bool, got </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)))</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">yaml</span><span class="o">.</span><span class="n">YAMLError</span><span class="p">(</span><span class="s2">"Error while parsing args: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">arg_str</span></div>
+
+
+<div class="viewcode-block" id="remove_config">
+<a class="viewcode-back" href="../../config.html#pyremotedata.config.remove_config">[docs]</a>
+<span class="k">def</span> <span class="nf">remove_config</span><span class="p">():</span>
+    <span class="k">global</span> <span class="n">config</span>
+    <span class="n">base_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span>
+    <span class="n">config_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_dir</span><span class="p">,</span> <span class="s1">'pyremotedata_config.yaml'</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">config_path</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">config_path</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"Removed config file at </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">config_path</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"No config file found at </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">config_path</span><span class="p">))</span>
+    <span class="c1"># Reset global config</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="config_path">
+<a class="viewcode-back" href="../../config.html#pyremotedata.config.config_path">[docs]</a>
+<span class="k">def</span> <span class="nf">config_path</span><span class="p">():</span>
+    <span class="n">base_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span>
+    <span class="n">config_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_dir</span><span class="p">,</span> <span class="s1">'pyremotedata_config.yaml'</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">config_path</span></div>
+
+</pre></div>
+
+          </article>
+        </div>
+      </div>
+    </main>
+  </div>
+  <footer class="md-footer">
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid">
+          
+          
+        </a>
+        
+      </nav>
+    </div>
+    <div class="md-footer-meta md-typeset">
+      <div class="md-footer-meta__inner md-grid">
+        <div class="md-footer-copyright">
+          <div class="md-footer-copyright__highlight">
+              &#169; Copyright 2024, Asger Svenning.
+              
+          </div>
+            Created using
+            <a href="http://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
+             and
+            <a href="https://github.com/bashtage/sphinx-material/">Material for
+              Sphinx</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+  <script src="../../_static/javascripts/application.js"></script>
+  <script>app.initialize({version: "1.0.4", url: {base: ".."}})</script>
+  </body>
+</html>
