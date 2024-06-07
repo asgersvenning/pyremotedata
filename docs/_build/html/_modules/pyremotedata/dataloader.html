@@ -45,11 +45,11 @@
   
   
   
-    <title>pyremotedata.dataloader &#8212; PyRemoteData 0.0.16 documentation</title>
+    <title>pyremotedata.dataloader &#8212; PyRemoteData 0.0.32 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=83e35b93" />
     <link rel="stylesheet" type="text/css" href="../../_static/material.css?v=79c92029" />
     <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=fb6b2637" />
-    <script src="../../_static/documentation_options.js?v=c7cdf6fe"></script>
+    <script src="../../_static/documentation_options.js?v=f2234cd1"></script>
     <script src="../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="canonical" href="_build/html/_modules/pyremotedata/dataloader.html" />
@@ -78,7 +78,7 @@
   <nav class="md-header-nav md-grid">
     <div class="md-flex navheader">
       <div class="md-flex__cell md-flex__cell--shrink">
-        <a href="../../index.html" title="PyRemoteData 0.0.16 documentation"
+        <a href="../../index.html" title="PyRemoteData 0.0.32 documentation"
            class="md-header-nav__button md-logo">
           
             &nbsp;
@@ -90,7 +90,7 @@
       </div>
       <div class="md-flex__cell md-flex__cell--stretch">
         <div class="md-flex__ellipsis md-header-nav__title" data-md-component="title">
-          <span class="md-header-nav__topic">PyRemoteData 0.0.16 documentation</span>
+          <span class="md-header-nav__topic">PyRemoteData 0.0.32 documentation</span>
           <span class="md-header-nav__topic"> pyremotedata.dataloader </span>
         </div>
       </div>
@@ -147,7 +147,7 @@
   <nav class="md-tabs" data-md-component="tabs">
     <div class="md-tabs__inner md-grid">
       <ul class="md-tabs__list">
-          <li class="md-tabs__item"><a href="../../index.html" class="md-tabs__link">PyRemoteData 0.0.16 documentation</a></li>
+          <li class="md-tabs__item"><a href="../../index.html" class="md-tabs__link">PyRemoteData 0.0.32 documentation</a></li>
           <li class="md-tabs__item"><a href="../index.html" class="md-tabs__link">Module code</a></li>
       </ul>
     </div>
@@ -160,13 +160,13 @@
               <div class="md-sidebar__inner">
                 <nav class="md-nav md-nav--primary" data-md-level="0">
   <label class="md-nav__title md-nav__title--site" for="__drawer">
-    <a href="../../index.html" title="PyRemoteData 0.0.16 documentation" class="md-nav__button md-logo">
+    <a href="../../index.html" title="PyRemoteData 0.0.32 documentation" class="md-nav__button md-logo">
       
         <img src="../../_static/" alt=" logo" width="48" height="48">
       
     </a>
     <a href="../../index.html"
-       title="PyRemoteData 0.0.16 documentation">PyRemoteData 0.0.16 documentation</a>
+       title="PyRemoteData 0.0.32 documentation">PyRemoteData 0.0.32 documentation</a>
   </label>
   
 
@@ -206,7 +206,6 @@
 
 <span class="c1"># Dependency imports</span>
 <span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">Tensor</span>
 <span class="kn">from</span> <span class="nn">torch.utils.data</span> <span class="kn">import</span> <span class="n">DataLoader</span><span class="p">,</span> <span class="n">IterableDataset</span><span class="c1">#, TensorDataset</span>
 <span class="kn">from</span> <span class="nn">torchvision.io</span> <span class="kn">import</span> <span class="n">read_image</span>
 <span class="kn">from</span> <span class="nn">torchvision.io.image</span> <span class="kn">import</span> <span class="n">ImageReadMode</span>
@@ -218,7 +217,7 @@
 <a class="viewcode-back" href="../../RemotePathDataset.html#pyremotedata.dataloader.RemotePathDataset">[docs]</a>
 <span class="k">class</span> <span class="nc">RemotePathDataset</span><span class="p">(</span><span class="n">IterableDataset</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">'''</span>
-<span class="sd">    Creates a PyTorch dataset from a RemotePathIterator.</span>
+<span class="sd">    Creates a :py:class:`torch.utils.data.IterableDataset` from a :py:class:`pyremotedata.implicit_mount.RemotePathIterator`.</span>
 
 <span class="sd">    By default the dataset will return the image as a tensor and the remote path as a string. </span>
 <span class="sd">    </span>
@@ -235,9 +234,9 @@
 <span class="sd">    Where `n = (hierarchical - 1)` and `level_0` is the leaf level.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        remote_path_iterator (RemotePathIterator): The remote path iterator to create the dataset from.</span>
-<span class="sd">        prefetch (int): The number of items to prefetch from the remote path iterator.</span>
-<span class="sd">        transform (callable, optional): A function/transform that takes in an image as a `torch.Tensor` and returns a transformed version.</span>
+<span class="sd">        remote_path_iterator (RemotePathIterator): The :py:class:`pyremotedata.implicit_mount.RemotePathIterator` to create the dataset from.</span>
+<span class="sd">        prefetch (int): The number of items to prefetch from the :py:class:`pyremotedata.implicit_mount.RemotePathIterator`.</span>
+<span class="sd">        transform (callable, optional): A function/transform that takes in an image as a :py:class:`torch.Tensor` and returns a transformed version.</span>
 <span class="sd">        target_transform (callable, optional): A function/transform that takes in the label (after potential parsing by `parse_hierarchical`) and transforms it.</span>
 <span class="sd">        device (torch.device, optional): The device to move the tensors to.</span>
 <span class="sd">        dtype (torch.dtype, optional): The data type to convert the tensors to.</span>
@@ -248,11 +247,11 @@
 <span class="sd">        verbose (bool, optional): Whether to print verbose output. Default: False.</span>
 
 <span class="sd">    Yields:</span>
-<span class="sd">        tuple: A tuple containing the following elements:</span>
-<span class="sd">            - torch.Tensor: The image as a tensor.</span>
-<span class="sd">            - Union[str, List[int]]: The label as the remote path or as a list of class indices.</span>
-<span class="sd">            - Optional[str]: The local path, if `return_local_path` is True.</span>
-<span class="sd">            - Optional[str]: The remote path, if `return_remote_path` is True.</span>
+<span class="sd">        (tuple): A tuple containing the following elements:</span>
+<span class="sd">            - (torch.Tensor): The image as a tensor.</span>
+<span class="sd">            - (Union[str, List[int]]): The label as the remote path or as a list of class indices.</span>
+<span class="sd">            - (Optional[str]): The local path, if `return_local_path` is True.</span>
+<span class="sd">            - (Optional[str]): The remote path, if `return_remote_path` is True.</span>
 <span class="sd">    '''</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span> 
@@ -271,7 +270,7 @@
         <span class="p">):</span>
         <span class="c1"># Check if remote_path_iterator is of type RemotePathIterator</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">remote_path_iterator</span><span class="p">,</span> <span class="n">RemotePathIterator</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Argument remote_path_iterator must be of type RemotePathIterator."</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Argument remote_path_iterator must be of type pyremotedata.implicit_mount.RemotePathIterator."</span><span class="p">)</span>
         <span class="c1"># Check if prefetch is an integer</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">prefetch</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Argument prefetch must be an integer."</span><span class="p">)</span>
@@ -289,7 +288,7 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">hierarchical</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">hierarchical</span> <span class="o">=</span> <span class="kc">False</span>
             <span class="k">def</span> <span class="nf">error_hierarchy</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Hierarchical mode disabled (`hierarchical` &lt; 1), but `RemotePathDataset.parse_hierarchy` function was called."</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Hierarchical mode disabled (`hierarchical` &lt; 1), but `pyremotedata.dataloader.RemotePathDataset.parse_hierarchy` function was called."</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">parse_hierarchy</span> <span class="o">=</span> <span class="n">error_hierarchy</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">hierarchy_parser</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -605,16 +604,16 @@
 <a class="viewcode-back" href="../../RemotePathDataLoader.html#pyremotedata.dataloader.RemotePathDataLoader">[docs]</a>
 <span class="k">class</span> <span class="nc">RemotePathDataLoader</span><span class="p">(</span><span class="n">DataLoader</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
-<span class="sd">    A custom DataLoader for RemotePathDatasets.</span>
+<span class="sd">    A custom :py:class:`torch.utils.data.DataLoader` for :py:class:`pyremotedata.dataloader.RemotePathDataset`.</span>
 
-<span class="sd">    This DataLoader is designed to work with RemotePathDatasets and does not support all the arguments of the standard DataLoader.</span>
+<span class="sd">    This DataLoader is designed to work with :py:class:`pyremotedata.dataloader.RemotePathDataset` and does not support all the arguments of the standard :py:class:`torch.utils.data.DataLoader`.</span>
 
 <span class="sd">    Unsupported arguments:</span>
 <span class="sd">    - sampler</span>
 <span class="sd">    - batch_sampler</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        dataset (RemotePathDataset): The `RemotePathDataset` dataset to load from.</span>
+<span class="sd">        dataset (RemotePathDataset): The :py:class:`pyremotedata.dataloader.RemotePathDataset` dataset to load from.</span>
 <span class="sd">        num_workers (int, optional): The number of worker threads to use for loading. Default: 0. Must be greater than 0.</span>
 <span class="sd">        shuffle (bool, optional): Whether to shuffle the dataset between epochs. Default: False.</span>
 <span class="sd">    """</span>
@@ -624,7 +623,7 @@
         <span class="k">for</span> <span class="n">unzkw</span> <span class="ow">in</span> <span class="n">unsupported_kwargs</span><span class="p">:</span>
             <span class="n">value</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">unzkw</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Argument </span><span class="si">{</span><span class="n">unzkw</span><span class="si">}</span><span class="s2"> is not supported in this custom DataLoader. </span><span class="si">{</span><span class="n">unzkw</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2"> will be ignored."</span><span class="p">)</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Argument </span><span class="si">{</span><span class="n">unzkw</span><span class="si">}</span><span class="s2"> is not supported in `pyremotedata.dataloader.RemotePathDataLoader`. </span><span class="si">{</span><span class="n">unzkw</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2"> will be ignored."</span><span class="p">)</span>
 
         <span class="c1"># Override the num_workers argument handling (default is 0)</span>
         <span class="n">dataset</span><span class="o">.</span><span class="n">num_workers</span> <span class="o">=</span> <span class="n">num_workers</span>
@@ -632,7 +631,7 @@
         <span class="n">dataset</span><span class="o">.</span><span class="n">shuffle</span> <span class="o">=</span> <span class="n">shuffle</span>
         
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">RemotePathDataset</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Argument dataset must be of type RemotePathDataset."</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Argument dataset must be of type `pyremotedata.dataloader.RemotePathDataset`."</span><span class="p">)</span>
 
         <span class="c1"># Initialize the dataloader</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">RemotePathDataLoader</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
@@ -650,26 +649,7 @@
     <span class="c1"># def __setattr__(self, name, value):</span>
     <span class="c1">#     if name in ['batch_sampler', 'sampler']:</span>
     <span class="c1">#         raise (f"Changing {name} is not allowed in this custom DataLoader.")</span>
-    <span class="c1">#     super(CustomDataLoader, self).__setattr__(name, value)</span>
-
-
-<span class="c1"># class HDF5Dataset(TensorDataset):</span>
-<span class="c1">#     """</span>
-<span class="c1">#     TODO: Add docstring and integrate with the currently missing functionality of cloning a remote dataset to a local HDF5 file</span>
-<span class="c1">#     """</span>
-<span class="c1">#     def __init__(self, hdf5file, tensorname, classname, *args, **kwargs):</span>
-<span class="c1">#         import h5py</span>
-<span class="c1">#         self.hdf5 = h5py.File(hdf5file, 'r')</span>
-<span class="c1">#         self.tensors = self.hdf5[tensorname]</span>
-<span class="c1">#         self.classes = self.hdf5[classname]</span>
-<span class="c1">#         self.class_set = sorted(list(set(self.classes)))</span>
-<span class="c1">#         self.n_classes = len(self.class_set)</span>
-<span class="c1">#         self.class_to_idx = {self.class_set[i]: i for i in range(len(self.class_set))}</span>
-<span class="c1">#         self.idx_to_class = {i: self.class_set[i] for i in range(len(self.class_set))}</span>
-<span class="c1">#         super(HDF5Dataset, self).__init__(self.tensors, *args, **kwargs)</span>
-
-<span class="c1">#     def __getitem__(self, index):</span>
-<span class="c1">#         return super().__getitem__(index), self.class_to_idx[self.classes[index]]</span>
+    <span class="c1">#     super(RemotePathDataLoader, self).__setattr__(name, value)</span>
 </pre></div>
 
           </article>
