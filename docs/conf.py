@@ -3,26 +3,33 @@
 # For the full list of built-in configuration values, see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
+import os, sys, re
+sys.path.insert(0, os.path.abspath('../'))
+
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'PyRemoteData'
 copyright = '2024, Asger Svenning'
 author = 'Asger Svenning'
-release = '0.0.16'
+release = [re.search(r'version\s*=\s*\"(.*?)\"', line).group(1) for line in open('../pyproject.toml') if 'version' in line][0]
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
-import os, sys
 
-sys.path.insert(0, os.path.abspath('../'))
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.viewcode", 
+    "sphinx.ext.intersphinx",
     "sphinx.ext.napoleon"
 ]
 napoleon_google_docstring = True
+napoleon_numpy_docstring = False
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/3', None),
+    'torch': ('https://pytorch.org/docs/stable/', None),
+}
 
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']

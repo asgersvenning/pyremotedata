@@ -10,7 +10,6 @@ from typing import Union, Optional, Tuple, List, Callable
 
 # Dependency imports
 import torch
-from torch import Tensor
 from torch.utils.data import DataLoader, IterableDataset#, TensorDataset
 from torchvision.io import read_image
 from torchvision.io.image import ImageReadMode
@@ -20,7 +19,7 @@ from .implicit_mount import RemotePathIterator
 
 class RemotePathDataset(IterableDataset):
     '''
-    Creates a PyTorch dataset from a RemotePathIterator.
+    Creates a :py:class:`torch.utils.data.IterableDataset` from a :py:class:`pyremotedata.implicit_mount.RemotePathIterator`.
 
     By default the dataset will return the image as a tensor and the remote path as a string. 
     
@@ -37,9 +36,9 @@ class RemotePathDataset(IterableDataset):
     Where `n = (hierarchical - 1)` and `level_0` is the leaf level.
 
     Args:
-        remote_path_iterator (RemotePathIterator): The remote path iterator to create the dataset from.
-        prefetch (int): The number of items to prefetch from the remote path iterator.
-        transform (callable, optional): A function/transform that takes in an image as a `torch.Tensor` and returns a transformed version.
+        remote_path_iterator (RemotePathIterator): The :py:class:`pyremotedata.implicit_mount.RemotePathIterator` to create the dataset from.
+        prefetch (int): The number of items to prefetch from the :py:class:`pyremotedata.implicit_mount.RemotePathIterator`.
+        transform (callable, optional): A function/transform that takes in an image as a :py:class:`torch.Tensor` and returns a transformed version.
         target_transform (callable, optional): A function/transform that takes in the label (after potential parsing by `parse_hierarchical`) and transforms it.
         device (torch.device, optional): The device to move the tensors to.
         dtype (torch.dtype, optional): The data type to convert the tensors to.
@@ -50,11 +49,11 @@ class RemotePathDataset(IterableDataset):
         verbose (bool, optional): Whether to print verbose output. Default: False.
 
     Yields:
-        tuple: A tuple containing the following elements:
-            - torch.Tensor: The image as a tensor.
-            - Union[str, List[int]]: The label as the remote path or as a list of class indices.
-            - Optional[str]: The local path, if `return_local_path` is True.
-            - Optional[str]: The remote path, if `return_remote_path` is True.
+        (tuple): A tuple containing the following elements:
+            - (torch.Tensor): The image as a tensor.
+            - (Union[str, List[int]]): The label as the remote path or as a list of class indices.
+            - (Optional[str]): The local path, if `return_local_path` is True.
+            - (Optional[str]): The remote path, if `return_remote_path` is True.
     '''
     def __init__(
             self, 
@@ -73,7 +72,7 @@ class RemotePathDataset(IterableDataset):
         ):
         # Check if remote_path_iterator is of type RemotePathIterator
         if not isinstance(remote_path_iterator, RemotePathIterator):
-            raise ValueError("Argument remote_path_iterator must be of type RemotePathIterator.")
+            raise ValueError("Argument remote_path_iterator must be of type pyremotedata.implicit_mount.RemotePathIterator.")
         # Check if prefetch is an integer
         if not isinstance(prefetch, int):
             raise ValueError("Argument prefetch must be an integer.")
@@ -91,7 +90,7 @@ class RemotePathDataset(IterableDataset):
         if self.hierarchical < 1:
             self.hierarchical = False
             def error_hierarchy(*args, **kwargs):
-                raise ValueError("Hierarchical mode disabled (`hierarchical` < 1), but `RemotePathDataset.parse_hierarchy` function was called.")
+                raise ValueError("Hierarchical mode disabled (`hierarchical` < 1), but `pyremotedata.dataloader.RemotePathDataset.parse_hierarchy` function was called.")
             self.parse_hierarchy = error_hierarchy
         else:
             if hierarchy_parser is None:
@@ -404,16 +403,16 @@ class RemotePathDataset(IterableDataset):
 
 class RemotePathDataLoader(DataLoader):
     """
-    A custom DataLoader for RemotePathDatasets.
+    A custom :py:class:`torch.utils.data.DataLoader` for :py:class:`pyremotedata.dataloader.RemotePathDataset`.
 
-    This DataLoader is designed to work with RemotePathDatasets and does not support all the arguments of the standard DataLoader.
+    This DataLoader is designed to work with :py:class:`pyremotedata.dataloader.RemotePathDataset` and does not support all the arguments of the standard :py:class:`torch.utils.data.DataLoader`.
 
     Unsupported arguments:
     - sampler
     - batch_sampler
 
     Args:
-        dataset (RemotePathDataset): The `RemotePathDataset` dataset to load from.
+        dataset (RemotePathDataset): The :py:class:`pyremotedata.dataloader.RemotePathDataset` dataset to load from.
         num_workers (int, optional): The number of worker threads to use for loading. Default: 0. Must be greater than 0.
         shuffle (bool, optional): Whether to shuffle the dataset between epochs. Default: False.
     """
@@ -423,7 +422,7 @@ class RemotePathDataLoader(DataLoader):
         for unzkw in unsupported_kwargs:
             value = kwargs.pop(unzkw, None)
             if value is not None:
-                warnings.warn(f"Argument {unzkw} is not supported in this custom DataLoader. {unzkw}={value} will be ignored.")
+                warnings.warn(f"Argument {unzkw} is not supported in `pyremotedata.dataloader.RemotePathDataLoader`. {unzkw}={value} will be ignored.")
 
         # Override the num_workers argument handling (default is 0)
         dataset.num_workers = num_workers
@@ -431,7 +430,7 @@ class RemotePathDataLoader(DataLoader):
         dataset.shuffle = shuffle
         
         if not isinstance(dataset, RemotePathDataset):
-            raise ValueError("Argument dataset must be of type RemotePathDataset.")
+            raise ValueError("Argument dataset must be of type `pyremotedata.dataloader.RemotePathDataset`.")
 
         # Initialize the dataloader
         super(RemotePathDataLoader, self).__init__(
@@ -448,23 +447,4 @@ class RemotePathDataLoader(DataLoader):
     # def __setattr__(self, name, value):
     #     if name in ['batch_sampler', 'sampler']:
     #         raise (f"Changing {name} is not allowed in this custom DataLoader.")
-    #     super(CustomDataLoader, self).__setattr__(name, value)
-
-
-# class HDF5Dataset(TensorDataset):
-#     """
-#     TODO: Add docstring and integrate with the currently missing functionality of cloning a remote dataset to a local HDF5 file
-#     """
-#     def __init__(self, hdf5file, tensorname, classname, *args, **kwargs):
-#         import h5py
-#         self.hdf5 = h5py.File(hdf5file, 'r')
-#         self.tensors = self.hdf5[tensorname]
-#         self.classes = self.hdf5[classname]
-#         self.class_set = sorted(list(set(self.classes)))
-#         self.n_classes = len(self.class_set)
-#         self.class_to_idx = {self.class_set[i]: i for i in range(len(self.class_set))}
-#         self.idx_to_class = {i: self.class_set[i] for i in range(len(self.class_set))}
-#         super(HDF5Dataset, self).__init__(self.tensors, *args, **kwargs)
-
-#     def __getitem__(self, index):
-#         return super().__getitem__(index), self.class_to_idx[self.classes[index]]
+    #     super(RemotePathDataLoader, self).__setattr__(name, value)
