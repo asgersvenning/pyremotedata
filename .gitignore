@@ -1,3 +1,4 @@
 dist
 myenv
 perf/sample.txt
+**/__pycache__

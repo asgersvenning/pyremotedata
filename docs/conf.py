@@ -13,8 +13,16 @@ release = '0.0.16'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
+import os, sys
 
-extensions = ["sphinx.ext.autodoc", "sphinx.ext.napoleon", "sphinx.ext.autosummary"]
+sys.path.insert(0, os.path.abspath('../'))
+extensions = [
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
+    "sphinx.ext.viewcode", 
+    "sphinx.ext.napoleon"
+]
+napoleon_google_docstring = True
 
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']

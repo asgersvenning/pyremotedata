@@ -517,7 +517,7 @@ class ImplicitMount:
         if recursive:
             if local_path == "":
                 local_path = "."
-            output = self.execute_command(f'!find "{local_path}" -type f -exec realpath --relative-to="{local_path}" {{}} \;')
+            output = self.execute_command(f'!find "{local_path}" -type f -exec realpath --relative-to="{local_path}" {{}} \\;')
         else: 
             output = self.execute_command(f'!ls "{local_path}"', **kwargs)
         
@@ -826,7 +826,7 @@ class IOHandler(ImplicitMount):
             nmax (int): The maximum number of files to include.
             override (bool): If True, the file index will be overridden if it already exists.
             store (bool): If True, the file index will be stored on the remote directory.
-            pattern (str): A regular expression pattern to filter the file names by, e.g. "\.txt$" to only include files with the ".txt" extension.
+            pattern (str): A regular expression pattern to filter the file names by, e.g. "\\.txt$" to only include files with the ".txt" extension.
         Returns:
             A list of files in the current remote directory.
         """
