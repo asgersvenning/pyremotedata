@@ -26,10 +26,6 @@ extensions = [
 ]
 napoleon_google_docstring = True
 napoleon_numpy_docstring = False
-intersphinx_mapping = {
-    'python': ('https://docs.python.org/3', None),
-    'torch': ('https://pytorch.org/docs/stable/', None),
-}
 
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
@@ -42,6 +38,12 @@ html_theme = 'sphinx_material'
 html_css_files = ['custom.css']
 html_static_path = ['_static']
 html_baseurl = '_build/html/'
+
+intersphinx_mapping = {
+    'pyremotedata': ("https://asgersvenning.github.io/pyremotedata/" + html_baseurl, None),
+    'python': ('https://docs.python.org/3', None),
+    'torch': ('https://pytorch.org/docs/stable/', None),
+}
 
 ### Custom code to remove custom Sphinx comments from docstrings
 
