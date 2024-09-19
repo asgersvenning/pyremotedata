@@ -392,7 +392,7 @@ class ImplicitMount:
             output (Union[bool, None]): If True, the function will return the absolute remote path of the uploaded file, otherwise it will return None.
             **kwargs: Keyword arguments to pass to the put command.
         """
-        def source_destiation(local_path: Union[str, List[str]], remote_destination: Union[str, List[str], None]=None) -> str:
+        def source_destination(local_path: Union[str, List[str]], remote_destination: Union[str, List[str], None]=None) -> str:
             if isinstance(local_path, str):
                 local_path = [local_path]
             if not isinstance(local_path, list):
@@ -418,7 +418,7 @@ class ImplicitMount:
         default_args = {}
         args = {**default_args, **kwargs}
         formatted_args = self.format_options(**args)
-        remote_destination, src_to_dst = source_destiation(local_path, remote_destination)
+        remote_destination, src_to_dst = source_destination(local_path, remote_destination)
         full_command = f"put {formatted_args} {src_to_dst}"
         exec_output = self.execute_command(
             full_command, 
