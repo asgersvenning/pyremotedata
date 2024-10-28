@@ -663,7 +663,8 @@ class IOHandler(ImplicitMount):
         # Print local directory:
         # if the local directory is not specified in the config, 
         # it is a temporary directory, so it is nice to know where it is located
-        print(f"Local directory: {self.lpwd()}")
+        if self.verbose:
+            print(f"Local directory: {self.lpwd()}")
 
         # Return self
         return self
@@ -682,8 +683,9 @@ class IOHandler(ImplicitMount):
         Very useful for interactive use, but shouldn't be used in scripts, using a context manager is safer and does the same.
         """
         self.__enter__()
-        print("IOHandler.start() is unsafe. Use IOHandler.__enter__() instead if possible.")
-        print("OBS: Remember to call IOHandler.stop() when you are done.")
+        if self.verbose:
+            print("IOHandler.start() is unsafe. Use IOHandler.__enter__() instead if possible.")
+            print("OBS: Remember to call IOHandler.stop() when you are done.")
 
     def stop(self) -> None:
         """
@@ -834,7 +836,7 @@ class IOHandler(ImplicitMount):
             raise ValueError("override cannot be 'True' if store is 'False'!")
         # Check if file index exists
         file_index_exists = self.execute_command('glob -f --exist *folder_index.txt && echo "YES" || echo "NO"') == "YES"
-        if not file_index_exists:
+        if not file_index_exists and self.verbose:
             print(f"Folder index does not exist in {self.pwd()}")
         # If override is True, delete the file index if it exists
         if override and file_index_exists:
@@ -844,7 +846,8 @@ class IOHandler(ImplicitMount):
             file_index_exists = False
         # If the file index does not exist, create it
         if not file_index_exists:
-            print("Creating folder index...")
+            if self.verbose:
+                print("Creating folder index...")
             # Traverse the remote directory and write the file index to a file
             files = self.ls(recursive=True, use_cache=False)
             local_index_path = f"{self.lpwd()}folder_index.txt"
@@ -925,9 +928,11 @@ class IOHandler(ImplicitMount):
             # Ask for confirmation
             confirmation = input(f"Are you sure you want to delete all files in the current directory {self.lpwd()}? (y/n)")
             if confirmation.lower() != "y":
-                print("Aborted")
+                if self.verbose:
+                    print("Aborted")
                 return
-        print("Cleaning up...")
+        if self.verbose:
+            print("Cleaning up...")
         for path in os.listdir(self.lpwd()):
             if os.path.isfile(path):
                 os.remove(path)
@@ -961,7 +966,8 @@ class IOHandler(ImplicitMount):
             else:
                 raise RuntimeError(f"Unknown last type {self.last_type}")
             if confirmation.lower() != "y":
-                print("Aborted")
+                if self.verbose:
+                    print("Aborted")
                 return
         
         if self.original_local_dir == self.lpwd():
