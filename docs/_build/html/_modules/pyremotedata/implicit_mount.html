@@ -45,12 +45,12 @@
   
   
   
-    <title>pyremotedata.implicit_mount &#8212; PyRemoteData 0.0.35 documentation</title>
+    <title>pyremotedata.implicit_mount &#8212; PyRemoteData 0.0.36 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=83e35b93" />
     <link rel="stylesheet" type="text/css" href="../../_static/material.css?v=79c92029" />
     <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=fb6b2637" />
-    <script src="../../_static/documentation_options.js?v=39aadc1c"></script>
-    <script src="../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../_static/documentation_options.js?v=0e525676"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="canonical" href="_build/html/_modules/pyremotedata/implicit_mount.html" />
     <link rel="index" title="Index" href="../../genindex.html" />
@@ -78,7 +78,7 @@
   <nav class="md-header-nav md-grid">
     <div class="md-flex navheader">
       <div class="md-flex__cell md-flex__cell--shrink">
-        <a href="../../index.html" title="PyRemoteData 0.0.35 documentation"
+        <a href="../../index.html" title="PyRemoteData 0.0.36 documentation"
            class="md-header-nav__button md-logo">
           
             &nbsp;
@@ -164,7 +164,7 @@
   <nav class="md-tabs" data-md-component="tabs">
     <div class="md-tabs__inner md-grid">
       <ul class="md-tabs__list">
-          <li class="md-tabs__item"><a href="../../index.html" class="md-tabs__link">PyRemoteData 0.0.35 documentation</a></li>
+          <li class="md-tabs__item"><a href="../../index.html" class="md-tabs__link">PyRemoteData 0.0.36 documentation</a></li>
           <li class="md-tabs__item"><a href="../index.html" class="md-tabs__link">Module code</a></li>
       </ul>
     </div>
@@ -177,13 +177,13 @@
               <div class="md-sidebar__inner">
                 <nav class="md-nav md-nav--primary" data-md-level="0">
   <label class="md-nav__title md-nav__title--site" for="__drawer">
-    <a href="../../index.html" title="PyRemoteData 0.0.35 documentation" class="md-nav__button md-logo">
+    <a href="../../index.html" title="PyRemoteData 0.0.36 documentation" class="md-nav__button md-logo">
       
         <img src="../../_static/" alt=" logo" width="48" height="48">
       
     </a>
     <a href="../../index.html"
-       title="PyRemoteData 0.0.35 documentation">PyRemoteData</a>
+       title="PyRemoteData 0.0.36 documentation">PyRemoteData</a>
   </label>
     <div class="md-nav__source">
       <a href="https://github.com/asgersvenning/pyremotedata" title="Go to repository" class="md-source" data-md-source="github">
@@ -245,7 +245,7 @@
 <span class="kn">import</span> <span class="nn">tempfile</span>
 <span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">import</span> <span class="nn">uuid</span>
-<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span> <span class="nn">logging</span>
 <span class="kn">from</span> <span class="nn">random</span> <span class="kn">import</span> <span class="n">shuffle</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
@@ -255,8 +255,9 @@
 <span class="kn">import</span> <span class="nn">threading</span>
 <span class="kn">from</span> <span class="nn">queue</span> <span class="kn">import</span> <span class="n">Queue</span>
 
-<span class="c1"># Config import</span>
-<span class="kn">from</span> <span class="nn">.config</span> <span class="kn">import</span> <span class="n">get_implicit_mount_config</span>
+<span class="c1"># Internal import</span>
+<span class="kn">from</span> <span class="nn">pyremotedata</span> <span class="kn">import</span> <span class="n">main_logger</span><span class="p">,</span> <span class="n">module_logger</span>
+<span class="kn">from</span> <span class="nn">pyremotedata.config</span> <span class="kn">import</span> <span class="n">get_implicit_mount_config</span>
 
 <div class="viewcode-block" id="ImplicitMount">
 <a class="viewcode-back" href="../../ImplicitMount.html#pyremotedata.implicit_mount.ImplicitMount">[docs]</a>
@@ -299,7 +300,7 @@
     <span class="n">time_stamp_pattern</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"^\s*(\S+\s+)</span><span class="si">{8}</span><span class="s2">"</span><span class="p">)</span> <span class="c1"># This is used to strip the timestamp from the output of the lftp shell</span>
     <span class="n">END_OF_OUTPUT</span> <span class="o">=</span> <span class="s1">'# LFTP_END_OF_OUTPUT_IDENTIFIER </span><span class="si">{uuid}</span><span class="s1"> #'</span>  <span class="c1"># This is used to signal the end of output when reading from stdout</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">remote</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">remote</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="n">main_logger</span><span class="o">.</span><span class="n">isEnabledFor</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)):</span>
         <span class="c1"># Default argument configuration and type checking</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">default_config</span> <span class="o">=</span> <span class="n">get_implicit_mount_config</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">user</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -339,7 +340,7 @@
 <span class="sd">        """</span>
         <span class="n">options</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="c1"># print(f'key: |{key}|, value: |{value}|')</span>
+            <span class="c1"># main_logger.debug(f'key: |{key}|, value: |{value}|')</span>
             <span class="n">prefix</span> <span class="o">=</span> <span class="s2">"-"</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="s2">"--"</span>
             <span class="n">this_option</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}{</span><span class="n">key</span><span class="si">}</span><span class="s2">"</span>
             
@@ -375,7 +376,7 @@
                     <span class="n">line</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">time_stamp_pattern</span><span class="p">,</span> <span class="s2">""</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
                 <span class="c1"># if not line.startswith("wait "):</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
-                    <span class="nb">print</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+                    <span class="n">main_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
                 <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">err</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_stderr</span><span class="p">()</span>
@@ -477,7 +478,7 @@
                 <span class="n">command</span> <span class="o">+=</span> <span class="s2">"wait</span><span class="se">\n</span><span class="s2">"</span>
             <span class="c1"># Execute command</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Executing command: </span><span class="si">{</span><span class="n">command</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                <span class="n">main_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Executing command: </span><span class="si">{</span><span class="n">command</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">lftp_shell</span><span class="o">.</span><span class="n">stdin</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">lftp_shell</span><span class="o">.</span><span class="n">stdin</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
             <span class="c1"># Read output</span>
@@ -508,11 +509,11 @@
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">lftp_settings</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="n">lftp_settings_str</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">" set </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">;"</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Mounting </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">remote</span><span class="si">}</span><span class="s2"> as </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="n">main_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Mounting </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">remote</span><span class="si">}</span><span class="s2"> as </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="c1"># "Mount" the remote directory using an lftp shell with the sftp protocol and the specified user and remote, and the specified lftp settings</span>
         <span class="n">lftp_mount_cmd</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">'open -u </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="si">}</span><span class="s1">,</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">password</span><span class="si">}</span><span class="s1"> -p 2222 sftp://</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">remote</span><span class="si">}</span><span class="s1">;</span><span class="si">{</span><span class="n">lftp_settings_str</span><span class="si">}</span><span class="s1">'</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Executing command: lftp"</span><span class="p">)</span>
+            <span class="n">main_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Executing command: lftp"</span><span class="p">)</span>
         <span class="c1"># Start the lftp shell</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">lftp_shell</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span>
@@ -551,10 +552,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">cd</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">default_config</span><span class="p">[</span><span class="s1">'default_remote_dir'</span><span class="p">])</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">"Waiting for connection..."</span><span class="p">)</span>
+            <span class="n">main_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Waiting for connection..."</span><span class="p">)</span>
         <span class="c1"># Check if we are connected to the remote directory by executing the pwd command on the lftp shell</span>
         <span class="n">connected_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pwd</span><span class="p">()</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Connected to </span><span class="si">{</span><span class="n">connected_path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="n">main_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Connected to </span><span class="si">{</span><span class="n">connected_path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">connected_path</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">unmount</span><span class="p">()</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to connect. Check internet connection or if </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">remote</span><span class="si">}</span><span class="s2"> is online."</span><span class="p">)</span></div>
@@ -932,7 +934,7 @@
         <span class="c1"># Print local directory:</span>
         <span class="c1"># if the local directory is not specified in the config, </span>
         <span class="c1"># it is a temporary directory, so it is nice to know where it is located</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Local directory: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">lpwd</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="n">main_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Local directory: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">lpwd</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="c1"># Return self</span>
         <span class="k">return</span> <span class="bp">self</span>
@@ -953,8 +955,9 @@
 <span class="sd">        Very useful for interactive use, but shouldn't be used in scripts, using a context manager is safer and does the same.</span>
 <span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="fm">__enter__</span><span class="p">()</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">"IOHandler.start() is unsafe. Use IOHandler.__enter__() instead if possible."</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">"OBS: Remember to call IOHandler.stop() when you are done."</span><span class="p">)</span></div>
+
+        <span class="n">main_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"IOHandler.start() is unsafe. Use IOHandler.__enter__() instead if possible."</span><span class="p">)</span>
+        <span class="n">main_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"OBS: Remember to call IOHandler.stop() when you are done."</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="IOHandler.stop">
@@ -1120,8 +1123,8 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"override cannot be 'True' if store is 'False'!"</span><span class="p">)</span>
         <span class="c1"># Check if file index exists</span>
         <span class="n">file_index_exists</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">execute_command</span><span class="p">(</span><span class="s1">'glob -f --exist *folder_index.txt &amp;&amp; echo "YES" || echo "NO"'</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"YES"</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">file_index_exists</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Folder index does not exist in </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">pwd</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">file_index_exists</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="n">main_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Folder index does not exist in </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">pwd</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="c1"># If override is True, delete the file index if it exists</span>
         <span class="k">if</span> <span class="n">override</span> <span class="ow">and</span> <span class="n">file_index_exists</span><span class="p">:</span>
             <span class="k">assert</span> <span class="n">store</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">,</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"'override' is '</span><span class="si">{</span><span class="n">override</span><span class="si">}</span><span class="s2">' and 'store' is '</span><span class="si">{</span><span class="n">store</span><span class="si">}</span><span class="s2">', this is not allowed and should not happen!"</span><span class="p">)</span>
@@ -1130,7 +1133,7 @@
             <span class="n">file_index_exists</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="c1"># If the file index does not exist, create it</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">file_index_exists</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">"Creating folder index..."</span><span class="p">)</span>
+            <span class="n">main_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Creating folder index..."</span><span class="p">)</span>
             <span class="c1"># Traverse the remote directory and write the file index to a file</span>
             <span class="n">files</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ls</span><span class="p">(</span><span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">use_cache</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
             <span class="n">local_index_path</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">lpwd</span><span class="p">()</span><span class="si">}</span><span class="s2">folder_index.txt"</span>
@@ -1170,106 +1173,34 @@
     <span class="k">def</span> <span class="nf">cache_file_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">skip</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">nmax</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">override</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="s2">"file_index"</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_file_index</span><span class="p">(</span><span class="n">skip</span><span class="p">,</span> <span class="n">nmax</span><span class="p">,</span> <span class="n">override</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">store_last</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dst</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"This function is not implemented yet."</span><span class="p">)</span> <span class="c1"># TODO: Remove or implement...</span>
-        <span class="c1"># TODO: This function should really be split into two; </span>
-        <span class="c1"># 1) Handling the self.last_download/self.last_type variables</span>
-        <span class="c1"># 2) Moving files/directories</span>
-
-        <span class="c1"># If the last download was a single file, the destination should be a file.</span>
-        <span class="c1"># Otherwise, it should be a directory.</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_download</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">"No last download to store"</span><span class="p">)</span>
-            <span class="k">return</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_type</span> <span class="o">==</span> <span class="s2">"unknown"</span><span class="p">:</span>
-            <span class="c1"># This should only happen if the last download was a multi download (read the rest of the function)</span>
-            <span class="c1"># In this case the last type must be inferred from the last_download path (no file extension =&gt; directory; TODO: This is unsafe.)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">last_type</span> <span class="o">=</span> <span class="s2">"file"</span> <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">last_download</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">""</span> <span class="k">else</span> <span class="s2">"directory"</span>
-        <span class="c1"># Check if destination has file extension (if last download was a file) or not (if last download was a directory)</span>
-        <span class="n">dst_has_ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">dst</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">""</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_type</span> <span class="o">==</span> <span class="s2">"file"</span><span class="p">:</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">dst_has_ext</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Destination must have file extension if it is NOT a directory."</span><span class="p">)</span>
-            <span class="n">shutil</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">last_download</span><span class="p">,</span> <span class="n">dst</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_type</span> <span class="o">==</span> <span class="s2">"directory"</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">dst_has_ext</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Destination must NOT have file extension if it IS a directory."</span><span class="p">)</span>
-            <span class="n">shutil</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">last_download</span><span class="p">,</span> <span class="n">dst</span><span class="p">)</span>
-            
-        <span class="c1"># This part is too complicated, and is used to handle the case where the last download was a multi download only</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_type</span> <span class="o">==</span> <span class="s2">"multi"</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">last_type</span> <span class="o">=</span> <span class="s2">"unknown"</span>
-                <span class="n">last_downloads</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_download</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">()</span>
-                <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">last_downloads</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">last_download</span> <span class="o">=</span> <span class="n">path</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">store_last</span><span class="p">(</span><span class="n">dst</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">clean_last</span><span class="p">()</span>
-
     <span class="k">def</span> <span class="nf">clean</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">user_confirmation</span><span class="p">:</span>
             <span class="c1"># Ask for confirmation</span>
             <span class="n">confirmation</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Are you sure you want to delete all files in the current directory </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">lpwd</span><span class="p">()</span><span class="si">}</span><span class="s2">? (y/n)"</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">confirmation</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">!=</span> <span class="s2">"y"</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="s2">"Aborted"</span><span class="p">)</span>
+                <span class="n">main_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Aborted"</span><span class="p">)</span>
                 <span class="k">return</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">"Cleaning up..."</span><span class="p">)</span>
+
+        <span class="n">main_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Cleaning up..."</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lpwd</span><span class="p">()):</span>
             <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
-                <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="n">main_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Error"</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lpwd</span><span class="p">())</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">"Error while cleaning local backend directory!"</span><span class="p">)</span>
+            <span class="n">main_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"Error while cleaning local backend directory!"</span><span class="p">)</span>
             <span class="n">files_in_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lpwd</span><span class="p">())</span>
             <span class="k">if</span> <span class="n">files_in_dir</span><span class="p">:</span>
                 <span class="n">n_files</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">files_in_dir</span><span class="p">)</span>
-                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">n_files</span><span class="si">}</span><span class="s2"> files in local directory (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">lpwd</span><span class="p">()</span><span class="si">}</span><span class="s2">):"</span><span class="p">)</span>
+                <span class="n">main_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">n_files</span><span class="si">}</span><span class="s2"> files in local directory (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">lpwd</span><span class="p">()</span><span class="si">}</span><span class="s2">):"</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">n_files</span> <span class="o">&gt;</span> <span class="mi">5</span><span class="p">:</span>
-                    <span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\t</span><span class="s2">"</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\n\t</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">files_in_dir</span><span class="p">[:</span><span class="mi">5</span><span class="p">])</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\n\t</span><span class="s2">..."</span><span class="p">)</span>
+                    <span class="n">main_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"</span><span class="se">\t</span><span class="s2">"</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\n\t</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">files_in_dir</span><span class="p">[:</span><span class="mi">5</span><span class="p">])</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\n\t</span><span class="s2">..."</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\t</span><span class="s2">"</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\n\t</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">files_in_dir</span><span class="p">))</span>
-            <span class="k">raise</span> <span class="n">e</span>
-
-    <span class="c1"># TODO: Is this function useful?</span>
-    <span class="k">def</span> <span class="nf">clean_last</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_download</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">"No last download to clean"</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">user_confirmation</span><span class="p">:</span>
-            <span class="c1"># Ask for confirmation</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_download</span> <span class="o">==</span> <span class="s2">"directory"</span><span class="p">:</span>
-                <span class="n">confirmation</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Are you sure you want to delete all files in </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">last_download</span><span class="si">}</span><span class="s2">? (y/n)"</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_download</span> <span class="o">==</span> <span class="s2">"file"</span><span class="p">:</span>
-                <span class="n">confirmation</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Are you sure you want to delete </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">last_download</span><span class="si">}</span><span class="s2">? (y/n)"</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_download</span> <span class="o">==</span> <span class="s2">"multi"</span><span class="p">:</span>
-                <span class="n">confirmation</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Are you sure you want to delete all files and or contents of </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">last_download</span><span class="si">}</span><span class="s2">? (y/n)"</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unknown last type </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">last_type</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">confirmation</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">!=</span> <span class="s2">"y"</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="s2">"Aborted"</span><span class="p">)</span>
-                <span class="k">return</span>
-        
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">original_local_dir</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">lpwd</span><span class="p">():</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_type</span> <span class="o">==</span> <span class="s2">"file"</span><span class="p">:</span>
-                <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">last_download</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_type</span> <span class="o">==</span> <span class="s2">"directory"</span><span class="p">:</span>
-                <span class="n">shutil</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">last_download</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_type</span> <span class="o">==</span> <span class="s2">"multi"</span><span class="p">:</span>
-                <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_download</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
-                        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
-                            <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
-                        <span class="k">else</span><span class="p">:</span>
-                            <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unknown last type </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">last_type</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-
-            <span class="bp">self</span><span class="o">.</span><span class="n">last_download</span> <span class="o">=</span> <span class="kc">None</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">last_type</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">"Last download was not in original local directory. Not cleaning."</span><span class="p">)</span></div>
+                    <span class="n">main_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"</span><span class="se">\t</span><span class="s2">"</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\n\t</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">files_in_dir</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="n">e</span></div>
 
 
 <div class="viewcode-block" id="RemotePathIterator">
@@ -1307,7 +1238,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">remote_paths</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">io_handler</span><span class="o">.</span><span class="n">get_file_index</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">kwargs</span><span class="p">:</span>
-                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Using cached file index. [</span><span class="si">{</span><span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s1">] will be ignored.'</span><span class="p">)</span>
+                <span class="n">main_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Using cached file index. [</span><span class="si">{</span><span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s1">] will be ignored.'</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">remote_paths</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">io_handler</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="s2">"file_index"</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">temp_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">io_handler</span><span class="o">.</span><span class="n">lpwd</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">=</span> <span class="n">batch_size</span>
@@ -1315,7 +1246,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">max_queued_batches</span> <span class="o">=</span> <span class="n">max_queued_batches</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_local_files</span> <span class="o">=</span> <span class="n">n_local_files</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_local_files</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">:</span>
-            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s2">"n_local_files (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_local_files</span><span class="si">}</span><span class="s2">) is less than batch_size (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="si">}</span><span class="s2">). This may cause files to be deleted before they are consumed. Consider increasing n_local_files. Recommended value: </span><span class="si">{</span><span class="mi">2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">max_queued_batches</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="n">main_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"n_local_files (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_local_files</span><span class="si">}</span><span class="s2">) is less than batch_size (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="si">}</span><span class="s2">). This may cause files to be deleted before they are consumed. Consider increasing n_local_files. Recommended value: </span><span class="si">{</span><span class="mi">2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">max_queued_batches</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">idx</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">download_queue</span> <span class="o">=</span> <span class="n">Queue</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">delete_queue</span> <span class="o">=</span> <span class="n">Queue</span><span class="p">()</span>
@@ -1442,8 +1373,8 @@
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">local_paths</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">io_handler</span><span class="o">.</span><span class="n">download</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_parallel</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to download batch </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> - </span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-                <span class="nb">print</span><span class="p">(</span><span class="s2">"Skipping batch..."</span><span class="p">)</span>
+                <span class="n">main_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to download batch </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> - </span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                <span class="n">main_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Skipping batch..."</span><span class="p">)</span>
                 <span class="k">continue</span>
             <span class="k">for</span> <span class="n">local_path</span><span class="p">,</span> <span class="n">remote_path</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">local_paths</span><span class="p">,</span> <span class="n">batch</span><span class="p">):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">download_queue</span><span class="o">.</span><span class="n">put</span><span class="p">((</span><span class="n">local_path</span><span class="p">,</span> <span class="n">remote_path</span><span class="p">))</span>
@@ -1501,8 +1432,7 @@
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">delete_queue</span><span class="o">.</span><span class="n">get</span><span class="p">())</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">io_handler</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
-                    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to remove file: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                <span class="n">main_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to remove file: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="c1"># Get next item from queue or raise error if queue is empty</span>
         <span class="k">try</span><span class="p">:</span>
@@ -1538,49 +1468,51 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">download_thread</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="c1"># Clean up the temporary directory</span>
             <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">download_queue</span><span class="o">.</span><span class="n">empty</span><span class="p">():</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">download_queue</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
                 <span class="k">try</span><span class="p">:</span>
-                    <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">download_queue</span><span class="o">.</span><span class="n">get</span><span class="p">())</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
                 <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">io_handler</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
-                        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to remove file: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                    <span class="n">main_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to remove file (</span><span class="si">{</span><span class="n">f</span><span class="si">}</span><span class="s2">): </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">clear_local</span><span class="p">:</span>
                 <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">delete_queue</span><span class="o">.</span><span class="n">empty</span><span class="p">():</span>
+                    <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">delete_queue</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
                     <span class="k">try</span><span class="p">:</span>
-                        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">delete_queue</span><span class="o">.</span><span class="n">get</span><span class="p">())</span>
+                        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
                     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">io_handler</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
-                            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to remove file: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                        <span class="n">main_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to remove file (</span><span class="si">{</span><span class="n">f</span><span class="si">}</span><span class="s2">): </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">delete_queue</span><span class="o">.</span><span class="n">mutex</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">delete_queue</span><span class="o">.</span><span class="n">queue</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+            
             <span class="c1"># Remove any remaining files in the temporary directory</span>
-            <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">temp_dir</span><span class="p">):</span>
-                <span class="k">if</span> <span class="s2">"folder_index.txt"</span> <span class="ow">in</span> <span class="n">file</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">temp_dir</span><span class="p">):</span>
+                <span class="k">if</span> <span class="s2">"folder_index.txt"</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
                     <span class="k">continue</span>
                 <span class="k">try</span><span class="p">:</span>
-                    <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
                 <span class="k">except</span><span class="p">:</span>
+                    <span class="n">main_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to remove file: </span><span class="si">{</span><span class="n">f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
                     <span class="k">pass</span>
 
             <span class="c1">## TODO: DOUBLE CHECK - THIS SHOULD NOT BE NECESSARY (it is at the moment though!)</span>
             <span class="c1"># Check if the download thread is still running</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">download_thread</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">"Download thread is still running. This should not happen."</span><span class="p">)</span>
+                <span class="n">main_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"Download thread is still running. This should not happen."</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">stop_requested</span> <span class="o">=</span> <span class="kc">True</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">download_thread</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">download_thread</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="c1"># Check if the download queue is empty</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">download_queue</span><span class="o">.</span><span class="n">empty</span><span class="p">():</span>
-                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">"Download queue is not empty. This should not happen."</span><span class="p">)</span>
+                <span class="n">main_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"Download queue is not empty. This should not happen."</span><span class="p">)</span>
                 <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">download_queue</span><span class="o">.</span><span class="n">mutex</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">download_queue</span><span class="o">.</span><span class="n">queue</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
             <span class="c1"># Check if the delete queue is empty</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">delete_queue</span><span class="o">.</span><span class="n">empty</span><span class="p">()</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">clear_local</span><span class="p">:</span>
-                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">"Delete queue is not empty. This should not happen."</span><span class="p">)</span>
+                <span class="n">main_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"Delete queue is not empty. This should not happen."</span><span class="p">)</span>
                 <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">download_queue</span><span class="o">.</span><span class="n">mutex</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">download_queue</span><span class="o">.</span><span class="n">queue</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">"Already cleaned up"</span><span class="p">)</span></div>
+            <span class="n">main_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Already cleaned up"</span><span class="p">)</span></div>
 
 </pre></div>
 
@@ -1606,7 +1538,7 @@
               
           </div>
             Created using
-            <a href="http://www.sphinx-doc.org/">Sphinx</a> 8.0.2.
+            <a href="http://www.sphinx-doc.org/">Sphinx</a> 8.1.3.
              and
             <a href="https://github.com/bashtage/sphinx-material/">Material for
               Sphinx</a>
