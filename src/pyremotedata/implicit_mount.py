@@ -17,7 +17,7 @@ import shutil
 import tempfile
 import time
 import uuid
-import warnings
+import logging
 from random import shuffle
 from typing import List, Set, Tuple, Union
 
@@ -27,8 +27,9 @@ import subprocess
 import threading
 from queue import Queue
 
-# Config import
-from .config import get_implicit_mount_config
+# Internal import
+from pyremotedata import main_logger, module_logger
+from pyremotedata.config import get_implicit_mount_config
 
 class ImplicitMount:
     """
@@ -69,7 +70,7 @@ class ImplicitMount:
     time_stamp_pattern = re.compile(r"^\s*(\S+\s+){8}") # This is used to strip the timestamp from the output of the lftp shell
     END_OF_OUTPUT = '# LFTP_END_OF_OUTPUT_IDENTIFIER {uuid} #'  # This is used to signal the end of output when reading from stdout
 
-    def __init__(self, user: str= None, remote: str=None, verbose: bool=False):
+    def __init__(self, user: str= None, remote: str=None, verbose: bool=main_logger.isEnabledFor(logging.DEBUG)):
         # Default argument configuration and type checking
         self.default_config = get_implicit_mount_config()
         if user is None:
@@ -107,7 +108,7 @@ class ImplicitMount:
         """
         options = []
         for key, value in kwargs.items():
-            # print(f'key: |{key}|, value: |{value}|')
+            # main_logger.debug(f'key: |{key}|, value: |{value}|')
             prefix = "-" if len(key) == 1 else "--"
             this_option = f"{prefix}{key}"
             
@@ -142,7 +143,7 @@ class ImplicitMount:
                     line = re.sub(self.time_stamp_pattern, "", line)
                 # if not line.startswith("wait "):
                 if self.verbose:
-                    print(line.strip())
+                    main_logger.info(line.strip())
                 lines.append(line.strip())
             else:
                 err = self._read_stderr()
@@ -241,7 +242,7 @@ class ImplicitMount:
                 command += "wait\n"
             # Execute command
             if self.verbose:
-                print(f"Executing command: {command}")
+                main_logger.info(f"Executing command: {command}")
             self.lftp_shell.stdin.write(command)
             self.lftp_shell.stdin.flush()
             # Read output
@@ -270,11 +271,11 @@ class ImplicitMount:
         for key, value in lftp_settings.items():
             lftp_settings_str += f" set {key} {value};"
         if self.verbose:
-            print(f"Mounting {self.remote} as {self.user}")
+            main_logger.info(f"Mounting {self.remote} as {self.user}")
         # "Mount" the remote directory using an lftp shell with the sftp protocol and the specified user and remote, and the specified lftp settings
         lftp_mount_cmd = f'open -u {self.user},{self.password} -p 2222 sftp://{self.remote};{lftp_settings_str}'
         if self.verbose:
-            print(f"Executing command: lftp")
+            main_logger.info(f"Executing command: lftp")
         # Start the lftp shell
         try:
             self.lftp_shell = subprocess.Popen(
@@ -313,10 +314,11 @@ class ImplicitMount:
         self.cd(self.default_config['default_remote_dir'])
 
         if self.verbose:
-            print("Waiting for connection...")
+            main_logger.info("Waiting for connection...")
         # Check if we are connected to the remote directory by executing the pwd command on the lftp shell
         connected_path = self.pwd()
-        print(f"Connected to {connected_path}")
+        if self.verbose:
+            main_logger.info(f"Connected to {connected_path}")
         if not connected_path:
             self.unmount()
             raise RuntimeError(f"Failed to connect. Check internet connection or if {self.remote} is online.")
@@ -663,8 +665,7 @@ class IOHandler(ImplicitMount):
         # Print local directory:
         # if the local directory is not specified in the config, 
         # it is a temporary directory, so it is nice to know where it is located
-        if self.verbose:
-            print(f"Local directory: {self.lpwd()}")
+        main_logger.debug(f"Local directory: {self.lpwd()}")
 
         # Return self
         return self
@@ -683,9 +684,9 @@ class IOHandler(ImplicitMount):
         Very useful for interactive use, but shouldn't be used in scripts, using a context manager is safer and does the same.
         """
         self.__enter__()
-        if self.verbose:
-            print("IOHandler.start() is unsafe. Use IOHandler.__enter__() instead if possible.")
-            print("OBS: Remember to call IOHandler.stop() when you are done.")
+
+        main_logger.warning("IOHandler.start() is unsafe. Use IOHandler.__enter__() instead if possible.")
+        main_logger.warning("OBS: Remember to call IOHandler.stop() when you are done.")
 
     def stop(self) -> None:
         """
@@ -837,7 +838,7 @@ class IOHandler(ImplicitMount):
         # Check if file index exists
         file_index_exists = self.execute_command('glob -f --exist *folder_index.txt && echo "YES" || echo "NO"') == "YES"
         if not file_index_exists and self.verbose:
-            print(f"Folder index does not exist in {self.pwd()}")
+            main_logger.debug(f"Folder index does not exist in {self.pwd()}")
         # If override is True, delete the file index if it exists
         if override and file_index_exists:
             assert store is False, RuntimeError(f"'override' is '{override}' and 'store' is '{store}', this is not allowed and should not happen!")
@@ -846,8 +847,7 @@ class IOHandler(ImplicitMount):
             file_index_exists = False
         # If the file index does not exist, create it
         if not file_index_exists:
-            if self.verbose:
-                print("Creating folder index...")
+            main_logger.debug("Creating folder index...")
             # Traverse the remote directory and write the file index to a file
             files = self.ls(recursive=True, use_cache=False)
             local_index_path = f"{self.lpwd()}folder_index.txt"
@@ -886,109 +886,34 @@ class IOHandler(ImplicitMount):
     def cache_file_index(self, skip: int=0, nmax: Union[int, None]=None, override: bool=False) -> None:
         self.cache["file_index"] = self.get_file_index(skip, nmax, override)
 
-    def store_last(self, dst: str):
-        raise NotImplementedError("This function is not implemented yet.") # TODO: Remove or implement...
-        # TODO: This function should really be split into two; 
-        # 1) Handling the self.last_download/self.last_type variables
-        # 2) Moving files/directories
-
-        # If the last download was a single file, the destination should be a file.
-        # Otherwise, it should be a directory.
-        if self.last_download is None:
-            warnings.warn("No last download to store")
-            return
-        if self.last_type == "unknown":
-            # This should only happen if the last download was a multi download (read the rest of the function)
-            # In this case the last type must be inferred from the last_download path (no file extension => directory; TODO: This is unsafe.)
-            self.last_type = "file" if os.path.splitext(self.last_download)[1] != "" else "directory"
-        # Check if destination has file extension (if last download was a file) or not (if last download was a directory)
-        dst_has_ext = os.path.splitext(dst)[1] != ""
-        if self.last_type == "file":
-            if not dst_has_ext:
-                raise ValueError("Destination must have file extension if it is NOT a directory.")
-            shutil.move(self.last_download, dst)
-        elif self.last_type == "directory":
-            if dst_has_ext:
-                raise ValueError("Destination must NOT have file extension if it IS a directory.")
-            shutil.move(self.last_download, dst)
-            
-        # This part is too complicated, and is used to handle the case where the last download was a multi download only
-        else:
-            if self.last_type == "multi":
-                self.last_type = "unknown"
-                last_downloads = self.last_download.deepcopy()
-                for path in last_downloads:
-                    self.last_download = path
-                    self.store_last(dst)
-            else:
-                self.clean_last()
-
     def clean(self):
         if self.user_confirmation:
             # Ask for confirmation
             confirmation = input(f"Are you sure you want to delete all files in the current directory {self.lpwd()}? (y/n)")
             if confirmation.lower() != "y":
-                if self.verbose:
-                    print("Aborted")
+                main_logger.debug("Aborted")
                 return
-        if self.verbose:
-            print("Cleaning up...")
+
+        main_logger.debug("Cleaning up...")
         for path in os.listdir(self.lpwd()):
             if os.path.isfile(path):
-                os.remove(path)
+                try:
+                    os.remove(path)
+                except:
+                    main_logger.debug("Error")
         try:
             shutil.rmtree(self.lpwd())
         except Exception as e:
-            print("Error while cleaning local backend directory!")
+            main_logger.error("Error while cleaning local backend directory!")
             files_in_dir = os.listdir(self.lpwd())
             if files_in_dir:
                 n_files = len(files_in_dir)
-                print(f"{n_files} files in local directory ({self.lpwd()}):")
+                main_logger.error(f"{n_files} files in local directory ({self.lpwd()}):")
                 if n_files > 5:
-                    print("\t" + "\n\t".join(files_in_dir[:5]) + "\n\t...")
+                    main_logger.error("\t" + "\n\t".join(files_in_dir[:5]) + "\n\t...")
                 else:
-                    print("\t" + "\n\t".join(files_in_dir))
+                    main_logger.error("\t" + "\n\t".join(files_in_dir))
             raise e
-
-    # TODO: Is this function useful?
-    def clean_last(self):
-        if self.last_download is None:
-            warnings.warn("No last download to clean")
-
-        if self.user_confirmation:
-            # Ask for confirmation
-            if self.last_download == "directory":
-                confirmation = input(f"Are you sure you want to delete all files in {self.last_download}? (y/n)")
-            elif self.last_download == "file":
-                confirmation = input(f"Are you sure you want to delete {self.last_download}? (y/n)")
-            elif self.last_download == "multi":
-                confirmation = input(f"Are you sure you want to delete all files and or contents of {self.last_download}? (y/n)")
-            else:
-                raise RuntimeError(f"Unknown last type {self.last_type}")
-            if confirmation.lower() != "y":
-                if self.verbose:
-                    print("Aborted")
-                return
-        
-        if self.original_local_dir == self.lpwd():
-            if self.last_type == "file":
-                os.remove(self.last_download)
-            elif self.last_type == "directory":
-                shutil.remove(self.last_download)
-            elif self.last_type == "multi":
-                for path in self.last_download:
-                    if os.path.exists(path):
-                        if os.path.isfile(path):
-                            os.remove(path)
-                        else:
-                            shutil.rmtree(path)
-            else:
-                raise RuntimeError(f"Unknown last type {self.last_type}")
-
-            self.last_download = None
-            self.last_type = None
-        else:
-            warnings.warn("Last download was not in original local directory. Not cleaning.")
 
 class RemotePathIterator:
     """
@@ -1023,7 +948,7 @@ class RemotePathIterator:
             self.remote_paths = self.io_handler.get_file_index(**kwargs)
         else:
             if kwargs:
-                warnings.warn(f'Using cached file index. [{", ".join(kwargs.keys())}] will be ignored.')
+                main_logger.warning(f'Using cached file index. [{", ".join(kwargs.keys())}] will be ignored.')
             self.remote_paths = self.io_handler.cache["file_index"]
         self.temp_dir = self.io_handler.lpwd()
         self.batch_size = batch_size
@@ -1031,7 +956,7 @@ class RemotePathIterator:
         self.max_queued_batches = max_queued_batches
         self.n_local_files = n_local_files
         if self.n_local_files < self.batch_size:
-            warnings.warn(f"n_local_files ({self.n_local_files}) is less than batch_size ({self.batch_size}). This may cause files to be deleted before they are consumed. Consider increasing n_local_files. Recommended value: {2 * self.batch_size * self.max_queued_batches}")
+            main_logger.warning(f"n_local_files ({self.n_local_files}) is less than batch_size ({self.batch_size}). This may cause files to be deleted before they are consumed. Consider increasing n_local_files. Recommended value: {2 * self.batch_size * self.max_queued_batches}")
         self.idx = 0
         self.download_queue = Queue()
         self.delete_queue = Queue()
@@ -1147,8 +1072,8 @@ class RemotePathIterator:
             try:
                 local_paths = self.io_handler.download(batch, n = self.batch_parallel)
             except Exception as e:
-                print(f"Failed to download batch {i} - {i + self.batch_size}: {e}")
-                print("Skipping batch...")
+                main_logger.error(f"Failed to download batch {i} - {i + self.batch_size}: {e}")
+                main_logger.warning("Skipping batch...")
                 continue
             for local_path, remote_path in zip(local_paths, batch):
                 self.download_queue.put((local_path, remote_path))
@@ -1202,8 +1127,7 @@ class RemotePathIterator:
             try:
                 os.remove(self.delete_queue.get())
             except Exception as e:
-                if self.io_handler.verbose:
-                    warnings.warn(f"Failed to remove file: {e}")
+                main_logger.warning(f"Failed to remove file: {e}")
 
         # Get next item from queue or raise error if queue is empty
         try:
@@ -1239,46 +1163,48 @@ class RemotePathIterator:
                 self.download_thread = None
             # Clean up the temporary directory
             while not self.download_queue.empty():
+                f = self.download_queue.get()
                 try:
-                    os.remove(self.download_queue.get())
+                    os.remove(f)
                 except Exception as e:
-                    if self.io_handler.verbose:
-                        warnings.warn(f"Failed to remove file: {e}")
+                    main_logger.warning(f"Failed to remove file ({f}): {e}")
             if self.clear_local:
                 while not self.delete_queue.empty():
+                    f = self.delete_queue.get()
                     try:
-                        os.remove(self.delete_queue.get())
+                        os.remove(f)
                     except Exception as e:
-                        if self.io_handler.verbose:
-                            warnings.warn(f"Failed to remove file: {e}")
+                        main_logger.warning(f"Failed to remove file ({f}): {e}")
             else:
                 with self.delete_queue.mutex:
                     self.delete_queue.queue.clear()
+            
             # Remove any remaining files in the temporary directory
-            for file in os.listdir(self.temp_dir):
-                if "folder_index.txt" in file:
+            for f in os.listdir(self.temp_dir):
+                if "folder_index.txt" in f:
                     continue
                 try:
-                    os.remove(file)
+                    os.remove(f)
                 except:
+                    main_logger.warning(f"Failed to remove file: {f}")
                     pass
 
             ## TODO: DOUBLE CHECK - THIS SHOULD NOT BE NECESSARY (it is at the moment though!)
             # Check if the download thread is still running
             if self.download_thread is not None:
-                warnings.warn("Download thread is still running. This should not happen.")
+                main_logger.error("Download thread is still running. This should not happen.")
                 self.stop_requested = True
                 self.download_thread.join(timeout=1)
                 self.download_thread = None
             # Check if the download queue is empty
             if not self.download_queue.empty():
-                warnings.warn("Download queue is not empty. This should not happen.")
+                main_logger.error("Download queue is not empty. This should not happen.")
                 with self.download_queue.mutex:
                     self.download_queue.queue.clear()
             # Check if the delete queue is empty
             if not self.delete_queue.empty() and self.clear_local:
-                warnings.warn("Delete queue is not empty. This should not happen.")
+                main_logger.error("Delete queue is not empty. This should not happen.")
                 with self.download_queue.mutex:
                     self.download_queue.queue.clear()
         else:
-            print("Already cleaned up")
+            main_logger.debug("Already cleaned up")

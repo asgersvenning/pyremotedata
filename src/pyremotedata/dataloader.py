@@ -14,8 +14,9 @@ from torch.utils.data import DataLoader, IterableDataset#, TensorDataset
 from torchvision.io import read_image
 from torchvision.io.image import ImageReadMode
 
-# Backend imports
-from .implicit_mount import RemotePathIterator
+# Internal imports
+from pyremotedata import main_logger, module_logger
+from pyremotedata.implicit_mount import RemotePathIterator
 
 class RemotePathDataset(IterableDataset):
     '''
@@ -193,7 +194,7 @@ class RemotePathDataset(IterableDataset):
                 continue
             if not consumer.is_alive():
                 continue
-            print(f"Waiting for worker {i} to finish.")
+            main_logger.debug(f"Waiting for worker {i} to finish.")
             consumer.join(timeout = 1 / self.num_workers) # Wait for the consumer thread to finish
         if self.producer_thread is not None:
             self.producer_thread.join(timeout=1) # Wait for the producer thread to finish
@@ -225,9 +226,8 @@ class RemotePathDataset(IterableDataset):
         min_fill = int(self.buffer.maxsize * self.buffer_minfill) 
         max_fill = int(self.buffer.maxsize * self.buffer_maxfill)
 
-        if self.verbose:
-            print(f"Buffer min fill: {min_fill}, max fill: {max_fill}")
-            print("Producer thread started.")
+        main_logger.debug(f"Buffer min fill: {min_fill}, max fill: {max_fill}")
+        main_logger.debug("Producer thread started.")
 
         wait_for_min_fill = False
         for item in self.remote_path_iterator:
@@ -246,24 +246,24 @@ class RemotePathDataset(IterableDataset):
 
             # Fill the buffer
             self.buffer.put(item)
-        if self.verbose:
-            print("Producer signalling end of iterator.")
+        
+        main_logger.debug("Producer signalling end of iterator.")
+        
         # Signal the end of the iterator to the consumers by putting None in the buffer until all consumer threads have finished
         while self.consumers > 0:
             time.sleep(0.01)
             self.buffer.put(None)
-        if self.verbose:
-            print("Producer emptying buffer.")
+        main_logger.debug("Producer emptying buffer.")
+        
         # Wait for the consumer threads to finish then clear the buffer
         while self.buffer.qsize() > 0:
             self.buffer.get()
         self.processed_buffer.put(None) # Signal the end of the processed buffer to the main thread
-        if self.verbose:
-            print("Producer thread finished.")
+        main_logger.debug("Producer thread finished.")
     
     def _process_buffer(self):
-        if self.verbose:
-            print("Consumer thread started.")
+        main_logger.debug("Consumer thread started.")
+        
         self.consumers += 1
         while True:
             qsize = self.buffer.qsize()
@@ -274,8 +274,8 @@ class RemotePathDataset(IterableDataset):
                     break
             # Get the next item from the buffer
             item = self.buffer.get()
-            if self.verbose:
-                print("Consumer thread got item")
+            main_logger.debug("Consumer thread got item")
+            
             # Check if the buffer is empty, signaling the end of the iterator
             if item is None or self.stop_consumer_threads:
                 break  # Close the thread
@@ -284,12 +284,10 @@ class RemotePathDataset(IterableDataset):
             processed_item = self.parse_item(*item) if item is not None else None
             if processed_item is not None:
                 self.processed_buffer.put(processed_item)
-            if self.verbose:
-                print("Consumer thread processed item")
+            main_logger.debug("Consumer thread processed item")
 
         self.consumers -= 1
-        if self.verbose:
-            print("Consumer thread finished.")
+        main_logger.debug("Consumer thread finished.")
 
     def __iter__(self):
         # Check if the buffer filling thread has been initiated
@@ -357,13 +355,13 @@ class RemotePathDataset(IterableDataset):
         try:
             image = read_image(local_path, mode=ImageReadMode.RGB)
         except Exception as e:
-            print(f"Error reading image {remote_path} ({e}).")
+            main_logger.error(f"Error reading image {remote_path} ({e}).")
             return None
         # Remove the alpha channel if present
         if image.shape[0] == 4:
             image = image[:3]
         if image.shape[0] != 3:
-            print(f"Error reading image {remote_path}.")
+            main_logger.error(f"Error reading image {remote_path}.")
             return None
         # Apply transforms (preprocessing)
         if self.transform:

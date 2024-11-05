@@ -1,6 +1,9 @@
 import os
 import yaml
 
+# Interanl imports
+from pyremotedata import main_logger, module_logger
+
 config = None
 
 def ask_user(question, interactive=True):
@@ -74,8 +77,8 @@ implicit_mount:
     with open(config_path, "w") as config_file:
         config_file.write(yaml_content)
     
-    print("Created default config file at {}".format(config_path))
-    print("OBS: It is **strongly** recommended that you **check the config file** and make sure that it is correct before using pyRemoteData.")
+    module_logger.info("Created default config file at {}".format(config_path))
+    module_logger.info("OBS: It is **strongly** recommended that you **check the config file** and make sure that it is correct before using pyRemoteData.")
 
 def get_config():
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -92,7 +95,7 @@ def get_config():
         try:
             config_data = yaml.safe_load(stream)
         except yaml.YAMLError as exc:
-            print(exc)
+            module_logger.error(exc)
             return None
     
     return config_data
@@ -151,9 +154,9 @@ def remove_config():
     config_path = os.path.join(base_dir, 'pyremotedata_config.yaml')
     if os.path.exists(config_path):
         os.remove(config_path)
-        print("Removed config file at {}".format(config_path))
+        module_logger.info("Removed config file at {}".format(config_path))
     else:
-        print("No config file found at {}".format(config_path))
+        module_logger.info("No config file found at {}".format(config_path))
     # Reset global config
     config = None
 
