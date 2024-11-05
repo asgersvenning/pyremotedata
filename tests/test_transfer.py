@@ -11,10 +11,12 @@ import unittest
 from unittest.mock import patch
 import os, time
 
+from pyremotedata import module_logger
+
 class TestImplicitMount(unittest.TestCase):
     @wrapt_timeout_decorator.timeout(10)
     def test_implicit_mount(self):
-        print("Running basic functionality test.")
+        module_logger.info("Running basic functionality test.")
         with patch.dict('os.environ', {
             'PYREMOTEDATA_REMOTE_USERNAME': 'foo',
             'PYREMOTEDATA_REMOTE_URI': '0.0.0.0',
@@ -27,18 +29,18 @@ class TestImplicitMount(unittest.TestCase):
             handler = IOHandler()
             handler.start()
             # Run some commands
-            print(handler.pwd())
-            print(handler.ls())
+            module_logger.info(handler.pwd())
+            module_logger.info(handler.ls())
             # Cleanup
             handler.stop()
             from pyremotedata.config import remove_config
             remove_config()
-        print("Basic functionality test passed.")
+        module_logger.info("Basic functionality test passed.")
 
 class TestUploadDownload(unittest.TestCase):
     @wrapt_timeout_decorator.timeout(25)
     def test_upload_download(self):
-        print("Running upload/download test.")
+        module_logger.info("Running upload/download test.")
         with patch.dict('os.environ', {
             'PYREMOTEDATA_REMOTE_USERNAME': 'foo',
             'PYREMOTEDATA_REMOTE_URI': '0.0.0.0',
@@ -50,12 +52,12 @@ class TestUploadDownload(unittest.TestCase):
             # Open the connection
             handler = IOHandler()
             handler.start()
-            print(handler.pwd())
+            module_logger.info(handler.pwd())
             # Upload a test file to the mock SFTP server
             test_file_size = 10 # MB
             n_rep = 10
             generate_test_file_command = f"bash -c 'openssl rand -out {handler.lpwd()}{os.sep}localfile.txt -base64 {int(test_file_size * (10**6) * 3/4)}'"
-            print(f'Generating test file with command: {generate_test_file_command}')
+            module_logger.info(f'Generating test file with command: {generate_test_file_command}')
             os.system(generate_test_file_command)
             start_upload = time.time()
             upload_result = handler.put("localfile.txt", "testfile.txt", execute=False)
@@ -88,7 +90,7 @@ class TestUploadDownload(unittest.TestCase):
         upload_time = (end_upload - start_upload) / n_rep - 0.01
         download_time = (end_download - start_download) / n_rep - 0.01
         upload_speed, download_speed = 100/upload_time, 100/download_time
-        print(f'Upload/download test passed with upload {upload_speed:.1f} MB/s and download {download_speed:.1f} MB/s.') 
+        module_logger.info(f'Upload/download test passed with upload {upload_speed:.1f} MB/s and download {download_speed:.1f} MB/s.') 
 
 if __name__ == "__main__":
     unittest.main()
