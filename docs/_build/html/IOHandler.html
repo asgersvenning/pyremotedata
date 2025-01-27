@@ -46,11 +46,11 @@
   
   
   
-    <title>IOHandler &#8212; PyRemoteData 0.0.37 documentation</title>
+    <title>IOHandler &#8212; PyRemoteData 0.0.38 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=75810a84" />
     <link rel="stylesheet" type="text/css" href="_static/material.css?v=79c92029" />
     <link rel="stylesheet" type="text/css" href="_static/custom.css?v=fb6b2637" />
-    <script src="_static/documentation_options.js?v=aa2ad26f"></script>
+    <script src="_static/documentation_options.js?v=423071ad"></script>
     <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="canonical" href="_build/html/IOHandler.html" />
@@ -81,7 +81,7 @@
   <nav class="md-header-nav md-grid">
     <div class="md-flex navheader">
       <div class="md-flex__cell md-flex__cell--shrink">
-        <a href="index.html" title="PyRemoteData 0.0.37 documentation"
+        <a href="index.html" title="PyRemoteData 0.0.38 documentation"
            class="md-header-nav__button md-logo">
           
             &nbsp;
@@ -167,7 +167,7 @@
   <nav class="md-tabs" data-md-component="tabs">
     <div class="md-tabs__inner md-grid">
       <ul class="md-tabs__list">
-          <li class="md-tabs__item"><a href="index.html" class="md-tabs__link">PyRemoteData 0.0.37 documentation</a></li>
+          <li class="md-tabs__item"><a href="index.html" class="md-tabs__link">PyRemoteData 0.0.38 documentation</a></li>
           <li class="md-tabs__item"><a href="implicit_mount.html" class="md-tabs__link">SFTP Backend</a></li>
       </ul>
     </div>
@@ -180,13 +180,13 @@
               <div class="md-sidebar__inner">
                 <nav class="md-nav md-nav--primary" data-md-level="0">
   <label class="md-nav__title md-nav__title--site" for="__drawer">
-    <a href="index.html" title="PyRemoteData 0.0.37 documentation" class="md-nav__button md-logo">
+    <a href="index.html" title="PyRemoteData 0.0.38 documentation" class="md-nav__button md-logo">
       
         <img src="_static/" alt=" logo" width="48" height="48">
       
     </a>
     <a href="index.html"
-       title="PyRemoteData 0.0.37 documentation">PyRemoteData</a>
+       title="PyRemoteData 0.0.38 documentation">PyRemoteData</a>
   </label>
     <div class="md-nav__source">
       <a href="https://github.com/asgersvenning/pyremotedata" title="Go to repository" class="md-source" data-md-source="github">
@@ -298,6 +298,29 @@
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A list of files in the current remote directory.</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">lcd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">local_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyremotedata/implicit_mount.html#IOHandler.lcd"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Changes the current local directory using the LFTP command <cite>lcd</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>local_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – The local directory to change to.</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">lpwd</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyremotedata/implicit_mount.html#IOHandler.lpwd"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Get the current local directory using the LFTP command <cite>lpwd</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The current local directory.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a></p>
 </dd>
 </dl>
 </dd></dl>
