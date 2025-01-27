@@ -850,7 +850,7 @@ class IOHandler(ImplicitMount):
             main_logger.debug("Creating folder index...")
             # Traverse the remote directory and write the file index to a file
             files = self.ls(recursive=True, use_cache=False)
-            local_index_path = f"{self.lpwd()}folder_index.txt"
+            local_index_path = os.path.join(self.lpwd(), "folder_index.txt")
             with open(local_index_path, "w") as f:
                 for file in files:
                     f.write(file + "\n")
