@@ -45,11 +45,11 @@
   
   
   
-    <title>pyremotedata.implicit_mount &#8212; PyRemoteData 0.0.37 documentation</title>
+    <title>pyremotedata.implicit_mount &#8212; PyRemoteData 0.0.38 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=75810a84" />
     <link rel="stylesheet" type="text/css" href="../../_static/material.css?v=79c92029" />
     <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=fb6b2637" />
-    <script src="../../_static/documentation_options.js?v=aa2ad26f"></script>
+    <script src="../../_static/documentation_options.js?v=423071ad"></script>
     <script src="../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="canonical" href="_build/html/_modules/pyremotedata/implicit_mount.html" />
@@ -78,7 +78,7 @@
   <nav class="md-header-nav md-grid">
     <div class="md-flex navheader">
       <div class="md-flex__cell md-flex__cell--shrink">
-        <a href="../../index.html" title="PyRemoteData 0.0.37 documentation"
+        <a href="../../index.html" title="PyRemoteData 0.0.38 documentation"
            class="md-header-nav__button md-logo">
           
             &nbsp;
@@ -164,7 +164,7 @@
   <nav class="md-tabs" data-md-component="tabs">
     <div class="md-tabs__inner md-grid">
       <ul class="md-tabs__list">
-          <li class="md-tabs__item"><a href="../../index.html" class="md-tabs__link">PyRemoteData 0.0.37 documentation</a></li>
+          <li class="md-tabs__item"><a href="../../index.html" class="md-tabs__link">PyRemoteData 0.0.38 documentation</a></li>
           <li class="md-tabs__item"><a href="../index.html" class="md-tabs__link">Module code</a></li>
       </ul>
     </div>
@@ -177,13 +177,13 @@
               <div class="md-sidebar__inner">
                 <nav class="md-nav md-nav--primary" data-md-level="0">
   <label class="md-nav__title md-nav__title--site" for="__drawer">
-    <a href="../../index.html" title="PyRemoteData 0.0.37 documentation" class="md-nav__button md-logo">
+    <a href="../../index.html" title="PyRemoteData 0.0.38 documentation" class="md-nav__button md-logo">
       
         <img src="../../_static/" alt=" logo" width="48" height="48">
       
     </a>
     <a href="../../index.html"
-       title="PyRemoteData 0.0.37 documentation">PyRemoteData</a>
+       title="PyRemoteData 0.0.38 documentation">PyRemoteData</a>
   </label>
     <div class="md-nav__source">
       <a href="https://github.com/asgersvenning/pyremotedata" title="Go to repository" class="md-source" data-md-source="github">
@@ -912,8 +912,8 @@
 <span class="sd">    """</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">local_dir</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">user_confirmation</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">clean</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">local_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_config</span><span class="p">[</span><span class="s1">'local_dir'</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">local_dir</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">local_dir</span> <span class="o">==</span> <span class="s2">""</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_config</span><span class="p">[</span><span class="s1">'local_dir'</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_config</span><span class="p">[</span><span class="s1">'local_dir'</span><span class="p">]</span> <span class="o">==</span> <span class="s2">""</span><span class="p">:</span>
                 <span class="n">local_dir</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">TemporaryDirectory</span><span class="p">()</span><span class="o">.</span><span class="n">name</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">local_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_config</span><span class="p">[</span><span class="s1">'local_dir'</span><span class="p">]</span>
@@ -927,6 +927,19 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">last_type</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="p">{}</span>
 
+<div class="viewcode-block" id="IOHandler.lcd">
+<a class="viewcode-back" href="../../IOHandler.html#pyremotedata.implicit_mount.IOHandler.lcd">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">lcd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">local_path</span> <span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">local_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">local_dir</span><span class="p">,</span> <span class="n">local_path</span><span class="p">))</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">lcd</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">local_dir</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="IOHandler.lpwd">
+<a class="viewcode-back" href="../../IOHandler.html#pyremotedata.implicit_mount.IOHandler.lpwd">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">lpwd</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"'lpwd()' should not be used for 'IOHandler' objects, use the 'local_dir' attribute instead."</span><span class="p">)</span></div>
+
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"IOHandler"</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mount</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lcd</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">local_dir</span><span class="p">)</span>
@@ -934,7 +947,7 @@
         <span class="c1"># Print local directory:</span>
         <span class="c1"># if the local directory is not specified in the config, </span>
         <span class="c1"># it is a temporary directory, so it is nice to know where it is located</span>
-        <span class="n">main_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Local directory: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">lpwd</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="n">main_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Local directory: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">local_dir</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="c1"># Return self</span>
         <span class="k">return</span> <span class="bp">self</span>
@@ -994,7 +1007,7 @@
                 <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"Expected str, got </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">remote_path</span><span class="p">)))</span>
         
         <span class="k">if</span> <span class="n">local_destination</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">local_destination</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lpwd</span><span class="p">()</span>
+            <span class="n">local_destination</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_dir</span>
 
         <span class="c1"># Check if remote and local have file extensions:</span>
         <span class="c1"># The function assumes files have extensions and directories do not.</span>
@@ -1054,7 +1067,7 @@
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">local_destination</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="n">local_destination</span> <span class="o">=</span> <span class="p">[</span><span class="n">local_destination</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">remote_paths</span><span class="p">]</span>
         <span class="k">elif</span> <span class="n">local_destination</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">local_destination</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lpwd</span><span class="p">()</span>
+            <span class="n">local_destination</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_dir</span>
             <span class="n">local_destination</span> <span class="o">=</span> <span class="p">[</span><span class="n">local_destination</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">remote_paths</span><span class="p">]</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">remote_paths</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">local_destination</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"remote_paths and local_destination must have the same length."</span><span class="p">)</span>
@@ -1094,7 +1107,7 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">local_destination</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">local_destination</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"Expected str or None, got </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">local_destination</span><span class="p">)))</span>
         <span class="k">if</span> <span class="n">local_destination</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">local_destination</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lpwd</span><span class="p">()</span>
+            <span class="n">local_destination</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_dir</span>
         <span class="n">local_destination</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">local_destination</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">pwd</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"/"</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">local_destination</span><span class="p">):</span>
             <span class="k">try</span><span class="p">:</span>
@@ -1122,7 +1135,10 @@
         <span class="k">if</span> <span class="n">override</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">store</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"override cannot be 'True' if store is 'False'!"</span><span class="p">)</span>
         <span class="c1"># Check if file index exists</span>
-        <span class="n">file_index_exists</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">execute_command</span><span class="p">(</span><span class="s1">'glob -f --exist *folder_index.txt &amp;&amp; echo "YES" || echo "NO"'</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"YES"</span>
+        <span class="n">glob_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">execute_command</span><span class="p">(</span><span class="s1">'glob -f --exist *folder_index.txt &amp;&amp; echo "YES" || echo "NO"'</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">glob_result</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">glob_result</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">glob_result</span> <span class="o">=</span> <span class="n">glob_result</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">file_index_exists</span> <span class="o">=</span> <span class="n">glob_result</span> <span class="o">==</span> <span class="s2">"YES"</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">file_index_exists</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
             <span class="n">main_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Folder index does not exist in </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">pwd</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="c1"># If override is True, delete the file index if it exists</span>
@@ -1136,7 +1152,7 @@
             <span class="n">main_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Creating folder index..."</span><span class="p">)</span>
             <span class="c1"># Traverse the remote directory and write the file index to a file</span>
             <span class="n">files</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ls</span><span class="p">(</span><span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">use_cache</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-            <span class="n">local_index_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lpwd</span><span class="p">(),</span> <span class="s2">"folder_index.txt"</span><span class="p">)</span>
+            <span class="n">local_index_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">local_dir</span><span class="p">,</span> <span class="s2">"folder_index.txt"</span><span class="p">)</span>
             <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">local_index_path</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
                     <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">file</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
@@ -1171,31 +1187,31 @@
 
     
     <span class="k">def</span><span class="w"> </span><span class="nf">cache_file_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">skip</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">nmax</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">override</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="s2">"file_index"</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_file_index</span><span class="p">(</span><span class="n">skip</span><span class="p">,</span> <span class="n">nmax</span><span class="p">,</span> <span class="n">override</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">io_handler</span><span class="o">.</span><span class="n">pwd</span><span class="p">()]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_file_index</span><span class="p">(</span><span class="n">skip</span><span class="p">,</span> <span class="n">nmax</span><span class="p">,</span> <span class="n">override</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">clean</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">user_confirmation</span><span class="p">:</span>
             <span class="c1"># Ask for confirmation</span>
-            <span class="n">confirmation</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Are you sure you want to delete all files in the current directory </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">lpwd</span><span class="p">()</span><span class="si">}</span><span class="s2">? (y/n)"</span><span class="p">)</span>
+            <span class="n">confirmation</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Are you sure you want to delete all files in the current directory </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">local_dir</span><span class="si">}</span><span class="s2">? (y/n)"</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">confirmation</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">!=</span> <span class="s2">"y"</span><span class="p">:</span>
                 <span class="n">main_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Aborted"</span><span class="p">)</span>
                 <span class="k">return</span>
 
         <span class="n">main_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Cleaning up..."</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lpwd</span><span class="p">()):</span>
+        <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">local_dir</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
                 <span class="k">try</span><span class="p">:</span>
                     <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
                 <span class="k">except</span><span class="p">:</span>
                     <span class="n">main_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Error"</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lpwd</span><span class="p">())</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">local_dir</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="n">main_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"Error while cleaning local backend directory!"</span><span class="p">)</span>
-            <span class="n">files_in_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lpwd</span><span class="p">())</span>
+            <span class="n">files_in_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">local_dir</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">files_in_dir</span><span class="p">:</span>
                 <span class="n">n_files</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">files_in_dir</span><span class="p">)</span>
-                <span class="n">main_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">n_files</span><span class="si">}</span><span class="s2"> files in local directory (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">lpwd</span><span class="p">()</span><span class="si">}</span><span class="s2">):"</span><span class="p">)</span>
+                <span class="n">main_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">n_files</span><span class="si">}</span><span class="s2"> files in local directory (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">local_dir</span><span class="si">}</span><span class="s2">):"</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">n_files</span> <span class="o">&gt;</span> <span class="mi">5</span><span class="p">:</span>
                     <span class="n">main_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"</span><span class="se">\t</span><span class="s2">"</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\n\t</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">files_in_dir</span><span class="p">[:</span><span class="mi">5</span><span class="p">])</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\n\t</span><span class="s2">..."</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
@@ -1234,20 +1250,19 @@
 <span class="sd">    """</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">io_handler</span><span class="p">:</span> <span class="s2">"IOHandler"</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> <span class="n">batch_parallel</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">max_queued_batches</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">n_local_files</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">2</span><span class="o">*</span><span class="mi">3</span><span class="o">*</span><span class="mi">64</span><span class="p">,</span> <span class="n">clear_local</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">io_handler</span> <span class="o">=</span> <span class="n">io_handler</span>
-        <span class="k">if</span> <span class="s2">"file_index"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">io_handler</span><span class="o">.</span><span class="n">cache</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">io_handler</span><span class="o">.</span><span class="n">pwd</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">io_handler</span><span class="o">.</span><span class="n">cache</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">remote_paths</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">io_handler</span><span class="o">.</span><span class="n">get_file_index</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">kwargs</span><span class="p">:</span>
                 <span class="n">main_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Using cached file index. [</span><span class="si">{</span><span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s1">] will be ignored.'</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">remote_paths</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">io_handler</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="s2">"file_index"</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">temp_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">io_handler</span><span class="o">.</span><span class="n">lpwd</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">remote_paths</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">io_handler</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">io_handler</span><span class="o">.</span><span class="n">pwd</span><span class="p">()]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">temp_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">io_handler</span><span class="o">.</span><span class="n">local_dir</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">=</span> <span class="n">batch_size</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">batch_parallel</span> <span class="o">=</span> <span class="n">batch_parallel</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_queued_batches</span> <span class="o">=</span> <span class="n">max_queued_batches</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_local_files</span> <span class="o">=</span> <span class="n">n_local_files</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_local_files</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">:</span>
             <span class="n">main_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"n_local_files (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_local_files</span><span class="si">}</span><span class="s2">) is less than batch_size (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="si">}</span><span class="s2">). This may cause files to be deleted before they are consumed. Consider increasing n_local_files. Recommended value: </span><span class="si">{</span><span class="mi">2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">max_queued_batches</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">idx</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">download_queue</span> <span class="o">=</span> <span class="n">Queue</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">delete_queue</span> <span class="o">=</span> <span class="n">Queue</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">stop_requested</span> <span class="o">=</span> <span class="kc">False</span>
@@ -1259,6 +1274,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">last_item</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">last_batch_consumed</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">consumed_files</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">remote_paths</span><span class="p">)</span>
 
 <div class="viewcode-block" id="RemotePathIterator.shuffle">
 <a class="viewcode-back" href="../../RemotePathIterator.html#pyremotedata.implicit_mount.RemotePathIterator.shuffle">[docs]</a>
@@ -1368,21 +1386,25 @@
                     <span class="bp">self</span><span class="o">.</span><span class="n">last_batch_consumed</span> <span class="o">-=</span> <span class="mi">1</span>
                     <span class="k">break</span>
                 <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.2</span><span class="p">)</span>  <span class="c1"># Wait until a batch has been consumed</span>
-
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop_requested</span><span class="p">:</span>
+                <span class="k">break</span>
             <span class="n">batch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">remote_paths</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">]</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">local_paths</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">io_handler</span><span class="o">.</span><span class="n">download</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_parallel</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                 <span class="n">main_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to download batch </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> - </span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
                 <span class="n">main_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Skipping batch..."</span><span class="p">)</span>
-                <span class="k">continue</span>
-            <span class="k">for</span> <span class="n">local_path</span><span class="p">,</span> <span class="n">remote_path</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">local_paths</span><span class="p">,</span> <span class="n">batch</span><span class="p">):</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">download_queue</span><span class="o">.</span><span class="n">put</span><span class="p">((</span><span class="n">local_path</span><span class="p">,</span> <span class="n">remote_path</span><span class="p">))</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">io_handler</span><span class="o">.</span><span class="n">lftp_shell</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">io_handler</span><span class="o">.</span><span class="n">lftp_shell</span><span class="o">.</span><span class="n">poll</span><span class="p">()</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">main_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"LFTP shell died. Download thread killed."</span><span class="p">)</span>
+                    <span class="k">break</span>
+            <span class="k">finally</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">local_path</span><span class="p">,</span> <span class="n">remote_path</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">local_paths</span><span class="p">,</span> <span class="n">batch</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">download_queue</span><span class="o">.</span><span class="n">put</span><span class="p">((</span><span class="n">local_path</span><span class="p">,</span> <span class="n">remote_path</span><span class="p">))</span>
                 
             <span class="n">queued_batches</span> <span class="o">+=</span> <span class="mi">1</span></div>
 
-            
-            <span class="c1"># Deletion logic moved to __next__ to maintain minimal queued files</span>
 
 <div class="viewcode-block" id="RemotePathIterator.start_download_queue">
 <a class="viewcode-back" href="../../RemotePathIterator.html#pyremotedata.implicit_mount.RemotePathIterator.start_download_queue">[docs]</a>
@@ -1396,11 +1418,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">download_thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span></div>
 
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"RemotePathIterator"</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># Force reset state</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">not_cleaned</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="bp">self</span><span class="o">.</span><span class="fm">__del__</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">idx</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cleanup</span><span class="p">()</span>
 
         <span class="c1"># Prepare state for iteration</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">stop_requested</span> <span class="o">=</span> <span class="kc">False</span>
@@ -1409,56 +1430,48 @@
         <span class="c1"># Start the download thread</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">start_download_queue</span><span class="p">()</span>
 
-        <span class="c1"># Return self</span>
-        <span class="k">return</span> <span class="bp">self</span>
-    
-    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">remote_paths</span><span class="p">)</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="fm">__next__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Returns: </span>
-<span class="sd">            Tuple[str, str]: Tuple of the local path and the remote path.</span>
-<span class="sd">        """</span>
-        <span class="c1"># Handle stop request and end of iteration</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop_requested</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">idx</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">remote_paths</span><span class="p">):</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">clear_local</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="fm">__del__</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">stop_requested</span> <span class="o">=</span> <span class="kc">False</span>
-            <span class="k">raise</span> <span class="ne">StopIteration</span>
-
-        <span class="c1"># Delete files if the queue is too large</span>
-        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">delete_queue</span><span class="o">.</span><span class="n">qsize</span><span class="p">()</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_local_files</span><span class="p">:</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">delete_queue</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
-            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="n">main_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to remove file: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-
-        <span class="c1"># Get next item from queue or raise error if queue is empty</span>
+        <span class="c1"># Main loop body</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">next_item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">download_queue</span><span class="o">.</span><span class="n">get</span><span class="p">()</span> <span class="c1"># Timeout not applicable, since there is no guarantees on the size of the files or the speed of the connection</span>
-            <span class="c1"># Update state to ensure that the producer keeps the queue prefilled</span>
-            <span class="c1"># It is a bit complicated because the logic must be able to handle the case where the consumer is faster than the producer,</span>
-            <span class="c1"># in this case the producer may be multiple batches behind the consumer.</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">consumed_files</span> <span class="o">+=</span> <span class="mi">1</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">consumed_files</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">consumed_files</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">last_batch_consumed</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="k">except</span> <span class="n">queue</span><span class="o">.</span><span class="n">Empty</span><span class="p">:</span> <span class="c1"># TODO: Can this happen?</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop_requested</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="fm">__del__</span><span class="p">()</span>
-                <span class="k">raise</span> <span class="ne">StopIteration</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Download queue is empty but no stop was requested. Check the download thread."</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop_requested</span><span class="p">:</span>
+                    <span class="k">break</span>
 
-        <span class="c1"># Update state</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">idx</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">delete_queue</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">next_item</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-        
-        <span class="c1"># Return next item (local path, remote path =&gt; can be parsed to get the class label)</span>
-        <span class="k">return</span> <span class="n">next_item</span>
+                <span class="c1"># Delete files if the queue is too large</span>
+                <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">delete_queue</span><span class="o">.</span><span class="n">qsize</span><span class="p">()</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_local_files</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">delete_queue</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+                    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                        <span class="n">main_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to remove file: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># Get next item from queue or raise error if queue is empty</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">download_queue</span><span class="o">.</span><span class="n">empty</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">download_thread</span><span class="o">.</span><span class="n">is_alive</span><span class="p">():</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">stop_requested</span> <span class="o">=</span> <span class="kc">True</span>
+                        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Download thread died before iteration finished."</span><span class="p">)</span>
+                    <span class="n">next_item</span> <span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">download_queue</span><span class="o">.</span><span class="n">get</span><span class="p">()</span> <span class="c1"># Timeout not applicable, since there is no guarantees on the size of the files or the speed of the connection</span>
+                    <span class="c1"># Update state to ensure that the producer keeps the queue prefilled</span>
+                    <span class="c1"># It is a bit complicated because the logic must be able to handle the case where the consumer is faster than the producer,</span>
+                    <span class="c1"># in this case the producer may be multiple batches behind the consumer.</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">consumed_files</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">consumed_files</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">consumed_files</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">last_batch_consumed</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">except</span> <span class="n">queue</span><span class="o">.</span><span class="n">Empty</span><span class="p">:</span> <span class="c1"># TODO: Can this happen?</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop_requested</span><span class="p">:</span>
+                        <span class="k">break</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">stop_requested</span> <span class="o">=</span> <span class="kc">True</span>
+                        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Download queue is empty but no stop was requested. Check the download thread."</span><span class="p">)</span>
+                <span class="k">finally</span><span class="p">:</span>
+                    <span class="c1"># Update state</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">delete_queue</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">next_item</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                
+                <span class="c1"># Return next item (local path, remote path =&gt; can be parsed to get the class label)</span>
+                <span class="k">yield</span> <span class="n">next_item</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cleanup</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_cleanup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">not_cleaned</span> <span class="ow">or</span> <span class="n">force</span><span class="p">:</span>
             <span class="c1"># Force the iterator to stop if it is not already stopped</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">stop_requested</span> <span class="o">=</span> <span class="kc">True</span>
@@ -1468,31 +1481,25 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">download_thread</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="c1"># Clean up the temporary directory</span>
             <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">download_queue</span><span class="o">.</span><span class="n">empty</span><span class="p">():</span>
-                <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">download_queue</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
-                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                    <span class="n">main_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to remove file (</span><span class="si">{</span><span class="n">f</span><span class="si">}</span><span class="s2">): </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">clear_local</span><span class="p">:</span>
-                <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">delete_queue</span><span class="o">.</span><span class="n">empty</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">delete_queue</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">download_queue</span><span class="o">.</span><span class="n">get</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">delete_queue</span><span class="o">.</span><span class="n">empty</span><span class="p">():</span>
                     <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">delete_queue</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
                     <span class="k">try</span><span class="p">:</span>
-                        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+                            <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
                     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                         <span class="n">main_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to remove file (</span><span class="si">{</span><span class="n">f</span><span class="si">}</span><span class="s2">): </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">delete_queue</span><span class="o">.</span><span class="n">mutex</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">delete_queue</span><span class="o">.</span><span class="n">queue</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
-            
             <span class="c1"># Remove any remaining files in the temporary directory</span>
-            <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">temp_dir</span><span class="p">):</span>
-                <span class="k">if</span> <span class="s2">"folder_index.txt"</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
-                    <span class="k">continue</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
-                <span class="k">except</span><span class="p">:</span>
-                    <span class="n">main_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to remove file: </span><span class="si">{</span><span class="n">f</span><span class="si">}</span><span class="s2"> (The file has probably already been deleted)"</span><span class="p">)</span>
-                    <span class="k">pass</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">clear_local</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">temp_dir</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">temp_dir</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="s2">"folder_index.txt"</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+                        <span class="k">continue</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+                            <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+                    <span class="k">except</span><span class="p">:</span>
+                        <span class="n">main_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to remove file: </span><span class="si">{</span><span class="n">f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                        <span class="k">pass</span>
 
             <span class="c1">## TODO: DOUBLE CHECK - THIS SHOULD NOT BE NECESSARY (it is at the moment though!)</span>
             <span class="c1"># Check if the download thread is still running</span>
@@ -1511,6 +1518,7 @@
                 <span class="n">main_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"Delete queue is not empty. This should not happen."</span><span class="p">)</span>
                 <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">download_queue</span><span class="o">.</span><span class="n">mutex</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">download_queue</span><span class="o">.</span><span class="n">queue</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">not_cleaned</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">main_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Already cleaned up"</span><span class="p">)</span></div>
 
