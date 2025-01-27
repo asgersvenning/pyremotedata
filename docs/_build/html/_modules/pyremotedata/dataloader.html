@@ -45,11 +45,11 @@
   
   
   
-    <title>pyremotedata.dataloader &#8212; PyRemoteData 0.0.36 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=83e35b93" />
+    <title>pyremotedata.dataloader &#8212; PyRemoteData 0.0.37 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=75810a84" />
     <link rel="stylesheet" type="text/css" href="../../_static/material.css?v=79c92029" />
     <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=fb6b2637" />
-    <script src="../../_static/documentation_options.js?v=0e525676"></script>
+    <script src="../../_static/documentation_options.js?v=aa2ad26f"></script>
     <script src="../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="canonical" href="_build/html/_modules/pyremotedata/dataloader.html" />
@@ -78,7 +78,7 @@
   <nav class="md-header-nav md-grid">
     <div class="md-flex navheader">
       <div class="md-flex__cell md-flex__cell--shrink">
-        <a href="../../index.html" title="PyRemoteData 0.0.36 documentation"
+        <a href="../../index.html" title="PyRemoteData 0.0.37 documentation"
            class="md-header-nav__button md-logo">
           
             &nbsp;
@@ -164,7 +164,7 @@
   <nav class="md-tabs" data-md-component="tabs">
     <div class="md-tabs__inner md-grid">
       <ul class="md-tabs__list">
-          <li class="md-tabs__item"><a href="../../index.html" class="md-tabs__link">PyRemoteData 0.0.36 documentation</a></li>
+          <li class="md-tabs__item"><a href="../../index.html" class="md-tabs__link">PyRemoteData 0.0.37 documentation</a></li>
           <li class="md-tabs__item"><a href="../index.html" class="md-tabs__link">Module code</a></li>
       </ul>
     </div>
@@ -177,13 +177,13 @@
               <div class="md-sidebar__inner">
                 <nav class="md-nav md-nav--primary" data-md-level="0">
   <label class="md-nav__title md-nav__title--site" for="__drawer">
-    <a href="../../index.html" title="PyRemoteData 0.0.36 documentation" class="md-nav__button md-logo">
+    <a href="../../index.html" title="PyRemoteData 0.0.37 documentation" class="md-nav__button md-logo">
       
         <img src="../../_static/" alt=" logo" width="48" height="48">
       
     </a>
     <a href="../../index.html"
-       title="PyRemoteData 0.0.36 documentation">PyRemoteData</a>
+       title="PyRemoteData 0.0.37 documentation">PyRemoteData</a>
   </label>
     <div class="md-nav__source">
       <a href="https://github.com/asgersvenning/pyremotedata" title="Go to repository" class="md-source" data-md-source="github">
@@ -229,26 +229,26 @@
 <span></span><span class="c1">## PSA: This script is not ready for general use, as it still hardcoded to the specific use case of the project it was developed for.</span>
 
 <span class="c1"># Standard library imports</span>
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">time</span>
-<span class="kn">import</span> <span class="nn">warnings</span>
-<span class="kn">from</span> <span class="nn">queue</span> <span class="kn">import</span> <span class="n">Queue</span>
-<span class="kn">from</span> <span class="nn">threading</span> <span class="kn">import</span> <span class="n">Thread</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Callable</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">queue</span><span class="w"> </span><span class="kn">import</span> <span class="n">Queue</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">threading</span><span class="w"> </span><span class="kn">import</span> <span class="n">Thread</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Callable</span>
 
 <span class="c1"># Dependency imports</span>
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">torch.utils.data</span> <span class="kn">import</span> <span class="n">DataLoader</span><span class="p">,</span> <span class="n">IterableDataset</span><span class="c1">#, TensorDataset</span>
-<span class="kn">from</span> <span class="nn">torchvision.io</span> <span class="kn">import</span> <span class="n">read_image</span>
-<span class="kn">from</span> <span class="nn">torchvision.io.image</span> <span class="kn">import</span> <span class="n">ImageReadMode</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.utils.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataLoader</span><span class="p">,</span> <span class="n">IterableDataset</span><span class="c1">#, TensorDataset</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">read_image</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.io.image</span><span class="w"> </span><span class="kn">import</span> <span class="n">ImageReadMode</span>
 
 <span class="c1"># Internal imports</span>
-<span class="kn">from</span> <span class="nn">pyremotedata</span> <span class="kn">import</span> <span class="n">main_logger</span><span class="p">,</span> <span class="n">module_logger</span>
-<span class="kn">from</span> <span class="nn">pyremotedata.implicit_mount</span> <span class="kn">import</span> <span class="n">RemotePathIterator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyremotedata</span><span class="w"> </span><span class="kn">import</span> <span class="n">main_logger</span><span class="p">,</span> <span class="n">module_logger</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyremotedata.implicit_mount</span><span class="w"> </span><span class="kn">import</span> <span class="n">RemotePathIterator</span>
 
 <div class="viewcode-block" id="RemotePathDataset">
 <a class="viewcode-back" href="../../RemotePathDataset.html#pyremotedata.dataloader.RemotePathDataset">[docs]</a>
-<span class="k">class</span> <span class="nc">RemotePathDataset</span><span class="p">(</span><span class="n">IterableDataset</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">RemotePathDataset</span><span class="p">(</span><span class="n">IterableDataset</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">'''</span>
 <span class="sd">    Creates a :py:class:`torch.utils.data.IterableDataset` from a :py:class:`pyremotedata.implicit_mount.RemotePathIterator`.</span>
 
@@ -286,7 +286,7 @@
 <span class="sd">            - (Optional[str]): The local path, if `return_local_path` is True.</span>
 <span class="sd">            - (Optional[str]): The remote path, if `return_remote_path` is True.</span>
 <span class="sd">    '''</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span> 
             <span class="n">remote_path_iterator</span> <span class="p">:</span> <span class="s2">"RemotePathIterator"</span><span class="p">,</span> 
             <span class="n">prefetch</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> 
@@ -320,7 +320,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">hierarchical</span> <span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">hierarchical</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">hierarchical</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">hierarchical</span> <span class="o">=</span> <span class="kc">False</span>
-            <span class="k">def</span> <span class="nf">error_hierarchy</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">error_hierarchy</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Hierarchical mode disabled (`hierarchical` &lt; 1), but `pyremotedata.dataloader.RemotePathDataset.parse_hierarchy` function was called."</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">parse_hierarchy</span> <span class="o">=</span> <span class="n">error_hierarchy</span>
         <span class="k">else</span><span class="p">:</span>
@@ -386,7 +386,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">processed_buffer</span> <span class="o">=</span> <span class="n">Queue</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="n">prefetch</span><span class="p">)</span>  <span class="c1"># Tune maxsize as needed</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">class_handles</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">class_handles</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">{</span>
             <span class="s1">'classes'</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">classes</span><span class="p">,</span>
             <span class="s1">'n_classes'</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_classes</span><span class="p">,</span>
@@ -396,7 +396,7 @@
         <span class="p">}</span>
     
     <span class="nd">@class_handles</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">class_handles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span> <span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">class_handles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span> <span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Argument value must be a dictionary."</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">value</span><span class="p">[</span><span class="s2">"hierarchical"</span><span class="p">]:</span>
@@ -409,14 +409,14 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">idx_to_class</span> <span class="o">=</span> <span class="n">value</span><span class="p">[</span><span class="s1">'idx_to_class'</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">hierarchical</span> <span class="o">=</span> <span class="n">value</span><span class="p">[</span><span class="s1">'hierarchical'</span><span class="p">]</span>
 
-    <span class="k">def</span> <span class="nf">_shuffle</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_shuffle</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">shuffle</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Shuffle called, but shuffle is set to False."</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">thread_initiated</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Shuffle called, but buffer filling thread is still active."</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">remote_path_iterator</span><span class="o">.</span><span class="n">shuffle</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">_shutdown_and_reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_shutdown_and_reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># Handle shutdown logic (Should probably be moved to a dedicated reset function, that is called on StopIteration instead or perhaps in __iter__)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">stop_consumer_threads</span> <span class="o">=</span> <span class="kc">True</span> <span class="c1"># Signal the consumer threads to stop</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">consumer</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">consumer_threads</span><span class="p">):</span>
@@ -438,7 +438,7 @@
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">buffer</span><span class="o">.</span><span class="n">qsize</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Buffer not empty after iterator end."</span><span class="p">)</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">processed_buffer</span><span class="o">.</span><span class="n">qsize</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Processed buffer not empty after iterator end."</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_init_buffer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_init_buffer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># Check if the buffer filling thread has been initiated</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">thread_initiated</span><span class="p">:</span>
             <span class="c1"># Start the buffer filling thread</span>
@@ -451,7 +451,7 @@
             <span class="c1"># Raise an error if the buffer filling thread has already been initiated</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Buffer filling thread already initiated."</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_fill_buffer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_fill_buffer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># Calculate the min and max fill values for the buffer</span>
         <span class="n">min_fill</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">buffer</span><span class="o">.</span><span class="n">maxsize</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">buffer_minfill</span><span class="p">)</span> 
         <span class="n">max_fill</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">buffer</span><span class="o">.</span><span class="n">maxsize</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">buffer_maxfill</span><span class="p">)</span>
@@ -491,7 +491,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">processed_buffer</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span> <span class="c1"># Signal the end of the processed buffer to the main thread</span>
         <span class="n">main_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Producer thread finished."</span><span class="p">)</span>
     
-    <span class="k">def</span> <span class="nf">_process_buffer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_process_buffer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">main_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Consumer thread started."</span><span class="p">)</span>
         
         <span class="bp">self</span><span class="o">.</span><span class="n">consumers</span> <span class="o">+=</span> <span class="mi">1</span>
@@ -519,7 +519,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">consumers</span> <span class="o">-=</span> <span class="mi">1</span>
         <span class="n">main_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Consumer thread finished."</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># Check if the buffer filling thread has been initiated</span>
         <span class="c1"># If it has, reset the dataloader state and close all threads</span>
         <span class="c1"># (Only one iteration is allowed per dataloader instance)</span>
@@ -551,7 +551,7 @@
 
         <span class="k">return</span> <span class="bp">self</span>
 
-    <span class="k">def</span> <span class="fm">__next__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__next__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># Fetch from processed_buffer instead</span>
         <span class="n">processed_item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">processed_buffer</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
 
@@ -571,10 +571,10 @@
         <span class="c1"># Otherwise, return the processed item</span>
         <span class="k">return</span> <span class="n">processed_item</span>
 
-    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">remote_path_iterator</span><span class="p">)</span>
     
-    <span class="k">def</span> <span class="nf">parse_item</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">local_path</span> <span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">remote_path</span> <span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]],</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span> <span class="nb">str</span><span class="p">],</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_item</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">local_path</span> <span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">remote_path</span> <span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]],</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span> <span class="nb">str</span><span class="p">],</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
         <span class="c1">## Image processing</span>
         <span class="c1"># Check if image format is supported (jpeg/jpg/png)</span>
         <span class="n">image_type</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">local_path</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
@@ -632,7 +632,7 @@
 
 <div class="viewcode-block" id="RemotePathDataLoader">
 <a class="viewcode-back" href="../../RemotePathDataLoader.html#pyremotedata.dataloader.RemotePathDataLoader">[docs]</a>
-<span class="k">class</span> <span class="nc">RemotePathDataLoader</span><span class="p">(</span><span class="n">DataLoader</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">RemotePathDataLoader</span><span class="p">(</span><span class="n">DataLoader</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    A custom :py:class:`torch.utils.data.DataLoader` for :py:class:`pyremotedata.dataloader.RemotePathDataset`.</span>
 
@@ -647,7 +647,7 @@
 <span class="sd">        num_workers (int, optional): The number of worker threads to use for loading. Default: 0. Must be greater than 0.</span>
 <span class="sd">        shuffle (bool, optional): Whether to shuffle the dataset between epochs. Default: False.</span>
 <span class="sd">    """</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset</span><span class="p">:</span> <span class="s2">"RemotePathDataset"</span><span class="p">,</span> <span class="n">num_workers</span> <span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">shuffle</span> <span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset</span><span class="p">:</span> <span class="s2">"RemotePathDataset"</span><span class="p">,</span> <span class="n">num_workers</span> <span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">shuffle</span> <span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="c1"># Snipe arguments from the user which would break the custom dataloader (e.g. sampler, shuffle, etc.)</span>
         <span class="n">unsupported_kwargs</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'sampler'</span><span class="p">,</span> <span class="s1">'batch_sampler'</span><span class="p">]</span>
         <span class="k">for</span> <span class="n">unzkw</span> <span class="ow">in</span> <span class="n">unsupported_kwargs</span><span class="p">:</span>
