@@ -1125,7 +1125,7 @@ class RemotePathIterator:
         # Delete files if the queue is too large
         while self.delete_queue.qsize() > self.n_local_files:
             try:
-                os.remove(self.delete_queue.get())
+                os.remove(self.delete_queue.get(timeout=1))
             except Exception as e:
                 main_logger.warning(f"Failed to remove file: {e}")
 
@@ -1186,7 +1186,7 @@ class RemotePathIterator:
                 try:
                     os.remove(f)
                 except:
-                    main_logger.warning(f"Failed to remove file: {f}")
+                    main_logger.warning(f"Failed to remove file: {f} (The file has probably already been deleted)")
                     pass
 
             ## TODO: DOUBLE CHECK - THIS SHOULD NOT BE NECESSARY (it is at the moment though!)
