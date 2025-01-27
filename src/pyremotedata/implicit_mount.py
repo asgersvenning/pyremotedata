@@ -643,8 +643,8 @@ class IOHandler(ImplicitMount):
     """
     def __init__(self, local_dir: Union[str, None]=None, user_confirmation: bool=False, clean: bool=False, **kwargs):
         super().__init__(**kwargs)
-        if local_dir is None:
-            if self.default_config['local_dir'] is None:
+        if local_dir is None or local_dir == "":
+            if self.default_config['local_dir'] is None or self.default_config['local_dir'] == "":
                 local_dir = tempfile.TemporaryDirectory().name
             else:
                 local_dir = self.default_config['local_dir']
@@ -658,6 +658,13 @@ class IOHandler(ImplicitMount):
         self.last_type = None
         self.cache = {}
 
+    def lcd(self, local_path : str):
+        self.local_dir = os.path.abspath(os.path.join(self.local_dir, local_path))
+        super().lcd(self.local_dir)
+
+    def lpwd(self):
+        raise TypeError("'lpwd()' should not be used for 'IOHandler' objects, use the 'local_dir' attribute instead.")
+
     def __enter__(self) -> "IOHandler":
         self.mount()
         self.lcd(self.local_dir)
@@ -665,7 +672,7 @@ class IOHandler(ImplicitMount):
         # Print local directory:
         # if the local directory is not specified in the config, 
         # it is a temporary directory, so it is nice to know where it is located
-        main_logger.debug(f"Local directory: {self.lpwd()}")
+        main_logger.debug(f"Local directory: {self.local_dir}")
 
         # Return self
         return self
@@ -717,7 +724,7 @@ class IOHandler(ImplicitMount):
                 raise TypeError("Expected str, got {}".format(type(remote_path)))
         
         if local_destination is None:
-            local_destination = self.lpwd()
+            local_destination = self.local_dir
 
         # Check if remote and local have file extensions:
         # The function assumes files have extensions and directories do not.
@@ -774,7 +781,7 @@ class IOHandler(ImplicitMount):
         if isinstance(local_destination, str):
             local_destination = [local_destination + os.sep + os.path.basename(r) for r in remote_paths]
         elif local_destination is None:
-            local_destination = self.lpwd()
+            local_destination = self.local_dir
             local_destination = [local_destination + os.sep + os.path.basename(r) for r in remote_paths]
         if len(remote_paths) != len(local_destination):
             raise ValueError("remote_paths and local_destination must have the same length.")
@@ -811,7 +818,7 @@ class IOHandler(ImplicitMount):
         if not isinstance(local_destination, str) and local_destination is not None:
             raise TypeError("Expected str or None, got {}".format(type(local_destination)))
         if local_destination is None:
-            local_destination = self.lpwd()
+            local_destination = self.local_dir
         local_destination = os.path.abspath(local_destination + os.sep + self.pwd().split("/")[-1])
         if not os.path.exists(local_destination):
             try:
@@ -836,7 +843,10 @@ class IOHandler(ImplicitMount):
         if override and not store:
             raise ValueError("override cannot be 'True' if store is 'False'!")
         # Check if file index exists
-        file_index_exists = self.execute_command('glob -f --exist *folder_index.txt && echo "YES" || echo "NO"') == "YES"
+        glob_result = self.execute_command('glob -f --exist *folder_index.txt && echo "YES" || echo "NO"')
+        if isinstance(glob_result, list) and len(glob_result) == 1:
+            glob_result = glob_result[0]
+        file_index_exists = glob_result == "YES"
         if not file_index_exists and self.verbose:
             main_logger.debug(f"Folder index does not exist in {self.pwd()}")
         # If override is True, delete the file index if it exists
@@ -850,7 +860,7 @@ class IOHandler(ImplicitMount):
             main_logger.debug("Creating folder index...")
             # Traverse the remote directory and write the file index to a file
             files = self.ls(recursive=True, use_cache=False)
-            local_index_path = os.path.join(self.lpwd(), "folder_index.txt")
+            local_index_path = os.path.join(self.local_dir, "folder_index.txt")
             with open(local_index_path, "w") as f:
                 for file in files:
                     f.write(file + "\n")
@@ -884,31 +894,31 @@ class IOHandler(ImplicitMount):
         return file_index
     
     def cache_file_index(self, skip: int=0, nmax: Union[int, None]=None, override: bool=False) -> None:
-        self.cache["file_index"] = self.get_file_index(skip, nmax, override)
+        self.cache[self.io_handler.pwd()] = self.get_file_index(skip, nmax, override)
 
     def clean(self):
         if self.user_confirmation:
             # Ask for confirmation
-            confirmation = input(f"Are you sure you want to delete all files in the current directory {self.lpwd()}? (y/n)")
+            confirmation = input(f"Are you sure you want to delete all files in the current directory {self.local_dir}? (y/n)")
             if confirmation.lower() != "y":
                 main_logger.debug("Aborted")
                 return
 
         main_logger.debug("Cleaning up...")
-        for path in os.listdir(self.lpwd()):
+        for path in os.listdir(self.local_dir):
             if os.path.isfile(path):
                 try:
                     os.remove(path)
                 except:
                     main_logger.debug("Error")
         try:
-            shutil.rmtree(self.lpwd())
+            shutil.rmtree(self.local_dir)
         except Exception as e:
             main_logger.error("Error while cleaning local backend directory!")
-            files_in_dir = os.listdir(self.lpwd())
+            files_in_dir = os.listdir(self.local_dir)
             if files_in_dir:
                 n_files = len(files_in_dir)
-                main_logger.error(f"{n_files} files in local directory ({self.lpwd()}):")
+                main_logger.error(f"{n_files} files in local directory ({self.local_dir}):")
                 if n_files > 5:
                     main_logger.error("\t" + "\n\t".join(files_in_dir[:5]) + "\n\t...")
                 else:
@@ -944,20 +954,19 @@ class RemotePathIterator:
     """
     def __init__(self, io_handler: "IOHandler", batch_size: int=64, batch_parallel: int=10, max_queued_batches: int=3, n_local_files: int=2*3*64, clear_local: bool=False, **kwargs):
         self.io_handler = io_handler
-        if "file_index" not in self.io_handler.cache:
+        if self.io_handler.pwd() not in self.io_handler.cache:
             self.remote_paths = self.io_handler.get_file_index(**kwargs)
         else:
             if kwargs:
                 main_logger.warning(f'Using cached file index. [{", ".join(kwargs.keys())}] will be ignored.')
-            self.remote_paths = self.io_handler.cache["file_index"]
-        self.temp_dir = self.io_handler.lpwd()
+            self.remote_paths = self.io_handler.cache[self.io_handler.pwd()]
+        self.temp_dir = self.io_handler.local_dir
         self.batch_size = batch_size
         self.batch_parallel = batch_parallel
         self.max_queued_batches = max_queued_batches
         self.n_local_files = n_local_files
         if self.n_local_files < self.batch_size:
             main_logger.warning(f"n_local_files ({self.n_local_files}) is less than batch_size ({self.batch_size}). This may cause files to be deleted before they are consumed. Consider increasing n_local_files. Recommended value: {2 * self.batch_size * self.max_queued_batches}")
-        self.idx = 0
         self.download_queue = Queue()
         self.delete_queue = Queue()
         self.stop_requested = False
@@ -969,6 +978,9 @@ class RemotePathIterator:
         self.last_item = None
         self.last_batch_consumed = 0
         self.consumed_files = 0
+
+    def __len__(self) -> int:
+        return len(self.remote_paths)
 
     def shuffle(self) -> None:
         """
@@ -1067,20 +1079,24 @@ class RemotePathIterator:
                     self.last_batch_consumed -= 1
                     break
                 time.sleep(0.2)  # Wait until a batch has been consumed
-
+            if self.stop_requested:
+                break
             batch = self.remote_paths[i:i + self.batch_size]
             try:
                 local_paths = self.io_handler.download(batch, n = self.batch_parallel)
             except Exception as e:
                 main_logger.error(f"Failed to download batch {i} - {i + self.batch_size}: {e}")
                 main_logger.warning("Skipping batch...")
-                continue
-            for local_path, remote_path in zip(local_paths, batch):
-                self.download_queue.put((local_path, remote_path))
+                if not self.io_handler.lftp_shell is None and self.io_handler.lftp_shell.poll() is None:
+                    continue
+                else:
+                    main_logger.error("LFTP shell died. Download thread killed.")
+                    break
+            finally:
+                for local_path, remote_path in zip(local_paths, batch):
+                    self.download_queue.put((local_path, remote_path))
                 
             queued_batches += 1
-            
-            # Deletion logic moved to __next__ to maintain minimal queued files
 
     def start_download_queue(self) -> None:
         """
@@ -1091,11 +1107,10 @@ class RemotePathIterator:
         self.download_thread = threading.Thread(target=self.download_files)
         self.download_thread.start()
 
-    def __iter__(self) -> "RemotePathIterator":
+    def __iter__(self):
         # Force reset state
         self.not_cleaned = True
-        self.__del__(force=True)
-        self.idx = 0
+        self._cleanup()
 
         # Prepare state for iteration
         self.stop_requested = False
@@ -1104,56 +1119,48 @@ class RemotePathIterator:
         # Start the download thread
         self.start_download_queue()
 
-        # Return self
-        return self
-    
-    def __len__(self) -> int:
-        return len(self.remote_paths)
-
-    def __next__(self) -> Tuple[str, str]:
-        """
-        Returns: 
-            Tuple[str, str]: Tuple of the local path and the remote path.
-        """
-        # Handle stop request and end of iteration
-        if self.stop_requested or self.idx >= len(self.remote_paths):
-            if self.clear_local:
-                self.__del__()
-            self.stop_requested = False
-            raise StopIteration
-
-        # Delete files if the queue is too large
-        while self.delete_queue.qsize() > self.n_local_files:
-            try:
-                os.remove(self.delete_queue.get(timeout=1))
-            except Exception as e:
-                main_logger.warning(f"Failed to remove file: {e}")
-
-        # Get next item from queue or raise error if queue is empty
+        # Main loop body
         try:
-            next_item = self.download_queue.get() # Timeout not applicable, since there is no guarantees on the size of the files or the speed of the connection
-            # Update state to ensure that the producer keeps the queue prefilled
-            # It is a bit complicated because the logic must be able to handle the case where the consumer is faster than the producer,
-            # in this case the producer may be multiple batches behind the consumer.
-            self.consumed_files += 1
-            if self.consumed_files >= self.batch_size:
-                self.consumed_files -= self.batch_size
-                self.last_batch_consumed += 1
-        except queue.Empty: # TODO: Can this happen?
-            if self.stop_requested:
-                self.__del__()
-                raise StopIteration
-            else:
-                raise RuntimeError("Download queue is empty but no stop was requested. Check the download thread.")
+            for _ in range(len(self)):
+                if self.stop_requested:
+                    break
 
-        # Update state
-        self.idx += 1
-        self.delete_queue.put(next_item[0])
-        
-        # Return next item (local path, remote path => can be parsed to get the class label)
-        return next_item
+                # Delete files if the queue is too large
+                while self.delete_queue.qsize() > self.n_local_files:
+                    try:
+                        os.remove(self.delete_queue.get(timeout=1))
+                    except Exception as e:
+                        main_logger.warning(f"Failed to remove file: {e}")
 
-    def __del__(self, force=False) -> None:
+                # Get next item from queue or raise error if queue is empty
+                try:
+                    if self.download_queue.empty() and not self.download_thread.is_alive():
+                        self.stop_requested = True
+                        raise RuntimeError("Download thread died before iteration finished.")
+                    next_item : Tuple[str, str] = self.download_queue.get() # Timeout not applicable, since there is no guarantees on the size of the files or the speed of the connection
+                    # Update state to ensure that the producer keeps the queue prefilled
+                    # It is a bit complicated because the logic must be able to handle the case where the consumer is faster than the producer,
+                    # in this case the producer may be multiple batches behind the consumer.
+                    self.consumed_files += 1
+                    if self.consumed_files >= self.batch_size:
+                        self.consumed_files -= self.batch_size
+                        self.last_batch_consumed += 1
+                except queue.Empty: # TODO: Can this happen?
+                    if self.stop_requested:
+                        break
+                    else:
+                        self.stop_requested = True
+                        raise RuntimeError("Download queue is empty but no stop was requested. Check the download thread.")
+                finally:
+                    # Update state
+                    self.delete_queue.put(next_item[0])
+                
+                # Return next item (local path, remote path => can be parsed to get the class label)
+                yield next_item
+        finally:
+            self._cleanup()
+
+    def _cleanup(self, force=False) -> None:
         if self.not_cleaned or force:
             # Force the iterator to stop if it is not already stopped
             self.stop_requested = True
@@ -1163,31 +1170,25 @@ class RemotePathIterator:
                 self.download_thread = None
             # Clean up the temporary directory
             while not self.download_queue.empty():
-                f = self.download_queue.get()
-                try:
-                    os.remove(f)
-                except Exception as e:
-                    main_logger.warning(f"Failed to remove file ({f}): {e}")
-            if self.clear_local:
-                while not self.delete_queue.empty():
+                self.delete_queue.put(self.download_queue.get()[0])
+            while not self.delete_queue.empty():
                     f = self.delete_queue.get()
                     try:
-                        os.remove(f)
+                        if os.path.exists(f):
+                            os.remove(f)
                     except Exception as e:
                         main_logger.warning(f"Failed to remove file ({f}): {e}")
-            else:
-                with self.delete_queue.mutex:
-                    self.delete_queue.queue.clear()
-            
             # Remove any remaining files in the temporary directory
-            for f in os.listdir(self.temp_dir):
-                if "folder_index.txt" in f:
-                    continue
-                try:
-                    os.remove(f)
-                except:
-                    main_logger.warning(f"Failed to remove file: {f} (The file has probably already been deleted)")
-                    pass
+            if self.clear_local and os.path.exists(self.temp_dir):
+                for f in os.listdir(self.temp_dir):
+                    if "folder_index.txt" in f:
+                        continue
+                    try:
+                        if os.path.exists(f):
+                            os.remove(f)
+                    except:
+                        main_logger.warning(f"Failed to remove file: {f}")
+                        pass
 
             ## TODO: DOUBLE CHECK - THIS SHOULD NOT BE NECESSARY (it is at the moment though!)
             # Check if the download thread is still running
@@ -1206,5 +1207,6 @@ class RemotePathIterator:
                 main_logger.error("Delete queue is not empty. This should not happen.")
                 with self.download_queue.mutex:
                     self.download_queue.queue.clear()
+            self.not_cleaned = False
         else:
             main_logger.debug("Already cleaned up")

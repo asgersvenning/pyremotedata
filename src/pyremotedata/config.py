@@ -4,26 +4,30 @@ import yaml
 # Interanl imports
 from pyremotedata import main_logger, module_logger
 
-config = None
-
 def ask_user(question, interactive=True):
     if not interactive:
-        raise RuntimeError("Cannot ask user for input when interactive=False")
+        raise RuntimeError("Cannot ask user for input when interactive=False: " + question)
     return input(question)
 
-def create_default_config(interactive=True):
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    config_path = os.path.join(base_dir, 'pyremotedata_config.yaml')
+def get_environment_variables(interactive=True):
+    remote_username = os.getenv('PYREMOTEDATA_REMOTE_USERNAME', None) or ask_user("PYREMOTEDATA_REMOTE_USERNAME not set. Enter your remote name: ", interactive)
+    remote_uri = os.getenv('PYREMOTEDATA_REMOTE_URI', None) or (ask_user("PYREMOTEDATA_REMOTE_URI not set. Enter your remote URI (leave empty for 'io.erda.au.dk'): ", interactive) or 'io.erda.au.dk')
+    local_directory = os.getenv('PYREMOTEDATA_LOCAL_DIRECTORY', "")
+    remote_directory = os.getenv('PYREMOTEDATA_REMOTE_DIRECTORY', None) or ask_user("PYREMOTEDATA_REMOTE_DIRECTORY not set. Enter your remote directory: ", interactive)
+    
+    return remote_username, remote_uri, local_directory, remote_directory
 
-    # Check for environment variables or ask for user input
-    remote_username = os.getenv('PYREMOTEDATA_REMOTE_USERNAME', None) or ask_user("Enter your remote name: ", interactive)
-    remote_uri = os.getenv('PYREMOTEDATA_REMOTE_URI', None) or (ask_user("Enter your remote URI (leave empty for 'io.erda.au.dk'): ", interactive) or 'io.erda.au.dk')
-    local_dir = os.getenv('PYREMOTEDATA_LOCAL_DIR', "")
-    remote_directory = os.getenv('PYREMOTEDATA_REMOTE_DIRECTORY', None) or ask_user("Enter your remote directory: ", interactive)
-    if isinstance(local_dir, str) and local_dir != "":
-        local_dir = f'"{local_dir}"'
-    if isinstance(remote_directory, str) and remote_directory != "":
-        remote_directory = f'"{remote_directory}"'
+CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'pyremotedata_config.yaml')
+
+def remove_config():
+    if os.path.exists(CONFIG_PATH):
+        os.remove(CONFIG_PATH)
+        module_logger.info("Removed config file at {}".format(CONFIG_PATH))
+    else:
+        module_logger.info("No config file found at {}".format(CONFIG_PATH))
+
+def create_default_config(interactive=True):
+    remote_username, remote_uri, local_directory, remote_directory = get_environment_variables(interactive)
 
     # TODO: Remove unnecessary config options!
     yaml_content = f"""
@@ -50,8 +54,8 @@ implicit_mount:
     # Remote configuration
     user: "{remote_username}"
     remote: "{remote_uri}"
-    local_dir: {local_dir} # Leave empty to use the default local directory
-    default_remote_dir : {remote_directory}
+    local_dir: "{local_directory}" # Leave empty to use the default local directory
+    default_remote_dir : "{remote_directory}"
 
     # Lftp configuration (Can be left as-is)
     lftp:
@@ -74,45 +78,48 @@ implicit_mount:
 
 """
     
-    with open(config_path, "w") as config_file:
+    with open(CONFIG_PATH, "w") as config_file:
         config_file.write(yaml_content)
     
-    module_logger.info("Created default config file at {}".format(config_path))
+    module_logger.info("Created default config file at {}".format(CONFIG_PATH))
     module_logger.info("OBS: It is **strongly** recommended that you **check the config file** and make sure that it is correct before using pyRemoteData.")
 
-def get_config():
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    config_path = os.path.join(base_dir, 'pyremotedata_config.yaml')
-    
-    if not os.path.exists(config_path):
+def get_config():  
+    if not os.path.exists(CONFIG_PATH):
         interactive = os.getenv("PYREMOTEDATA_AUTO", "no").lower().strip() != "yes"
         if not interactive or ask_user("Config file not found. Create default config file? (y/n): ", interactive).lower().strip() == 'y':
             create_default_config(interactive)
         else:
-            raise FileNotFoundError("Config file not found at {}".format(config_path))
+            raise FileNotFoundError("Config file not found at {}".format(CONFIG_PATH))
 
-    with open(config_path, 'r') as stream:
+    with open(CONFIG_PATH, 'r') as stream:
         try:
             config_data = yaml.safe_load(stream)
         except yaml.YAMLError as exc:
             module_logger.error(exc)
             return None
     
+    # Check if environment variables match config (config/cache invalidation)
+    invalid = False
+    for k, ek, v in zip(["user", "remote", "local_dir", "default_remote_dir"], ["PYREMOTEDATA_REMOTE_USERNAME", "PYREMOTEDATAA_REMOTE_URI", "PYREMOTEDATA_LOCAL_DIRECTORY", "PYREMOTEDATA_REMOTE_DIRECTORY"], get_environment_variables()):
+        expected = config_data["implicit_mount"][k]
+        if expected != v and not (expected is None and v == ""):
+            module_logger.warning(f"Invalid config detected, auto regenerating from scratch: Expected '{expected}' for '{k}' ({ek}), but got '{v}'.")
+            invalid = True
+    if invalid:
+        remove_config()
+        return get_config()            
+
     return config_data
 
-config = get_config()
-
 def get_this_config(this):
-    global config
     if not isinstance(this, str):
         raise TypeError("Expected string, got {}".format(type(this)))
-    # Check if config is loaded
-    if config is None:
-        # Load config
-        config = get_config()
-    if this not in config:
+    # Load config
+    cfg = get_config()
+    if this not in cfg:
         raise ValueError("Key {} not found in config".format(this))
-    return config[this]
+    return cfg[this]
 
 def get_mount_config():
     return get_this_config('mount')
@@ -148,19 +155,3 @@ def deparse_args(config, what):
     
     return arg_str
 
-def remove_config():
-    global config
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    config_path = os.path.join(base_dir, 'pyremotedata_config.yaml')
-    if os.path.exists(config_path):
-        os.remove(config_path)
-        module_logger.info("Removed config file at {}".format(config_path))
-    else:
-        module_logger.info("No config file found at {}".format(config_path))
-    # Reset global config
-    config = None
-
-def config_path():
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    config_path = os.path.join(base_dir, 'pyremotedata_config.yaml')
-    return config_path
