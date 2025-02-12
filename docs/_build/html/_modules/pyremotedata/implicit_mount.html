@@ -45,11 +45,11 @@
   
   
   
-    <title>pyremotedata.implicit_mount &#8212; PyRemoteData 0.0.39 documentation</title>
+    <title>pyremotedata.implicit_mount &#8212; PyRemoteData 0.0.40 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=75810a84" />
     <link rel="stylesheet" type="text/css" href="../../_static/material.css?v=79c92029" />
     <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=fb6b2637" />
-    <script src="../../_static/documentation_options.js?v=e648f5b4"></script>
+    <script src="../../_static/documentation_options.js?v=84bd753f"></script>
     <script src="../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="canonical" href="_build/html/_modules/pyremotedata/implicit_mount.html" />
@@ -78,7 +78,7 @@
   <nav class="md-header-nav md-grid">
     <div class="md-flex navheader">
       <div class="md-flex__cell md-flex__cell--shrink">
-        <a href="../../index.html" title="PyRemoteData 0.0.39 documentation"
+        <a href="../../index.html" title="PyRemoteData 0.0.40 documentation"
            class="md-header-nav__button md-logo">
           
             &nbsp;
@@ -164,7 +164,7 @@
   <nav class="md-tabs" data-md-component="tabs">
     <div class="md-tabs__inner md-grid">
       <ul class="md-tabs__list">
-          <li class="md-tabs__item"><a href="../../index.html" class="md-tabs__link">PyRemoteData 0.0.39 documentation</a></li>
+          <li class="md-tabs__item"><a href="../../index.html" class="md-tabs__link">PyRemoteData 0.0.40 documentation</a></li>
           <li class="md-tabs__item"><a href="../index.html" class="md-tabs__link">Module code</a></li>
       </ul>
     </div>
@@ -177,13 +177,13 @@
               <div class="md-sidebar__inner">
                 <nav class="md-nav md-nav--primary" data-md-level="0">
   <label class="md-nav__title md-nav__title--site" for="__drawer">
-    <a href="../../index.html" title="PyRemoteData 0.0.39 documentation" class="md-nav__button md-logo">
+    <a href="../../index.html" title="PyRemoteData 0.0.40 documentation" class="md-nav__button md-logo">
       
         <img src="../../_static/" alt=" logo" width="48" height="48">
       
     </a>
     <a href="../../index.html"
-       title="PyRemoteData 0.0.39 documentation">PyRemoteData</a>
+       title="PyRemoteData 0.0.40 documentation">PyRemoteData</a>
   </label>
     <div class="md-nav__source">
       <a href="https://github.com/asgersvenning/pyremotedata" title="Go to repository" class="md-source" data-md-source="github">
@@ -1143,7 +1143,6 @@
             <span class="n">main_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Folder index does not exist in </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">pwd</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="c1"># If override is True, delete the file index if it exists</span>
         <span class="k">if</span> <span class="n">override</span> <span class="ow">and</span> <span class="n">file_index_exists</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="n">store</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">,</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"'override' is '</span><span class="si">{</span><span class="n">override</span><span class="si">}</span><span class="s2">' and 'store' is '</span><span class="si">{</span><span class="n">store</span><span class="si">}</span><span class="s2">', this is not allowed and should not happen!"</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">execute_command</span><span class="p">(</span><span class="s2">"rm folder_index.txt"</span><span class="p">)</span>
             <span class="c1"># Now the file index does not exist (duh)</span>
             <span class="n">file_index_exists</span> <span class="o">=</span> <span class="kc">False</span>
