@@ -10,26 +10,26 @@ The main functionality of this package is provided through the use of the Implic
 * The **RemotePathIterator** class provides a high-level wrapper for the IOHandler class, and handles asynchronous streaming of files from a remote directory to a local directory using thread-safe buffers.
 """
 
+import logging
 # Standard library imports
 import os
-import re
-import shutil
-import tempfile
-import time
-import uuid
-import logging
-from random import shuffle
-from typing import List, Set, Tuple, Union
-
 # Threading and subprocess imports
 import queue
+import re
+import shutil
 import subprocess
+import tempfile
 import threading
+import time
+import uuid
 from queue import Queue
+from random import choice, choices, shuffle
+from typing import List, Set, Tuple, Union
 
 # Internal import
-from pyremotedata import main_logger, module_logger
+from pyremotedata import CLEAR_LINE, ESC_EOL, main_logger, module_logger
 from pyremotedata.config import get_implicit_mount_config
+
 
 class ImplicitMount:
     """
@@ -437,7 +437,7 @@ class ImplicitMount:
         abs_remote_path = [rpwd + "/" + r for r in remote_destination]
         return abs_remote_path
 
-    def ls(self, path: str = ".", recursive: bool=False, use_cache: bool=True) -> List[str]:
+    def ls(self, path: str = ".", recursive: bool=False, use_cache: bool=True, pbar : int=0, top : bool=True) -> List[str]:
         """
         Find all files in the given remote directory using the LFTP command `cls`. Can be used recursively, even though LFTP does not support recursive listing with the `cls` command.
 
@@ -445,6 +445,8 @@ class ImplicitMount:
             path (str): The remote directory to search in.
             recursive (bool): If True, the function will search recursively.
             use_cache (bool): If True, the function will use `cls`, otherwise it will use `recls`. `recls` forces a refresh of the cache.
+            pbar (int): If 1, prints something to show that the process is not dead, only relevant if recursive is True. Defaults to 0.
+            top (bool): DO NOT USE! Flag to indicate whether the recursion is at the top level.
 
         Returns:
             Union[None, str, List[str]]: If the directory is empty, the function will return None, if the directory contains one file, the function will return a string, otherwise it will return a list of strings.
@@ -486,6 +488,8 @@ class ImplicitMount:
         # which is determined by checking if the permission starts with "d"
         if recursive:
             recls = "" if use_cache else "re"
+            if pbar:
+                main_logger.info(f"{CLEAR_LINE}Retrieving file list{'.'*pbar}{ESC_EOL}")
             this_level = self.execute_command(f'{recls}cls "{path}" -1 --perm')
             # If the directory contains one or no files
             if isinstance(this_level, str) or this_level is None:
@@ -496,12 +500,17 @@ class ImplicitMount:
                     continue
                 perm, path = perm_path.split(" ", 1)
                 if perm.startswith("d"):
-                    output += self.ls(path, recursive=True)
+                    pbar = (pbar % 10) + 1 if pbar else pbar
+                    output += self.ls(path, recursive=True, pbar=pbar, top=False)
                 else:
                     sanitize_path(output, path)
         # Non-recursive case
         else:
             output = sanitize_path([], self.execute_command(f'cls "{path}" -1'))
+        
+        # Clear the progress bar if end of top-level
+        if pbar and top:
+            main_logger.info(f"{CLEAR_LINE}{ESC_EOL}\n")
 
         # Check if the output is a list
         if not isinstance(output, list):
@@ -858,7 +867,7 @@ class IOHandler(ImplicitMount):
         if not file_index_exists:
             main_logger.debug("Creating folder index...")
             # Traverse the remote directory and write the file index to a file
-            files = self.ls(recursive=True, use_cache=False)
+            files = self.ls(recursive=True, use_cache=False, pbar=True)
             local_index_path = os.path.join(self.local_dir, "folder_index.txt")
             with open(local_index_path, "w") as f:
                 for file in files:
@@ -1033,8 +1042,6 @@ class RemotePathIterator:
                 raise ValueError("All proportions must be between 0 and 1.")
             if sum(proportion) != 1:
                 proportion = [p / sum(proportion) for p in proportion]
-            # Assume we have the correct imports from random already
-            from random import choices, choice
             allocation = choices(list(range(len(proportion))), weights=proportion, k=len(self.remote_paths))
             indices = [[] for _ in range(len(proportion))]
             for i, a in enumerate(allocation):

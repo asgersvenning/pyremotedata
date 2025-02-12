@@ -1,8 +1,10 @@
 import os
+
 import yaml
 
 # Interanl imports
 from pyremotedata import main_logger, module_logger
+
 
 def ask_user(question, interactive=True):
     if not interactive:

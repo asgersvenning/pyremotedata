@@ -1,22 +1,20 @@
 ## PSA: This script is not ready for general use, as it still hardcoded to the specific use case of the project it was developed for.
 
-# Standard library imports
 import os
 import time
 import warnings
 from queue import Queue
 from threading import Thread
-from typing import Union, Optional, Tuple, List, Callable
+from typing import Callable, List, Optional, Tuple, Union
 
-# Dependency imports
 import torch
-from torch.utils.data import DataLoader, IterableDataset#, TensorDataset
+from torch.utils.data import DataLoader, IterableDataset  # , TensorDataset
 from torchvision.io import read_image
 from torchvision.io.image import ImageReadMode
 
-# Internal imports
 from pyremotedata import main_logger, module_logger
 from pyremotedata.implicit_mount import RemotePathIterator
+
 
 class RemotePathDataset(IterableDataset):
     '''
