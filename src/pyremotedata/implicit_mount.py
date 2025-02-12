@@ -851,7 +851,6 @@ class IOHandler(ImplicitMount):
             main_logger.debug(f"Folder index does not exist in {self.pwd()}")
         # If override is True, delete the file index if it exists
         if override and file_index_exists:
-            assert store is False, RuntimeError(f"'override' is '{override}' and 'store' is '{store}', this is not allowed and should not happen!")
             self.execute_command("rm folder_index.txt")
             # Now the file index does not exist (duh)
             file_index_exists = False
