@@ -6,12 +6,14 @@ import os
 # Courtesy of: https://stackoverflow.com/a/65235302/19104786
 ESC_EOL = '[!n]'
 CLEAR_LINE = f'\r{" " * 100}\r'
+
 class MStreamHandler(logging.StreamHandler):
   """Handler that controls the writing of the newline character"""
 
   def emit(self, record) -> None:
-    if record.msg.endswith(ESC_EOL):
-        record.msg = record.msg.replace(ESC_EOL, '')
+    msg = str(record.msg)
+    if msg.endswith(ESC_EOL):
+        record.msg = msg.replace(ESC_EOL, '')
         oterm = self.terminator
         ofmt = self.formatter
         self.terminator = ''

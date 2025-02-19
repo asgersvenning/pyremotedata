@@ -767,13 +767,13 @@ class IOHandler(ImplicitMount):
         # Return the local path of the downloaded file or directory
         return local_result
     
-    def multi_download(self, remote_paths: List[str], local_destination: Union[str, List[str]], blocking: bool=True, n: int=5, **kwargs) -> List[str]:
+    def multi_download(self, remote_paths: List[str], local_destination: str, blocking: bool=True, n: int=5, **kwargs) -> List[str]:
         """
         Downloads a list of files from the remote directory to the given local destination.
 
         Args:
             remote_paths (List[str]): A list of remote paths to download.
-            local_destination (Union[str, List[str]]): The local destination to download the files to. If None, the files will be downloaded to the current local directory.
+            local_destination (str): The local destination to download the files to. If None, the files will be downloaded to the current local directory.
             blocking (bool): If True, the function will block until the download is complete.
             n (int): The number of connections to use for downloading each file.
             **kwargs: Extra keyword arguments are ignored.
@@ -788,21 +788,21 @@ class IOHandler(ImplicitMount):
         if not (isinstance(local_destination, str) or isinstance(local_destination, list) or local_destination is None):
             raise TypeError("Expected str or list, got {}".format(type(local_destination)))
         if isinstance(local_destination, str):
-            local_destination = [local_destination + os.sep + os.path.basename(r) for r in remote_paths]
+            os.makedirs(local_destination, exist_ok=True)
         elif local_destination is None:
             local_destination = self.local_dir
-            local_destination = [local_destination + os.sep + os.path.basename(r) for r in remote_paths]
+        local_files = [os.path.join(local_destination, os.path.basename(r)) for r in remote_paths]
         if len(remote_paths) != len(local_destination):
             raise ValueError("remote_paths and local_destination must have the same length.")
         if any([os.path.splitext(l)[1] != os.path.splitext(r)[1] for l, r in zip(local_destination, remote_paths)]):
             raise ValueError("Local and remote file extensions must match.")
         
         # Assemble the mget command, options and arguments
-        multi_command = f'mget -P {n} ' + ' '.join([f'"{r}"' for r in remote_paths])
+        multi_command = f'mget -O "{local_destination}" -P {n} ' + ' '.join([f'"{r}"' for r in remote_paths])
         # Execute the mget command
         self.execute_command(multi_command, output=blocking, blocking=blocking)
         # Check if the files were downloaded TODO: is this too slow? Should we just assume that the files were downloaded for efficiency?
-        for l in local_destination:
+        for l in local_files:
             if not os.path.exists(l):
                 raise RuntimeError(f"Failed to download {l}")
 
@@ -810,7 +810,7 @@ class IOHandler(ImplicitMount):
         self.last_download = local_destination
         self.last_type = "multi"
         # Return the local paths of the downloaded files
-        return local_destination
+        return local_files
 
     def clone(self, local_destination: Union[None, str], blocking: bool=True, **kwargs) -> any:
         """
