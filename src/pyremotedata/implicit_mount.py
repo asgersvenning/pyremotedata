@@ -726,6 +726,15 @@ class IOHandler(ImplicitMount):
         # If multiple remote paths are specified, use multi_download instead of download, 
         # this function is more flexible than mirror (works for files from different directories) and much faster than executing multiple pget commands
         if not isinstance(remote_path, str) and len(remote_path) > 1:
+            if local_destination is not None:
+                local_destination_dirs = os.path.dirname(local_destination) if isinstance(local_destination, str) else [os.path.dirname(l) for l in local_destination] 
+                if len(set(local_destination_dirs)) == 1:
+                    local_destination = local_destination_dirs[0]
+                else:
+                    result = []
+                    for this_local_dir in set(local_destination_dirs):
+                        result.extend(self.multi_download([r for r, ld in zip(remote_path, local_destination_dirs) if ld == this_local_dir], this_local_dir, **kwargs))
+                    return result
             return self.multi_download(remote_path, local_destination, **kwargs)
         if len(remote_path) == 1:
             remote_path = remote_path[0]
@@ -792,10 +801,6 @@ class IOHandler(ImplicitMount):
         elif local_destination is None:
             local_destination = self.local_dir
         local_files = [os.path.join(local_destination, os.path.basename(r)) for r in remote_paths]
-        if len(remote_paths) != len(local_destination):
-            raise ValueError("remote_paths and local_destination must have the same length.")
-        if any([os.path.splitext(l)[1] != os.path.splitext(r)[1] for l, r in zip(local_destination, remote_paths)]):
-            raise ValueError("Local and remote file extensions must match.")
         
         # Assemble the mget command, options and arguments
         multi_command = f'mget -O "{local_destination}" -P {n} ' + ' '.join([f'"{r}"' for r in remote_paths])
@@ -1174,6 +1179,7 @@ class RemotePathIterator:
             if self.download_thread is not None:
                 self.download_thread.join(timeout=1)
                 self.download_thread = None
+                time.sleep(0.01) # Wait a little to make sure the side-effects of the download thread are processed (race-condition) 
             # Clean up the temporary directory
             while not self.download_queue.empty():
                 self.delete_queue.put(self.download_queue.get()[0])
