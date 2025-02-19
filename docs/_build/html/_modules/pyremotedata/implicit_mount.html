@@ -45,11 +45,11 @@
   
   
   
-    <title>pyremotedata.implicit_mount &#8212; PyRemoteData 0.0.41 documentation</title>
+    <title>pyremotedata.implicit_mount &#8212; PyRemoteData 0.0.42 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=75810a84" />
     <link rel="stylesheet" type="text/css" href="../../_static/material.css?v=79c92029" />
     <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=fb6b2637" />
-    <script src="../../_static/documentation_options.js?v=20c5f126"></script>
+    <script src="../../_static/documentation_options.js?v=173d7b4c"></script>
     <script src="../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="canonical" href="_build/html/_modules/pyremotedata/implicit_mount.html" />
@@ -78,7 +78,7 @@
   <nav class="md-header-nav md-grid">
     <div class="md-flex navheader">
       <div class="md-flex__cell md-flex__cell--shrink">
-        <a href="../../index.html" title="PyRemoteData 0.0.41 documentation"
+        <a href="../../index.html" title="PyRemoteData 0.0.42 documentation"
            class="md-header-nav__button md-logo">
           
             &nbsp;
@@ -164,7 +164,7 @@
   <nav class="md-tabs" data-md-component="tabs">
     <div class="md-tabs__inner md-grid">
       <ul class="md-tabs__list">
-          <li class="md-tabs__item"><a href="../../index.html" class="md-tabs__link">PyRemoteData 0.0.41 documentation</a></li>
+          <li class="md-tabs__item"><a href="../../index.html" class="md-tabs__link">PyRemoteData 0.0.42 documentation</a></li>
           <li class="md-tabs__item"><a href="../index.html" class="md-tabs__link">Module code</a></li>
       </ul>
     </div>
@@ -177,13 +177,13 @@
               <div class="md-sidebar__inner">
                 <nav class="md-nav md-nav--primary" data-md-level="0">
   <label class="md-nav__title md-nav__title--site" for="__drawer">
-    <a href="../../index.html" title="PyRemoteData 0.0.41 documentation" class="md-nav__button md-logo">
+    <a href="../../index.html" title="PyRemoteData 0.0.42 documentation" class="md-nav__button md-logo">
       
         <img src="../../_static/" alt=" logo" width="48" height="48">
       
     </a>
     <a href="../../index.html"
-       title="PyRemoteData 0.0.41 documentation">PyRemoteData</a>
+       title="PyRemoteData 0.0.42 documentation">PyRemoteData</a>
   </label>
     <div class="md-nav__source">
       <a href="https://github.com/asgersvenning/pyremotedata" title="Go to repository" class="md-source" data-md-source="github">
@@ -1053,13 +1053,13 @@
     
 <div class="viewcode-block" id="IOHandler.multi_download">
 <a class="viewcode-back" href="../../IOHandler.html#pyremotedata.implicit_mount.IOHandler.multi_download">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">multi_download</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">remote_paths</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">local_destination</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span> <span class="n">blocking</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">multi_download</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">remote_paths</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">local_destination</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">blocking</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Downloads a list of files from the remote directory to the given local destination.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            remote_paths (List[str]): A list of remote paths to download.</span>
-<span class="sd">            local_destination (Union[str, List[str]]): The local destination to download the files to. If None, the files will be downloaded to the current local directory.</span>
+<span class="sd">            local_destination (str): The local destination to download the files to. If None, the files will be downloaded to the current local directory.</span>
 <span class="sd">            blocking (bool): If True, the function will block until the download is complete.</span>
 <span class="sd">            n (int): The number of connections to use for downloading each file.</span>
 <span class="sd">            **kwargs: Extra keyword arguments are ignored.</span>
@@ -1074,21 +1074,21 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">local_destination</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">local_destination</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="n">local_destination</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"Expected str or list, got </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">local_destination</span><span class="p">)))</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">local_destination</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-            <span class="n">local_destination</span> <span class="o">=</span> <span class="p">[</span><span class="n">local_destination</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">remote_paths</span><span class="p">]</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">local_destination</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">local_destination</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">local_destination</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_dir</span>
-            <span class="n">local_destination</span> <span class="o">=</span> <span class="p">[</span><span class="n">local_destination</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">remote_paths</span><span class="p">]</span>
+        <span class="n">local_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">local_destination</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">r</span><span class="p">))</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">remote_paths</span><span class="p">]</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">remote_paths</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">local_destination</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"remote_paths and local_destination must have the same length."</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">any</span><span class="p">([</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">l</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">r</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">l</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">local_destination</span><span class="p">,</span> <span class="n">remote_paths</span><span class="p">)]):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Local and remote file extensions must match."</span><span class="p">)</span>
         
         <span class="c1"># Assemble the mget command, options and arguments</span>
-        <span class="n">multi_command</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">'mget -P </span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s1"> '</span> <span class="o">+</span> <span class="s1">' '</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="sa">f</span><span class="s1">'"</span><span class="si">{</span><span class="n">r</span><span class="si">}</span><span class="s1">"'</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">remote_paths</span><span class="p">])</span>
+        <span class="n">multi_command</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">'mget -O "</span><span class="si">{</span><span class="n">local_destination</span><span class="si">}</span><span class="s1">" -P </span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s1"> '</span> <span class="o">+</span> <span class="s1">' '</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="sa">f</span><span class="s1">'"</span><span class="si">{</span><span class="n">r</span><span class="si">}</span><span class="s1">"'</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">remote_paths</span><span class="p">])</span>
         <span class="c1"># Execute the mget command</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">execute_command</span><span class="p">(</span><span class="n">multi_command</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="n">blocking</span><span class="p">,</span> <span class="n">blocking</span><span class="o">=</span><span class="n">blocking</span><span class="p">)</span>
         <span class="c1"># Check if the files were downloaded TODO: is this too slow? Should we just assume that the files were downloaded for efficiency?</span>
-        <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">local_destination</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">local_files</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">l</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to download </span><span class="si">{</span><span class="n">l</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
@@ -1096,7 +1096,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">last_download</span> <span class="o">=</span> <span class="n">local_destination</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">last_type</span> <span class="o">=</span> <span class="s2">"multi"</span>
         <span class="c1"># Return the local paths of the downloaded files</span>
-        <span class="k">return</span> <span class="n">local_destination</span></div>
+        <span class="k">return</span> <span class="n">local_files</span></div>
 
 
 <div class="viewcode-block" id="IOHandler.clone">
