@@ -45,11 +45,11 @@
   
   
   
-    <title>pyremotedata.implicit_mount &#8212; PyRemoteData 0.0.40 documentation</title>
+    <title>pyremotedata.implicit_mount &#8212; PyRemoteData 0.0.41 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=75810a84" />
     <link rel="stylesheet" type="text/css" href="../../_static/material.css?v=79c92029" />
     <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=fb6b2637" />
-    <script src="../../_static/documentation_options.js?v=84bd753f"></script>
+    <script src="../../_static/documentation_options.js?v=20c5f126"></script>
     <script src="../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="canonical" href="_build/html/_modules/pyremotedata/implicit_mount.html" />
@@ -78,7 +78,7 @@
   <nav class="md-header-nav md-grid">
     <div class="md-flex navheader">
       <div class="md-flex__cell md-flex__cell--shrink">
-        <a href="../../index.html" title="PyRemoteData 0.0.40 documentation"
+        <a href="../../index.html" title="PyRemoteData 0.0.41 documentation"
            class="md-header-nav__button md-logo">
           
             &nbsp;
@@ -164,7 +164,7 @@
   <nav class="md-tabs" data-md-component="tabs">
     <div class="md-tabs__inner md-grid">
       <ul class="md-tabs__list">
-          <li class="md-tabs__item"><a href="../../index.html" class="md-tabs__link">PyRemoteData 0.0.40 documentation</a></li>
+          <li class="md-tabs__item"><a href="../../index.html" class="md-tabs__link">PyRemoteData 0.0.41 documentation</a></li>
           <li class="md-tabs__item"><a href="../index.html" class="md-tabs__link">Module code</a></li>
       </ul>
     </div>
@@ -177,13 +177,13 @@
               <div class="md-sidebar__inner">
                 <nav class="md-nav md-nav--primary" data-md-level="0">
   <label class="md-nav__title md-nav__title--site" for="__drawer">
-    <a href="../../index.html" title="PyRemoteData 0.0.40 documentation" class="md-nav__button md-logo">
+    <a href="../../index.html" title="PyRemoteData 0.0.41 documentation" class="md-nav__button md-logo">
       
         <img src="../../_static/" alt=" logo" width="48" height="48">
       
     </a>
     <a href="../../index.html"
-       title="PyRemoteData 0.0.40 documentation">PyRemoteData</a>
+       title="PyRemoteData 0.0.41 documentation">PyRemoteData</a>
   </label>
     <div class="md-nav__source">
       <a href="https://github.com/asgersvenning/pyremotedata" title="Go to repository" class="md-source" data-md-source="github">
@@ -238,26 +238,26 @@
 <span class="sd">* The **RemotePathIterator** class provides a high-level wrapper for the IOHandler class, and handles asynchronous streaming of files from a remote directory to a local directory using thread-safe buffers.</span>
 <span class="sd">"""</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="c1"># Standard library imports</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">random</span><span class="w"> </span><span class="kn">import</span> <span class="n">shuffle</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
-
 <span class="c1"># Threading and subprocess imports</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">queue</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">subprocess</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">threading</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">queue</span><span class="w"> </span><span class="kn">import</span> <span class="n">Queue</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">random</span><span class="w"> </span><span class="kn">import</span> <span class="n">choice</span><span class="p">,</span> <span class="n">choices</span><span class="p">,</span> <span class="n">shuffle</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="c1"># Internal import</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pyremotedata</span><span class="w"> </span><span class="kn">import</span> <span class="n">main_logger</span><span class="p">,</span> <span class="n">module_logger</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyremotedata</span><span class="w"> </span><span class="kn">import</span> <span class="n">CLEAR_LINE</span><span class="p">,</span> <span class="n">ESC_EOL</span><span class="p">,</span> <span class="n">main_logger</span><span class="p">,</span> <span class="n">module_logger</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyremotedata.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_implicit_mount_config</span>
+
 
 <div class="viewcode-block" id="ImplicitMount">
 <a class="viewcode-back" href="../../ImplicitMount.html#pyremotedata.implicit_mount.ImplicitMount">[docs]</a>
@@ -687,7 +687,7 @@
 
 <div class="viewcode-block" id="ImplicitMount.ls">
 <a class="viewcode-back" href="../../ImplicitMount.html#pyremotedata.implicit_mount.ImplicitMount.ls">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">ls</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"."</span><span class="p">,</span> <span class="n">recursive</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">use_cache</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ls</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"."</span><span class="p">,</span> <span class="n">recursive</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">use_cache</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">pbar</span> <span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">top</span> <span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Find all files in the given remote directory using the LFTP command `cls`. Can be used recursively, even though LFTP does not support recursive listing with the `cls` command.</span>
 
@@ -695,6 +695,8 @@
 <span class="sd">            path (str): The remote directory to search in.</span>
 <span class="sd">            recursive (bool): If True, the function will search recursively.</span>
 <span class="sd">            use_cache (bool): If True, the function will use `cls`, otherwise it will use `recls`. `recls` forces a refresh of the cache.</span>
+<span class="sd">            pbar (int): If 1, prints something to show that the process is not dead, only relevant if recursive is True. Defaults to 0.</span>
+<span class="sd">            top (bool): DO NOT USE! Flag to indicate whether the recursion is at the top level.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Union[None, str, List[str]]: If the directory is empty, the function will return None, if the directory contains one file, the function will return a string, otherwise it will return a list of strings.</span>
@@ -736,6 +738,8 @@
         <span class="c1"># which is determined by checking if the permission starts with "d"</span>
         <span class="k">if</span> <span class="n">recursive</span><span class="p">:</span>
             <span class="n">recls</span> <span class="o">=</span> <span class="s2">""</span> <span class="k">if</span> <span class="n">use_cache</span> <span class="k">else</span> <span class="s2">"re"</span>
+            <span class="k">if</span> <span class="n">pbar</span><span class="p">:</span>
+                <span class="n">main_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">CLEAR_LINE</span><span class="si">}</span><span class="s2">Retrieving file list</span><span class="si">{</span><span class="s1">'.'</span><span class="o">*</span><span class="n">pbar</span><span class="si">}{</span><span class="n">ESC_EOL</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="n">this_level</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">execute_command</span><span class="p">(</span><span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">recls</span><span class="si">}</span><span class="s1">cls "</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s1">" -1 --perm'</span><span class="p">)</span>
             <span class="c1"># If the directory contains one or no files</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">this_level</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> <span class="n">this_level</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -746,12 +750,17 @@
                     <span class="k">continue</span>
                 <span class="n">perm</span><span class="p">,</span> <span class="n">path</span> <span class="o">=</span> <span class="n">perm_path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">" "</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">perm</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"d"</span><span class="p">):</span>
-                    <span class="n">output</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ls</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="n">pbar</span> <span class="o">=</span> <span class="p">(</span><span class="n">pbar</span> <span class="o">%</span> <span class="mi">10</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">pbar</span> <span class="k">else</span> <span class="n">pbar</span>
+                    <span class="n">output</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ls</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">pbar</span><span class="o">=</span><span class="n">pbar</span><span class="p">,</span> <span class="n">top</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">sanitize_path</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
         <span class="c1"># Non-recursive case</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">output</span> <span class="o">=</span> <span class="n">sanitize_path</span><span class="p">([],</span> <span class="bp">self</span><span class="o">.</span><span class="n">execute_command</span><span class="p">(</span><span class="sa">f</span><span class="s1">'cls "</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s1">" -1'</span><span class="p">))</span>
+        
+        <span class="c1"># Clear the progress bar if end of top-level</span>
+        <span class="k">if</span> <span class="n">pbar</span> <span class="ow">and</span> <span class="n">top</span><span class="p">:</span>
+            <span class="n">main_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">CLEAR_LINE</span><span class="si">}{</span><span class="n">ESC_EOL</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="c1"># Check if the output is a list</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
@@ -1150,7 +1159,7 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="n">file_index_exists</span><span class="p">:</span>
             <span class="n">main_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Creating folder index..."</span><span class="p">)</span>
             <span class="c1"># Traverse the remote directory and write the file index to a file</span>
-            <span class="n">files</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ls</span><span class="p">(</span><span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">use_cache</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">files</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ls</span><span class="p">(</span><span class="n">recursive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">use_cache</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">pbar</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="n">local_index_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">local_dir</span><span class="p">,</span> <span class="s2">"folder_index.txt"</span><span class="p">)</span>
             <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">local_index_path</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
@@ -1337,8 +1346,6 @@
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"All proportions must be between 0 and 1."</span><span class="p">)</span>
             <span class="k">if</span> <span class="nb">sum</span><span class="p">(</span><span class="n">proportion</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="n">proportion</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="o">/</span> <span class="nb">sum</span><span class="p">(</span><span class="n">proportion</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">proportion</span><span class="p">]</span>
-            <span class="c1"># Assume we have the correct imports from random already</span>
-            <span class="kn">from</span><span class="w"> </span><span class="nn">random</span><span class="w"> </span><span class="kn">import</span> <span class="n">choices</span><span class="p">,</span> <span class="n">choice</span>
             <span class="n">allocation</span> <span class="o">=</span> <span class="n">choices</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">proportion</span><span class="p">))),</span> <span class="n">weights</span><span class="o">=</span><span class="n">proportion</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">remote_paths</span><span class="p">))</span>
             <span class="n">indices</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">proportion</span><span class="p">))]</span>
             <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">a</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">allocation</span><span class="p">):</span>
