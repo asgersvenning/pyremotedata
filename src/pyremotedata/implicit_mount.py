@@ -571,7 +571,7 @@ class ImplicitMount:
         OBS: This function should probably not be used, just use the standard OS commands instead.
         """
         recursive = kwargs.get("R", kwargs.get("recursive", False))
-        if recursive:
+        if not (recursive is False):
             if local_path == "":
                 local_path = "."
             output = self.execute_command(f'!find "{local_path}" -type f -exec realpath --relative-to="{local_path}" {{}} \\;')
