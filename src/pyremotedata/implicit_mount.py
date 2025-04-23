@@ -42,8 +42,9 @@ class ImplicitMount:
     TODO: Add further arguments such as port, password, etc. to the constructor.
 
     Args:
-        user (str): The username to use for connecting to the remote directory.
-        remote (str): The remote server to connect to.
+        user (Optional[str]): The username to use for connecting to the remote directory.
+        password (Optional[str]): The *SFTP* password to possibly use when connecting to the remote host.
+        remote (Optional[str]): The remote server to connect to.
         verbose (bool): If True, print the commands executed by the class.
 
     .. <Sphinx comment
@@ -89,7 +90,7 @@ class ImplicitMount:
         
         # Set attributes
         self.user = user
-        self.password = password
+        self.password = password or ""
         self.remote = remote
         self.lftp_shell = None
         self.verbose = verbose
@@ -516,7 +517,7 @@ class ImplicitMount:
                 # Skip "." and ".." paths and folder index files (these are created by the folder index command, and should be treated as hidden files)
                 if len(path) >= 2 and not "folder_index.txt" in path:
                     # Remove leading "./" from paths
-                    if path.startswith("."):
+                    if path.startswith("./"):
                         path = path[2:]
                     # Append path to list (this a mutative operation)
                     l += [path]

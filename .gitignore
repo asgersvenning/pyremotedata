@@ -1,5 +1,5 @@
 dist
 myenv
 perf/sample.txt
-**/__pycache__
+**/__pycache__/
 src/pyremotedata/pyremotedata_config.yaml
