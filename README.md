@@ -1,10 +1,7 @@
 # `pyRemoteData`
 `pyRemoteData` is a module developed for scientific computation using the remote storage platform [ERDA](https://erda.au.dk/) (Electronic Research Data Archive) provided by Aarhus University IT, as part of my PhD at the Department of Ecoscience at Aarhus University.
 
-It can be used with **any** passwordless SSH-enabled storage facility that supports SFTP and LFTP. But is only tested on a minimal SFTP server found at [atmoz/sftp](https://hub.docker.com/r/atmoz/sftp) and on the live AU ERDA service which runs on MiG (Minimum intrusion Grid - [SourceForge](https://sourceforge.net/projects/migrid/)/[GitHub](https://github.com/ucphhpc/migrid-sync)) developed by [SCIENCE HPC Centre at Copenhagen University](https://science.ku.dk/english/research/research-e-infrastructure/science-hpc-centre/).
-
-If your facility requires a password, it should be very easy to modify the code to support this, in fact it is already implemented, but not exposed to the user.
-Merely change line 76 in src/remote_data/implicit_mount.py to fetch the password from the environment variable of your choice, or simply hardcode it. However, do this at your own risk, as I have not assessed the security implications.
+It can be used with **any** storage facility that supports SFTP and LFTP, but is only tested on a minimal SFTP server found at [atmoz/sftp](https://hub.docker.com/r/atmoz/sftp) and on the live AU ERDA service which runs on MiG (Minimum intrusion Grid - [SourceForge](https://sourceforge.net/projects/migrid/)/[GitHub](https://github.com/ucphhpc/migrid-sync)) developed by [SCIENCE HPC Centre at Copenhagen University](https://science.ku.dk/english/research/research-e-infrastructure/science-hpc-centre/).
 
 ## Capabilities
 In order to facility high-throughput computation in a cross-platform setting, `pyRemoteData` handles data transfer with multithreading and asynchronous data streaming using thread-safe buffers.
