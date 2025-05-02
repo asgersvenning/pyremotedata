@@ -45,11 +45,11 @@
   
   
   
-    <title>pyremotedata.implicit_mount &#8212; PyRemoteData 0.0.46 documentation</title>
+    <title>pyremotedata.implicit_mount &#8212; PyRemoteData 0.0.47 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=75810a84" />
     <link rel="stylesheet" type="text/css" href="../../_static/material.css?v=79c92029" />
     <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=fb6b2637" />
-    <script src="../../_static/documentation_options.js?v=eb4c61eb"></script>
+    <script src="../../_static/documentation_options.js?v=4f34e5f2"></script>
     <script src="../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="canonical" href="_build/html/_modules/pyremotedata/implicit_mount.html" />
@@ -78,7 +78,7 @@
   <nav class="md-header-nav md-grid">
     <div class="md-flex navheader">
       <div class="md-flex__cell md-flex__cell--shrink">
-        <a href="../../index.html" title="PyRemoteData 0.0.46 documentation"
+        <a href="../../index.html" title="PyRemoteData 0.0.47 documentation"
            class="md-header-nav__button md-logo">
           
             &nbsp;
@@ -164,7 +164,7 @@
   <nav class="md-tabs" data-md-component="tabs">
     <div class="md-tabs__inner md-grid">
       <ul class="md-tabs__list">
-          <li class="md-tabs__item"><a href="../../index.html" class="md-tabs__link">PyRemoteData 0.0.46 documentation</a></li>
+          <li class="md-tabs__item"><a href="../../index.html" class="md-tabs__link">PyRemoteData 0.0.47 documentation</a></li>
           <li class="md-tabs__item"><a href="../index.html" class="md-tabs__link">Module code</a></li>
       </ul>
     </div>
@@ -177,13 +177,13 @@
               <div class="md-sidebar__inner">
                 <nav class="md-nav md-nav--primary" data-md-level="0">
   <label class="md-nav__title md-nav__title--site" for="__drawer">
-    <a href="../../index.html" title="PyRemoteData 0.0.46 documentation" class="md-nav__button md-logo">
+    <a href="../../index.html" title="PyRemoteData 0.0.47 documentation" class="md-nav__button md-logo">
       
         <img src="../../_static/" alt=" logo" width="48" height="48">
       
     </a>
     <a href="../../index.html"
-       title="PyRemoteData 0.0.46 documentation">PyRemoteData</a>
+       title="PyRemoteData 0.0.47 documentation">PyRemoteData</a>
   </label>
     <div class="md-nav__source">
       <a href="https://github.com/asgersvenning/pyremotedata" title="Go to repository" class="md-source" data-md-source="github">
@@ -250,7 +250,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">queue</span><span class="w"> </span><span class="kn">import</span> <span class="n">Queue</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">random</span><span class="w"> </span><span class="kn">import</span> <span class="n">choices</span><span class="p">,</span> <span class="n">shuffle</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyremotedata</span><span class="w"> </span><span class="kn">import</span> <span class="n">CLEAR_LINE</span><span class="p">,</span> <span class="n">ESC_EOL</span><span class="p">,</span> <span class="n">main_logger</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pyremotedata.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_implicit_mount_config</span>
@@ -266,15 +266,11 @@
 
 <span class="sd">    OBS: The attributes of this method should not be used unless for development or advanced use cases, all responsibility in this case is on the user.</span>
 
-<span class="sd">    TODO: This class relies on a proper SSH setup on your machine (and the remote server) for passwordless SFTP. </span>
-<span class="sd">    Thoroughly test this on a fresh install, and add instructions, and the possibility for automatic setup, for setting up passwordless SFTP and SSH keys, as well as proper error handling for when this is not set up correctly.</span>
-
-<span class="sd">    TODO: Add further arguments such as port, password, etc. to the constructor.</span>
-
 <span class="sd">    Args:</span>
 <span class="sd">        user (Optional[str]): The username to use for connecting to the remote directory.</span>
 <span class="sd">        password (Optional[str]): The *SFTP* password to possibly use when connecting to the remote host.</span>
 <span class="sd">        remote (Optional[str]): The remote server to connect to.</span>
+<span class="sd">        port (int): The port to connect to (default: 2222).</span>
 <span class="sd">        verbose (bool): If True, print the commands executed by the class.</span>
 
 <span class="sd">    .. &lt;Sphinx comment</span>
@@ -303,10 +299,11 @@
             <span class="n">user</span> <span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
             <span class="n">password</span> <span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">remote</span> <span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+            <span class="n">port</span> <span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">2222</span><span class="p">,</span>
             <span class="n">verbose</span> <span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="n">main_logger</span><span class="o">.</span><span class="n">isEnabledFor</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
         <span class="p">):</span>
         <span class="c1"># Default argument configuration and type checking</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">default_config</span> <span class="o">=</span> <span class="n">get_implicit_mount_config</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">default_config</span> <span class="o">=</span> <span class="n">get_implicit_mount_config</span><span class="p">(</span><span class="n">validate</span><span class="o">=</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">user</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">remote</span><span class="p">,</span> <span class="nb">str</span><span class="p">)))</span>
         <span class="k">if</span> <span class="n">user</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">user</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_config</span><span class="p">[</span><span class="s1">'user'</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">remote</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -322,6 +319,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">user</span> <span class="o">=</span> <span class="n">user</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">password</span> <span class="o">=</span> <span class="n">password</span> <span class="ow">or</span> <span class="s2">""</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">remote</span> <span class="o">=</span> <span class="n">remote</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">port</span> <span class="o">=</span> <span class="n">port</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lftp_shell</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span>
 
@@ -534,7 +532,7 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
             <span class="n">main_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Mounting </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">remote</span><span class="si">}</span><span class="s2"> as </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="c1"># "Mount" the remote directory using an lftp shell with the sftp protocol and the specified user and remote, and the specified lftp settings</span>
-        <span class="n">lftp_mount_cmd</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">'open -u </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="si">}</span><span class="s1">,</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">password</span><span class="si">}</span><span class="s1"> -p 2222 sftp://</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">remote</span><span class="si">}</span><span class="s1">;</span><span class="si">{</span><span class="n">lftp_settings_str</span><span class="si">}</span><span class="s1">'</span>
+        <span class="n">lftp_mount_cmd</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">'open -u </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">user</span><span class="si">}</span><span class="s1">,</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">password</span><span class="si">}</span><span class="s1"> -p </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">port</span><span class="si">}</span><span class="s1"> sftp://</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">remote</span><span class="si">}</span><span class="s1">;</span><span class="si">{</span><span class="n">lftp_settings_str</span><span class="si">}</span><span class="s1">'</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
             <span class="n">main_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Executing command: lftp"</span><span class="p">)</span>
         <span class="c1"># Start the lftp shell</span>
@@ -953,12 +951,20 @@
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    This is a high-level wrapper for the ImplicitMount class, which provides human-friendly methods for downloading files from a remote directory without the need to have technical knowledge on how to use LFTP.</span>
 
+<span class="sd">    To avoid SSH setup use `lftp_settings = {'sftp:connect-program' : 'ssh -a -x -i &lt;keyfile&gt;'}, user = &lt;USER&gt;, remote = &lt;REMOTE&gt;`.</span>
+
 <span class="sd">    OBS: The attributes of this method should not be used unless for development or advanced use cases, all responsibility in this case is on the user.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        local_dir (str): The local directory to use for downloading files. If None, a temporary directory will be used (suggested, unless truly necessary).</span>
 <span class="sd">        user_confirmation (bool): If True, the user will be asked for confirmation before deleting files. (strongly suggested for debugging and testing)</span>
 <span class="sd">        clean (bool): If True, the local directory will be cleaned after the context manager is exited. (suggested, if not it may lead to rapid exhaustion of disk space)</span>
+<span class="sd">        lftp_settings (Optional[Dict[str, str]]): Add any additional settings or setting overrides (see https://lftp.yar.ru/lftp-man.html). </span>
+<span class="sd">            The most common usecase is properly to use `lftp_settings = {'sftp:connect-program' : 'ssh -a -x -i &lt;keyfile&gt;'}`.</span>
+<span class="sd">            The defaults can also be overwritten by changing the `PyRemoteData` config file.</span>
+<span class="sd">        user (Optional[str]): The username to use for connecting to the remote directory.</span>
+<span class="sd">        password (Optional[str]): The *SFTP* password to possibly use when connecting to the remote host.</span>
+<span class="sd">        remote (Optional[str]): The remote server to connect to.</span>
 <span class="sd">        **kwargs: Keyword arguments to pass to the ImplicitMount constructor.</span>
 
 <span class="sd">    .. &lt;Sphinx comment</span>
@@ -967,7 +973,6 @@
 <span class="sd">        clone(): Clone the current remote directory to the given local destination.</span>
 <span class="sd">        get_file_index(): Get a list of files in the current directory.</span>
 <span class="sd">        cache_file_index(): Cache the file index for the current directory.</span>
-<span class="sd">        store_last(): TODO: NOT IMPLEMENTED! Move the last downloaded file or directory to the given destination.</span>
 <span class="sd">        clean(): Clean the local directory.</span>
 <span class="sd">        clean_last(): Clean the last downloaded file or directory.</span>
 <span class="sd">    .. Sphinx comment&gt;</span>
@@ -977,9 +982,18 @@
             <span class="n">local_dir</span> <span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
             <span class="n">user_confirmation</span> <span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> 
             <span class="n">clean</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> 
+            <span class="n">user</span> <span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+            <span class="n">password</span> <span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">remote</span> <span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+            <span class="n">lftp_settings</span> <span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="o">**</span><span class="n">kwargs</span>
         <span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">user</span><span class="o">=</span><span class="n">user</span><span class="p">,</span>
+            <span class="n">password</span><span class="o">=</span><span class="n">password</span><span class="p">,</span>
+            <span class="n">remote</span><span class="o">=</span><span class="n">remote</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span>
+        <span class="p">)</span>
         <span class="k">if</span> <span class="n">local_dir</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">local_dir</span> <span class="o">==</span> <span class="s2">""</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_config</span><span class="p">[</span><span class="s1">'local_dir'</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_config</span><span class="p">[</span><span class="s1">'local_dir'</span><span class="p">]</span> <span class="o">==</span> <span class="s2">""</span><span class="p">:</span>
                 <span class="n">local_dir</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">TemporaryDirectory</span><span class="p">()</span><span class="o">.</span><span class="n">name</span>
@@ -991,6 +1005,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">local_dir</span> <span class="o">=</span> <span class="n">local_dir</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">user_confirmation</span> <span class="o">=</span> <span class="n">user_confirmation</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">do_clean</span> <span class="o">=</span> <span class="n">clean</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lftp_settings</span> <span class="o">=</span> <span class="n">lftp_settings</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">last_download</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">last_type</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="p">{}</span>
@@ -1009,7 +1024,10 @@
 
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"IOHandler"</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">mount</span><span class="p">()</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Opens the remote connection in a background shell.</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mount</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lftp_settings</span> <span class="ow">or</span> <span class="p">{})</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lcd</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">local_dir</span><span class="p">)</span>
 
         <span class="c1"># Print local directory:</span>

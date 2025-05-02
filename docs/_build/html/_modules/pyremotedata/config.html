@@ -45,11 +45,11 @@
   
   
   
-    <title>pyremotedata.config &#8212; PyRemoteData 0.0.46 documentation</title>
+    <title>pyremotedata.config &#8212; PyRemoteData 0.0.47 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=75810a84" />
     <link rel="stylesheet" type="text/css" href="../../_static/material.css?v=79c92029" />
     <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=fb6b2637" />
-    <script src="../../_static/documentation_options.js?v=eb4c61eb"></script>
+    <script src="../../_static/documentation_options.js?v=4f34e5f2"></script>
     <script src="../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="canonical" href="_build/html/_modules/pyremotedata/config.html" />
@@ -78,7 +78,7 @@
   <nav class="md-header-nav md-grid">
     <div class="md-flex navheader">
       <div class="md-flex__cell md-flex__cell--shrink">
-        <a href="../../index.html" title="PyRemoteData 0.0.46 documentation"
+        <a href="../../index.html" title="PyRemoteData 0.0.47 documentation"
            class="md-header-nav__button md-logo">
           
             &nbsp;
@@ -164,7 +164,7 @@
   <nav class="md-tabs" data-md-component="tabs">
     <div class="md-tabs__inner md-grid">
       <ul class="md-tabs__list">
-          <li class="md-tabs__item"><a href="../../index.html" class="md-tabs__link">PyRemoteData 0.0.46 documentation</a></li>
+          <li class="md-tabs__item"><a href="../../index.html" class="md-tabs__link">PyRemoteData 0.0.47 documentation</a></li>
           <li class="md-tabs__item"><a href="../index.html" class="md-tabs__link">Module code</a></li>
       </ul>
     </div>
@@ -177,13 +177,13 @@
               <div class="md-sidebar__inner">
                 <nav class="md-nav md-nav--primary" data-md-level="0">
   <label class="md-nav__title md-nav__title--site" for="__drawer">
-    <a href="../../index.html" title="PyRemoteData 0.0.46 documentation" class="md-nav__button md-logo">
+    <a href="../../index.html" title="PyRemoteData 0.0.47 documentation" class="md-nav__button md-logo">
       
         <img src="../../_static/" alt=" logo" width="48" height="48">
       
     </a>
     <a href="../../index.html"
-       title="PyRemoteData 0.0.46 documentation">PyRemoteData</a>
+       title="PyRemoteData 0.0.47 documentation">PyRemoteData</a>
   </label>
     <div class="md-nav__source">
       <a href="https://github.com/asgersvenning/pyremotedata" title="Go to repository" class="md-source" data-md-source="github">
@@ -241,13 +241,20 @@
     <span class="k">return</span> <span class="nb">input</span><span class="p">(</span><span class="n">question</span><span class="p">)</span></div>
 
 
+<span class="n">ENVIRONMENT_VARIABLES</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">"PYREMOTEDATA_REMOTE_USERNAME"</span><span class="p">,</span> 
+    <span class="s2">"PYREMOTEDATA_REMOTE_URI"</span><span class="p">,</span> 
+    <span class="s2">"PYREMOTEDATA_LOCAL_DIRECTORY"</span><span class="p">,</span> 
+    <span class="s2">"PYREMOTEDATA_REMOTE_DIRECTORY"</span>
+<span class="p">)</span>
+
 <div class="viewcode-block" id="get_environment_variables">
 <a class="viewcode-back" href="../../config.html#pyremotedata.config.get_environment_variables">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_environment_variables</span><span class="p">(</span><span class="n">interactive</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-    <span class="n">remote_username</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">'PYREMOTEDATA_REMOTE_USERNAME'</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">ask_user</span><span class="p">(</span><span class="s2">"PYREMOTEDATA_REMOTE_USERNAME not set. Enter your remote name: "</span><span class="p">,</span> <span class="n">interactive</span><span class="p">)</span>
-    <span class="n">remote_uri</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">'PYREMOTEDATA_REMOTE_URI'</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">ask_user</span><span class="p">(</span><span class="s2">"PYREMOTEDATA_REMOTE_URI not set. Enter your remote URI (leave empty for 'io.erda.au.dk'): "</span><span class="p">,</span> <span class="n">interactive</span><span class="p">)</span> <span class="ow">or</span> <span class="s1">'io.erda.au.dk'</span><span class="p">)</span>
-    <span class="n">local_directory</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">'PYREMOTEDATA_LOCAL_DIRECTORY'</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
-    <span class="n">remote_directory</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">'PYREMOTEDATA_REMOTE_DIRECTORY'</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">ask_user</span><span class="p">(</span><span class="s2">"PYREMOTEDATA_REMOTE_DIRECTORY not set. Enter your remote directory: "</span><span class="p">,</span> <span class="n">interactive</span><span class="p">)</span>
+    <span class="n">remote_username</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="n">ENVIRONMENT_VARIABLES</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">ask_user</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">ENVIRONMENT_VARIABLES</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> not set. Enter your remote name: "</span><span class="p">,</span> <span class="n">interactive</span><span class="p">)</span>
+    <span class="n">remote_uri</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="n">ENVIRONMENT_VARIABLES</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">ask_user</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">ENVIRONMENT_VARIABLES</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2"> not set. Enter your remote URI (leave empty for 'io.erda.au.dk'): "</span><span class="p">,</span> <span class="n">interactive</span><span class="p">)</span> <span class="ow">or</span> <span class="s1">'io.erda.au.dk'</span><span class="p">)</span>
+    <span class="n">local_directory</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="n">ENVIRONMENT_VARIABLES</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="s2">""</span><span class="p">)</span>
+    <span class="n">remote_directory</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="n">ENVIRONMENT_VARIABLES</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">ask_user</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">ENVIRONMENT_VARIABLES</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="si">}</span><span class="s2"> not set. Enter your remote directory: "</span><span class="p">,</span> <span class="n">interactive</span><span class="p">)</span>
     
     <span class="k">return</span> <span class="n">remote_username</span><span class="p">,</span> <span class="n">remote_uri</span><span class="p">,</span> <span class="n">local_directory</span><span class="p">,</span> <span class="n">remote_directory</span></div>
 
@@ -269,26 +276,9 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">create_default_config</span><span class="p">(</span><span class="n">interactive</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
     <span class="n">remote_username</span><span class="p">,</span> <span class="n">remote_uri</span><span class="p">,</span> <span class="n">local_directory</span><span class="p">,</span> <span class="n">remote_directory</span> <span class="o">=</span> <span class="n">get_environment_variables</span><span class="p">(</span><span class="n">interactive</span><span class="p">)</span>
 
-    <span class="c1"># TODO: Remove unnecessary config options!</span>
     <span class="n">yaml_content</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"""</span>
-<span class="s2"># Mounting configuration (NOT USED AT THE MOMENT - TODO: Implement or remove)</span>
-<span class="s2">mount:</span>
-<span class="s2">    # Remote configuration</span>
-<span class="s2">    remote: "YOUR_REMOTE_NAME_HERE"</span>
-<span class="s2">    remote_subdir: "YOUR_REMOTE_DIRECTORY_HERE"</span>
-<span class="s2">    local: "YOUR_LOCAL_MOUNT_POINT_HERE"</span>
-
-<span class="s2">    # Rclone configuration (Can be left as-is)</span>
-<span class="s2">    rclone:</span>
-<span class="s2">        vfs-cache-mode: "full"</span>
-<span class="s2">        vfs-read-chunk-size: "1M"</span>
-<span class="s2">        vfs-cache-max-age: "10h"</span>
-<span class="s2">        vfs-cache-max-size: "500G"</span>
-<span class="s2">        max-read-ahead: "1M"</span>
-<span class="s2">        dir-cache-time: "15m"</span>
-<span class="s2">        fast-list: true</span>
-<span class="s2">        transfers: 10</span>
-<span class="s2">        daemon: true</span>
+<span class="s2"># IMPORTANT: If you want to change this config manually and permanently, set this to 'false'</span>
+<span class="s2">validate: true</span>
 
 <span class="s2">implicit_mount:</span>
 <span class="s2">    # Remote configuration</span>
@@ -327,9 +317,9 @@
 
 <div class="viewcode-block" id="get_config">
 <a class="viewcode-back" href="../../config.html#pyremotedata.config.get_config">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">get_config</span><span class="p">():</span>  
+<span class="k">def</span><span class="w"> </span><span class="nf">get_config</span><span class="p">(</span><span class="n">validate</span> <span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>  
     <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">CONFIG_PATH</span><span class="p">):</span>
-        <span class="n">interactive</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">"PYREMOTEDATA_AUTO"</span><span class="p">,</span> <span class="s2">"no"</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">!=</span> <span class="s2">"yes"</span>
+        <span class="n">interactive</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">"PYREMOTEDATA_AUTO"</span><span class="p">,</span> <span class="s2">"yes"</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">!=</span> <span class="s2">"yes"</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">interactive</span> <span class="ow">or</span> <span class="n">ask_user</span><span class="p">(</span><span class="s2">"Config file not found. Create default config file? (y/n): "</span><span class="p">,</span> <span class="n">interactive</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">==</span> <span class="s1">'y'</span><span class="p">:</span>
             <span class="n">create_default_config</span><span class="p">(</span><span class="n">interactive</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
@@ -341,28 +331,40 @@
         <span class="k">except</span> <span class="n">yaml</span><span class="o">.</span><span class="n">YAMLError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
             <span class="n">module_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
             <span class="k">return</span> <span class="kc">None</span>
-    
+
+    <span class="c1"># Early return if no validation is applied</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">validate</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">config_data</span><span class="p">[</span><span class="s2">"validate"</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="n">config_data</span>
+
     <span class="c1"># Check if environment variables match config (config/cache invalidation)</span>
     <span class="n">invalid</span> <span class="o">=</span> <span class="kc">False</span>
-    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">ek</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">([</span><span class="s2">"user"</span><span class="p">,</span> <span class="s2">"remote"</span><span class="p">,</span> <span class="s2">"local_dir"</span><span class="p">,</span> <span class="s2">"default_remote_dir"</span><span class="p">],</span> <span class="p">[</span><span class="s2">"PYREMOTEDATA_REMOTE_USERNAME"</span><span class="p">,</span> <span class="s2">"PYREMOTEDATAA_REMOTE_URI"</span><span class="p">,</span> <span class="s2">"PYREMOTEDATA_LOCAL_DIRECTORY"</span><span class="p">,</span> <span class="s2">"PYREMOTEDATA_REMOTE_DIRECTORY"</span><span class="p">],</span> <span class="n">get_environment_variables</span><span class="p">()):</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">ek</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+        <span class="p">[</span><span class="s2">"user"</span><span class="p">,</span> <span class="s2">"remote"</span><span class="p">,</span> <span class="s2">"local_dir"</span><span class="p">,</span> <span class="s2">"default_remote_dir"</span><span class="p">],</span> 
+        <span class="n">ENVIRONMENT_VARIABLES</span><span class="p">,</span> 
+        <span class="n">get_environment_variables</span><span class="p">()</span>
+    <span class="p">):</span>
         <span class="n">expected</span> <span class="o">=</span> <span class="n">config_data</span><span class="p">[</span><span class="s2">"implicit_mount"</span><span class="p">][</span><span class="n">k</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">expected</span> <span class="o">!=</span> <span class="n">v</span> <span class="ow">and</span> <span class="ow">not</span> <span class="p">(</span><span class="n">expected</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">v</span> <span class="o">==</span> <span class="s2">""</span><span class="p">):</span>
             <span class="n">module_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid config detected, auto regenerating from scratch: Expected '</span><span class="si">{</span><span class="n">expected</span><span class="si">}</span><span class="s2">' for '</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">' (</span><span class="si">{</span><span class="n">ek</span><span class="si">}</span><span class="s2">), but got '</span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">'."</span><span class="p">)</span>
             <span class="n">invalid</span> <span class="o">=</span> <span class="kc">True</span>
+    
     <span class="k">if</span> <span class="n">invalid</span><span class="p">:</span>
         <span class="n">remove_config</span><span class="p">()</span>
-        <span class="k">return</span> <span class="n">get_config</span><span class="p">()</span>            
+        <span class="k">if</span> <span class="n">interactive</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">get_config</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Aborted due to invalid config.'</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">config_data</span></div>
 
 
 <div class="viewcode-block" id="get_this_config">
 <a class="viewcode-back" href="../../config.html#pyremotedata.config.get_this_config">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">get_this_config</span><span class="p">(</span><span class="n">this</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_this_config</span><span class="p">(</span><span class="n">this</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">this</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"Expected string, got </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">this</span><span class="p">)))</span>
     <span class="c1"># Load config</span>
-    <span class="n">cfg</span> <span class="o">=</span> <span class="n">get_config</span><span class="p">()</span>
+    <span class="n">cfg</span> <span class="o">=</span> <span class="n">get_config</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">this</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">cfg</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Key </span><span class="si">{}</span><span class="s2"> not found in config"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">this</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">cfg</span><span class="p">[</span><span class="n">this</span><span class="p">]</span></div>
@@ -370,20 +372,20 @@
 
 <div class="viewcode-block" id="get_mount_config">
 <a class="viewcode-back" href="../../config.html#pyremotedata.config.get_mount_config">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">get_mount_config</span><span class="p">():</span>
-    <span class="k">return</span> <span class="n">get_this_config</span><span class="p">(</span><span class="s1">'mount'</span><span class="p">)</span></div>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_mount_config</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">get_this_config</span><span class="p">(</span><span class="s1">'mount'</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="get_dataloader_config">
 <a class="viewcode-back" href="../../config.html#pyremotedata.config.get_dataloader_config">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">get_dataloader_config</span><span class="p">():</span>
-    <span class="k">return</span> <span class="n">get_this_config</span><span class="p">(</span><span class="s1">'dataloader'</span><span class="p">)</span></div>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_dataloader_config</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">get_this_config</span><span class="p">(</span><span class="s1">'dataloader'</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="get_implicit_mount_config">
 <a class="viewcode-back" href="../../config.html#pyremotedata.config.get_implicit_mount_config">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">get_implicit_mount_config</span><span class="p">():</span>
-    <span class="k">return</span> <span class="n">get_this_config</span><span class="p">(</span><span class="s1">'implicit_mount'</span><span class="p">)</span></div>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_implicit_mount_config</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">get_this_config</span><span class="p">(</span><span class="s1">'implicit_mount'</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="deparse_args">
