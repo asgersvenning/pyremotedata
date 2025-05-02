@@ -10,11 +10,18 @@ def ask_user(question, interactive=True):
         raise RuntimeError("Cannot ask user for input when interactive=False: " + question)
     return input(question)
 
+ENVIRONMENT_VARIABLES = (
+    "PYREMOTEDATA_REMOTE_USERNAME", 
+    "PYREMOTEDATA_REMOTE_URI", 
+    "PYREMOTEDATA_LOCAL_DIRECTORY", 
+    "PYREMOTEDATA_REMOTE_DIRECTORY"
+)
+
 def get_environment_variables(interactive=True):
-    remote_username = os.getenv('PYREMOTEDATA_REMOTE_USERNAME', None) or ask_user("PYREMOTEDATA_REMOTE_USERNAME not set. Enter your remote name: ", interactive)
-    remote_uri = os.getenv('PYREMOTEDATA_REMOTE_URI', None) or (ask_user("PYREMOTEDATA_REMOTE_URI not set. Enter your remote URI (leave empty for 'io.erda.au.dk'): ", interactive) or 'io.erda.au.dk')
-    local_directory = os.getenv('PYREMOTEDATA_LOCAL_DIRECTORY', "")
-    remote_directory = os.getenv('PYREMOTEDATA_REMOTE_DIRECTORY', None) or ask_user("PYREMOTEDATA_REMOTE_DIRECTORY not set. Enter your remote directory: ", interactive)
+    remote_username = os.getenv(ENVIRONMENT_VARIABLES[0], None) or ask_user(f"{ENVIRONMENT_VARIABLES[0]} not set. Enter your remote name: ", interactive)
+    remote_uri = os.getenv(ENVIRONMENT_VARIABLES[1], None) or (ask_user(f"{ENVIRONMENT_VARIABLES[1]} not set. Enter your remote URI (leave empty for 'io.erda.au.dk'): ", interactive) or 'io.erda.au.dk')
+    local_directory = os.getenv(ENVIRONMENT_VARIABLES[2], "")
+    remote_directory = os.getenv(ENVIRONMENT_VARIABLES[3], None) or ask_user(f"{ENVIRONMENT_VARIABLES[3]} not set. Enter your remote directory: ", interactive)
     
     return remote_username, remote_uri, local_directory, remote_directory
 
@@ -30,26 +37,9 @@ def remove_config():
 def create_default_config(interactive=True):
     remote_username, remote_uri, local_directory, remote_directory = get_environment_variables(interactive)
 
-    # TODO: Remove unnecessary config options!
     yaml_content = f"""
-# Mounting configuration (NOT USED AT THE MOMENT - TODO: Implement or remove)
-mount:
-    # Remote configuration
-    remote: "YOUR_REMOTE_NAME_HERE"
-    remote_subdir: "YOUR_REMOTE_DIRECTORY_HERE"
-    local: "YOUR_LOCAL_MOUNT_POINT_HERE"
-
-    # Rclone configuration (Can be left as-is)
-    rclone:
-        vfs-cache-mode: "full"
-        vfs-read-chunk-size: "1M"
-        vfs-cache-max-age: "10h"
-        vfs-cache-max-size: "500G"
-        max-read-ahead: "1M"
-        dir-cache-time: "15m"
-        fast-list: true
-        transfers: 10
-        daemon: true
+# IMPORTANT: If you want to change this config manually and permanently, set this to 'false'
+validate: true
 
 implicit_mount:
     # Remote configuration
@@ -85,9 +75,9 @@ implicit_mount:
     module_logger.info("Created default config file at {}".format(CONFIG_PATH))
     module_logger.info("OBS: It is **strongly** recommended that you **check the config file** and make sure that it is correct before using pyRemoteData.")
 
-def get_config():  
+def get_config(validate : bool=True):  
     if not os.path.exists(CONFIG_PATH):
-        interactive = os.getenv("PYREMOTEDATA_AUTO", "no").lower().strip() != "yes"
+        interactive = os.getenv("PYREMOTEDATA_AUTO", "yes").lower().strip() != "yes"
         if not interactive or ask_user("Config file not found. Create default config file? (y/n): ", interactive).lower().strip() == 'y':
             create_default_config(interactive)
         else:
@@ -99,37 +89,49 @@ def get_config():
         except yaml.YAMLError as exc:
             module_logger.error(exc)
             return None
-    
+
+    # Early return if no validation is applied
+    if not validate or not config_data["validate"]:
+        return config_data
+
     # Check if environment variables match config (config/cache invalidation)
     invalid = False
-    for k, ek, v in zip(["user", "remote", "local_dir", "default_remote_dir"], ["PYREMOTEDATA_REMOTE_USERNAME", "PYREMOTEDATAA_REMOTE_URI", "PYREMOTEDATA_LOCAL_DIRECTORY", "PYREMOTEDATA_REMOTE_DIRECTORY"], get_environment_variables()):
+    for k, ek, v in zip(
+        ["user", "remote", "local_dir", "default_remote_dir"], 
+        ENVIRONMENT_VARIABLES, 
+        get_environment_variables()
+    ):
         expected = config_data["implicit_mount"][k]
         if expected != v and not (expected is None and v == ""):
             module_logger.warning(f"Invalid config detected, auto regenerating from scratch: Expected '{expected}' for '{k}' ({ek}), but got '{v}'.")
             invalid = True
+    
     if invalid:
         remove_config()
-        return get_config()            
+        if interactive:
+            return get_config()
+        else:
+            raise RuntimeError(f'Aborted due to invalid config.')
 
     return config_data
 
-def get_this_config(this):
+def get_this_config(this, **kwargs):
     if not isinstance(this, str):
         raise TypeError("Expected string, got {}".format(type(this)))
     # Load config
-    cfg = get_config()
+    cfg = get_config(**kwargs)
     if this not in cfg:
         raise ValueError("Key {} not found in config".format(this))
     return cfg[this]
 
-def get_mount_config():
-    return get_this_config('mount')
+def get_mount_config(**kwargs):
+    return get_this_config('mount', **kwargs)
 
-def get_dataloader_config():
-    return get_this_config('dataloader')
+def get_dataloader_config(**kwargs):
+    return get_this_config('dataloader', **kwargs)
 
-def get_implicit_mount_config():
-    return get_this_config('implicit_mount')
+def get_implicit_mount_config(**kwargs):
+    return get_this_config('implicit_mount', **kwargs)
 
 def deparse_args(config, what):
     if not isinstance(what, str):

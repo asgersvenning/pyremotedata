@@ -22,7 +22,7 @@ import time
 import uuid
 from queue import Queue
 from random import choices, shuffle
-from typing import List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 from pyremotedata import CLEAR_LINE, ESC_EOL, main_logger
 from pyremotedata.config import get_implicit_mount_config
@@ -36,15 +36,11 @@ class ImplicitMount:
 
     OBS: The attributes of this method should not be used unless for development or advanced use cases, all responsibility in this case is on the user.
 
-    TODO: This class relies on a proper SSH setup on your machine (and the remote server) for passwordless SFTP. 
-    Thoroughly test this on a fresh install, and add instructions, and the possibility for automatic setup, for setting up passwordless SFTP and SSH keys, as well as proper error handling for when this is not set up correctly.
-
-    TODO: Add further arguments such as port, password, etc. to the constructor.
-
     Args:
         user (Optional[str]): The username to use for connecting to the remote directory.
         password (Optional[str]): The *SFTP* password to possibly use when connecting to the remote host.
         remote (Optional[str]): The remote server to connect to.
+        port (int): The port to connect to (default: 2222).
         verbose (bool): If True, print the commands executed by the class.
 
     .. <Sphinx comment
@@ -73,10 +69,11 @@ class ImplicitMount:
             user : Optional[str]=None, 
             password : Optional[str]=None,
             remote : Optional[str]=None, 
+            port : int=2222,
             verbose : bool=main_logger.isEnabledFor(logging.DEBUG)
         ):
         # Default argument configuration and type checking
-        self.default_config = get_implicit_mount_config()
+        self.default_config = get_implicit_mount_config(validate=(isinstance(user, str) and isinstance(remote, str)))
         if user is None:
             user = self.default_config['user']
         if remote is None:
@@ -92,6 +89,7 @@ class ImplicitMount:
         self.user = user
         self.password = password or ""
         self.remote = remote
+        self.port = port
         self.lftp_shell = None
         self.verbose = verbose
 
@@ -296,7 +294,7 @@ class ImplicitMount:
         if self.verbose:
             main_logger.info(f"Mounting {self.remote} as {self.user}")
         # "Mount" the remote directory using an lftp shell with the sftp protocol and the specified user and remote, and the specified lftp settings
-        lftp_mount_cmd = f'open -u {self.user},{self.password} -p 2222 sftp://{self.remote};{lftp_settings_str}'
+        lftp_mount_cmd = f'open -u {self.user},{self.password} -p {self.port} sftp://{self.remote};{lftp_settings_str}'
         if self.verbose:
             main_logger.info(f"Executing command: lftp")
         # Start the lftp shell
@@ -684,12 +682,20 @@ class IOHandler(ImplicitMount):
     """
     This is a high-level wrapper for the ImplicitMount class, which provides human-friendly methods for downloading files from a remote directory without the need to have technical knowledge on how to use LFTP.
 
+    To avoid SSH setup use `lftp_settings = {'sftp:connect-program' : 'ssh -a -x -i <keyfile>'}, user = <USER>, remote = <REMOTE>`.
+
     OBS: The attributes of this method should not be used unless for development or advanced use cases, all responsibility in this case is on the user.
 
     Args:
         local_dir (str): The local directory to use for downloading files. If None, a temporary directory will be used (suggested, unless truly necessary).
         user_confirmation (bool): If True, the user will be asked for confirmation before deleting files. (strongly suggested for debugging and testing)
         clean (bool): If True, the local directory will be cleaned after the context manager is exited. (suggested, if not it may lead to rapid exhaustion of disk space)
+        lftp_settings (Optional[Dict[str, str]]): Add any additional settings or setting overrides (see https://lftp.yar.ru/lftp-man.html). 
+            The most common usecase is properly to use `lftp_settings = {'sftp:connect-program' : 'ssh -a -x -i <keyfile>'}`.
+            The defaults can also be overwritten by changing the `PyRemoteData` config file.
+        user (Optional[str]): The username to use for connecting to the remote directory.
+        password (Optional[str]): The *SFTP* password to possibly use when connecting to the remote host.
+        remote (Optional[str]): The remote server to connect to.
         **kwargs: Keyword arguments to pass to the ImplicitMount constructor.
 
     .. <Sphinx comment
@@ -698,7 +704,6 @@ class IOHandler(ImplicitMount):
         clone(): Clone the current remote directory to the given local destination.
         get_file_index(): Get a list of files in the current directory.
         cache_file_index(): Cache the file index for the current directory.
-        store_last(): TODO: NOT IMPLEMENTED! Move the last downloaded file or directory to the given destination.
         clean(): Clean the local directory.
         clean_last(): Clean the last downloaded file or directory.
     .. Sphinx comment>
@@ -708,9 +713,18 @@ class IOHandler(ImplicitMount):
             local_dir : Optional[str]=None, 
             user_confirmation : bool=False, 
             clean: bool=False, 
+            user : Optional[str]=None, 
+            password : Optional[str]=None,
+            remote : Optional[str]=None, 
+            lftp_settings : Optional[Dict[str, str]]=None,
             **kwargs
         ):
-        super().__init__(**kwargs)
+        super().__init__(
+            user=user,
+            password=password,
+            remote=remote,
+            **kwargs
+        )
         if local_dir is None or local_dir == "":
             if self.default_config['local_dir'] is None or self.default_config['local_dir'] == "":
                 local_dir = tempfile.TemporaryDirectory().name
@@ -722,6 +736,7 @@ class IOHandler(ImplicitMount):
         self.local_dir = local_dir
         self.user_confirmation = user_confirmation
         self.do_clean = clean
+        self.lftp_settings = lftp_settings
         self.last_download = None
         self.last_type = None
         self.cache = {}
@@ -734,7 +749,10 @@ class IOHandler(ImplicitMount):
         raise TypeError("'lpwd()' should not be used for 'IOHandler' objects, use the 'local_dir' attribute instead.")
 
     def __enter__(self) -> "IOHandler":
-        self.mount()
+        """
+        Opens the remote connection in a background shell.
+        """
+        self.mount(self.lftp_settings or {})
         self.lcd(self.local_dir)
 
         # Print local directory:
