@@ -391,6 +391,15 @@ class ImplicitMount:
         """
         if output is None:
             output = blocking
+        # Construct and return the absolute local path
+        file_name = os.path.basename(remote_path)
+        abs_local_path = os.path.abspath(os.path.join(local_destination, file_name))
+        if os.path.exists(abs_local_path):
+            while os.path.exists(subdir := os.path.join(local_destination, str(uuid.uuid4()))):
+                pass
+            os.makedirs(subdir)
+            return self.pget(remote_path=remote_path, local_destination=subdir, blocking=blocking, execute=execute, output=output, **kwargs)
+
         default_args = {'n': 5}
         args = {**default_args, **kwargs}
         formatted_args = self.format_options(**args)
@@ -404,9 +413,6 @@ class ImplicitMount:
         if not execute:
             return exec_output
         
-        # Construct and return the absolute local path
-        file_name = os.path.basename(remote_path)
-        abs_local_path = os.path.abspath(os.path.join(local_destination, file_name))
         return abs_local_path
     
     def put(
@@ -866,7 +872,7 @@ class IOHandler(ImplicitMount):
             blocking : bool=True,
             n : int=5, 
             **kwargs
-        ) -> List[str]:
+        ):
         """
         Downloads a list of files from the remote directory to the given local destination.
 
@@ -891,21 +897,35 @@ class IOHandler(ImplicitMount):
         elif local_destination is None:
             local_destination = self.local_dir
         local_files = [os.path.join(local_destination, os.path.basename(r)) for r in remote_paths]
+        existing_files = [file for file in local_files if os.path.exists(file)]
+        if existing_files:
+            duplicates = [file in existing_files for file in local_files]
+            duplicate_remote_paths = [file for file, flag in zip(remote_paths, duplicates) if flag]
+            remote_paths = [file for file, flag in zip(remote_paths, duplicates) if not flag]
+            local_files = [file for file, flag in zip(local_files, duplicates) if not flag]
         
         # Assemble the mget command, options and arguments
         multi_command = f'mget -O "{local_destination}" -P {n} ' + ' '.join([f'"{r}"' for r in remote_paths])
         # Execute the mget command
         self.execute_command(multi_command, output=blocking, blocking=blocking)
         # Check if the files were downloaded TODO: is this too slow? Should we just assume that the files were downloaded for efficiency?
+        missing_files = []
         for l in local_files:
             if not os.path.exists(l):
-                raise RuntimeError(f"Failed to download {l}")
+                missing_files.append(l)
+        if missing_files:
+            raise RuntimeError(f"Failed to download files {missing_files}")
 
         # Store the last download for later use (nice for debugging)
         self.last_download = local_destination
         self.last_type = "multi"
         # Return the local paths of the downloaded files
-        return local_files
+        if not existing_files:
+            return local_files
+        else:
+            while os.path.exists(subdir := os.path.join(local_destination, str(uuid.uuid4()))):
+                continue
+            return local_files + self._multi_download(remote_paths=duplicate_remote_paths, local_destination=subdir, blocking=blocking, n=n, **kwargs)
 
     def clone(
             self, 
@@ -1264,7 +1284,8 @@ class RemotePathIterator:
                 # Delete files if the queue is too large
                 while self.delete_queue.qsize() > self.n_local_files:
                     try:
-                        os.remove(self.delete_queue.get(timeout=1))
+                        del_file = self.delete_queue.get(timeout=1)
+                        os.remove(del_file)
                     except Exception as e:
                         main_logger.warning(f"Failed to remove file: {e}")
 
