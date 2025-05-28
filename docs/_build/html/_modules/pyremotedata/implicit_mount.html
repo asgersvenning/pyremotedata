@@ -45,11 +45,11 @@
   
   
   
-    <title>pyremotedata.implicit_mount &#8212; PyRemoteData 0.0.47 documentation</title>
+    <title>pyremotedata.implicit_mount &#8212; PyRemoteData 0.0.48 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=75810a84" />
     <link rel="stylesheet" type="text/css" href="../../_static/material.css?v=79c92029" />
     <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=fb6b2637" />
-    <script src="../../_static/documentation_options.js?v=4f34e5f2"></script>
+    <script src="../../_static/documentation_options.js?v=a72e4630"></script>
     <script src="../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="canonical" href="_build/html/_modules/pyremotedata/implicit_mount.html" />
@@ -78,7 +78,7 @@
   <nav class="md-header-nav md-grid">
     <div class="md-flex navheader">
       <div class="md-flex__cell md-flex__cell--shrink">
-        <a href="../../index.html" title="PyRemoteData 0.0.47 documentation"
+        <a href="../../index.html" title="PyRemoteData 0.0.48 documentation"
            class="md-header-nav__button md-logo">
           
             &nbsp;
@@ -164,7 +164,7 @@
   <nav class="md-tabs" data-md-component="tabs">
     <div class="md-tabs__inner md-grid">
       <ul class="md-tabs__list">
-          <li class="md-tabs__item"><a href="../../index.html" class="md-tabs__link">PyRemoteData 0.0.47 documentation</a></li>
+          <li class="md-tabs__item"><a href="../../index.html" class="md-tabs__link">PyRemoteData 0.0.48 documentation</a></li>
           <li class="md-tabs__item"><a href="../index.html" class="md-tabs__link">Module code</a></li>
       </ul>
     </div>
@@ -177,13 +177,13 @@
               <div class="md-sidebar__inner">
                 <nav class="md-nav md-nav--primary" data-md-level="0">
   <label class="md-nav__title md-nav__title--site" for="__drawer">
-    <a href="../../index.html" title="PyRemoteData 0.0.47 documentation" class="md-nav__button md-logo">
+    <a href="../../index.html" title="PyRemoteData 0.0.48 documentation" class="md-nav__button md-logo">
       
         <img src="../../_static/" alt=" logo" width="48" height="48">
       
     </a>
     <a href="../../index.html"
-       title="PyRemoteData 0.0.47 documentation">PyRemoteData</a>
+       title="PyRemoteData 0.0.48 documentation">PyRemoteData</a>
   </label>
     <div class="md-nav__source">
       <a href="https://github.com/asgersvenning/pyremotedata" title="Go to repository" class="md-source" data-md-source="github">
@@ -635,6 +635,15 @@
 <span class="sd">        """</span>
         <span class="k">if</span> <span class="n">output</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">output</span> <span class="o">=</span> <span class="n">blocking</span>
+        <span class="c1"># Construct and return the absolute local path</span>
+        <span class="n">file_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">remote_path</span><span class="p">)</span>
+        <span class="n">abs_local_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">local_destination</span><span class="p">,</span> <span class="n">file_name</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">abs_local_path</span><span class="p">):</span>
+            <span class="k">while</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">subdir</span> <span class="o">:=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">local_destination</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()))):</span>
+                <span class="k">pass</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">subdir</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">pget</span><span class="p">(</span><span class="n">remote_path</span><span class="o">=</span><span class="n">remote_path</span><span class="p">,</span> <span class="n">local_destination</span><span class="o">=</span><span class="n">subdir</span><span class="p">,</span> <span class="n">blocking</span><span class="o">=</span><span class="n">blocking</span><span class="p">,</span> <span class="n">execute</span><span class="o">=</span><span class="n">execute</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="n">output</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
         <span class="n">default_args</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'n'</span><span class="p">:</span> <span class="mi">5</span><span class="p">}</span>
         <span class="n">args</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">default_args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">}</span>
         <span class="n">formatted_args</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">format_options</span><span class="p">(</span><span class="o">**</span><span class="n">args</span><span class="p">)</span>
@@ -648,9 +657,6 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="n">execute</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">exec_output</span>
         
-        <span class="c1"># Construct and return the absolute local path</span>
-        <span class="n">file_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">remote_path</span><span class="p">)</span>
-        <span class="n">abs_local_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">local_destination</span><span class="p">,</span> <span class="n">file_name</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">abs_local_path</span></div>
 
     
@@ -1150,7 +1156,7 @@
             <span class="n">blocking</span> <span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="n">n</span> <span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> 
             <span class="o">**</span><span class="n">kwargs</span>
-        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Downloads a list of files from the remote directory to the given local destination.</span>
 
@@ -1175,21 +1181,35 @@
         <span class="k">elif</span> <span class="n">local_destination</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">local_destination</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_dir</span>
         <span class="n">local_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">local_destination</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">r</span><span class="p">))</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">remote_paths</span><span class="p">]</span>
+        <span class="n">existing_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">file</span> <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">local_files</span> <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">file</span><span class="p">)]</span>
+        <span class="k">if</span> <span class="n">existing_files</span><span class="p">:</span>
+            <span class="n">duplicates</span> <span class="o">=</span> <span class="p">[</span><span class="n">file</span> <span class="ow">in</span> <span class="n">existing_files</span> <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">local_files</span><span class="p">]</span>
+            <span class="n">duplicate_remote_paths</span> <span class="o">=</span> <span class="p">[</span><span class="n">file</span> <span class="k">for</span> <span class="n">file</span><span class="p">,</span> <span class="n">flag</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">remote_paths</span><span class="p">,</span> <span class="n">duplicates</span><span class="p">)</span> <span class="k">if</span> <span class="n">flag</span><span class="p">]</span>
+            <span class="n">remote_paths</span> <span class="o">=</span> <span class="p">[</span><span class="n">file</span> <span class="k">for</span> <span class="n">file</span><span class="p">,</span> <span class="n">flag</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">remote_paths</span><span class="p">,</span> <span class="n">duplicates</span><span class="p">)</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">flag</span><span class="p">]</span>
+            <span class="n">local_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">file</span> <span class="k">for</span> <span class="n">file</span><span class="p">,</span> <span class="n">flag</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">local_files</span><span class="p">,</span> <span class="n">duplicates</span><span class="p">)</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">flag</span><span class="p">]</span>
         
         <span class="c1"># Assemble the mget command, options and arguments</span>
         <span class="n">multi_command</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">'mget -O "</span><span class="si">{</span><span class="n">local_destination</span><span class="si">}</span><span class="s1">" -P </span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s1"> '</span> <span class="o">+</span> <span class="s1">' '</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="sa">f</span><span class="s1">'"</span><span class="si">{</span><span class="n">r</span><span class="si">}</span><span class="s1">"'</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">remote_paths</span><span class="p">])</span>
         <span class="c1"># Execute the mget command</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">execute_command</span><span class="p">(</span><span class="n">multi_command</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="n">blocking</span><span class="p">,</span> <span class="n">blocking</span><span class="o">=</span><span class="n">blocking</span><span class="p">)</span>
         <span class="c1"># Check if the files were downloaded TODO: is this too slow? Should we just assume that the files were downloaded for efficiency?</span>
+        <span class="n">missing_files</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">local_files</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">l</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to download </span><span class="si">{</span><span class="n">l</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                <span class="n">missing_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">l</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">missing_files</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to download files </span><span class="si">{</span><span class="n">missing_files</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="c1"># Store the last download for later use (nice for debugging)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">last_download</span> <span class="o">=</span> <span class="n">local_destination</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">last_type</span> <span class="o">=</span> <span class="s2">"multi"</span>
         <span class="c1"># Return the local paths of the downloaded files</span>
-        <span class="k">return</span> <span class="n">local_files</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">existing_files</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">local_files</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">while</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">subdir</span> <span class="o">:=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">local_destination</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()))):</span>
+                <span class="k">continue</span>
+            <span class="k">return</span> <span class="n">local_files</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_multi_download</span><span class="p">(</span><span class="n">remote_paths</span><span class="o">=</span><span class="n">duplicate_remote_paths</span><span class="p">,</span> <span class="n">local_destination</span><span class="o">=</span><span class="n">subdir</span><span class="p">,</span> <span class="n">blocking</span><span class="o">=</span><span class="n">blocking</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="n">n</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 <div class="viewcode-block" id="IOHandler.clone">
 <a class="viewcode-back" href="../../IOHandler.html#pyremotedata.implicit_mount.IOHandler.clone">[docs]</a>
@@ -1572,7 +1592,8 @@
                 <span class="c1"># Delete files if the queue is too large</span>
                 <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">delete_queue</span><span class="o">.</span><span class="n">qsize</span><span class="p">()</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_local_files</span><span class="p">:</span>
                     <span class="k">try</span><span class="p">:</span>
-                        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">delete_queue</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+                        <span class="n">del_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">delete_queue</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">del_file</span><span class="p">)</span>
                     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                         <span class="n">main_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to remove file: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
