@@ -1282,7 +1282,7 @@ class RemotePathIterator:
                     break
 
                 # Delete files if the queue is too large
-                while self.delete_queue.qsize() > self.n_local_files:
+                while self.clear_local and self.delete_queue.qsize() > self.n_local_files:
                     try:
                         del_file = self.delete_queue.get(timeout=1)
                         os.remove(del_file)
@@ -1327,7 +1327,7 @@ class RemotePathIterator:
                 self.download_thread = None
                 time.sleep(0.01) # Wait a little to make sure the side-effects of the download thread are processed (race-condition) 
             # Clean up the temporary directory
-            while not self.download_queue.empty():
+            while self.clear_local and not self.download_queue.empty():
                 self.delete_queue.put(self.download_queue.get()[0])
             while not self.delete_queue.empty():
                     f = self.delete_queue.get()
