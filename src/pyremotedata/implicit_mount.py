@@ -1099,7 +1099,7 @@ class RemotePathIterator:
             batch_parallel : int=10,
             max_queued_batches : int=3,
             n_local_files : int=2*3*64,
-            clear_local : bool=False, 
+            clear_local : bool=True, 
             **kwargs
         ):
         self.io_handler = io_handler
