@@ -36,7 +36,7 @@ class TestImplicitMount(unittest.TestCase):
         module_logger.info("Basic functionality test passed.")
     
     @wrapt_timeout_decorator.timeout(30)
-    def test_error_assignment():
+    def test_error_assignment(self):
         module_logger.info("Running stress test on correct error assignment.")
         with patch.dict('os.environ', {
             'PYREMOTEDATA_REMOTE_USERNAME': 'foo',
