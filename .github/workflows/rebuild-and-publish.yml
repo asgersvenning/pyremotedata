@@ -51,6 +51,7 @@ jobs:
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
         git fetch origin
         git checkout master
+        git add pyproject.toml
         git commit -m "Bump version to ${{ env.new_version }} and update documentation [skip ci]"
         git push origin master
       env:
