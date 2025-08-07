@@ -57,7 +57,7 @@ implicit_mount:
         'ftp:sync-mode': 'off'  # Enable this to disable synchronization mode, which is used to prevent data corruption when downloading multiple files in parallel
         'cmd:parallel': 1  # If you write bespoke scripts that execute multiple commands in parallel, you can increase this value.
         'net:connection-limit': 0  # No limit on connections, maximizing throughput.
-        'cmd:verify-path': "off"  # To reduce latency, we skip path verification.
+        'cmd:verify-path': "on"  # To reduce latency, we skip path verification.
         'cmd:verify-host': "on"  # For initial security, it's good to verify the host.
         'sftp:size-read': 0x5000  # Increased block size for better read throughput.
         'sftp:size-write': 0x5000  # Increased block size for better write throughput.

@@ -45,10 +45,21 @@ jobs:
         echo "new_version=$(cat new_version.txt)" >> $GITHUB_ENV
         rm new_version.txt
     
+    - name: Commit new version to main branch
+      run: |
+        git config --global user.name 'github-actions[bot]'
+        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+        git fetch origin
+        git checkout master
+        git commit -m "Bump version to ${{ env.new_version }} and update documentation [skip ci]"
+        git push origin master
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
     - name: Build the package
       run: |
         python -m build
-    
+
     - name: Publish to PyPI
       env:
         PYPI_USERNAME: ${{ secrets.PYPI_USERNAME }}
