@@ -9,7 +9,7 @@
 import wrapt_timeout_decorator
 import unittest
 from unittest.mock import patch
-import os, time
+import os, time, uuid
 
 from pyremotedata import module_logger
 
@@ -34,6 +34,40 @@ class TestImplicitMount(unittest.TestCase):
             from pyremotedata.config import remove_config
             remove_config()
         module_logger.info("Basic functionality test passed.")
+    
+    @wrapt_timeout_decorator.timeout(30)
+    def test_error_assignment():
+        module_logger.info("Running stress test on correct error assignment.")
+        with patch.dict('os.environ', {
+            'PYREMOTEDATA_REMOTE_USERNAME': 'foo',
+            'PYREMOTEDATA_REMOTE_URI': '0.0.0.0',
+            'PYREMOTEDATA_REMOTE_DIRECTORY': 'upload',
+            'PYREMOTEDATA_AUTO': 'yes'
+        }):
+            n_exp_err = 1000
+            # Import the module
+            from pyremotedata.implicit_mount import IOHandler
+            # Open the connection
+            with IOHandler() as io:
+                module_logger.info("Output before stress test:")
+                module_logger.info(io.ls())
+                # Interleave valid and invalid commands
+                n_err = 0
+                for _ in range(n_exp_err):
+                    try:
+                        print(io.cd(str(uuid.uuid4())))
+                    except:
+                        n_err += 1
+                        pass
+                    io.ls()
+                module_logger.info("Output after stress test:")
+                module_logger.info(io.ls())
+            
+            assert n_err == n_exp_err, f"Invalid number of errors generated: {n_err}, expected: {n_exp_err}"
+            
+            from pyremotedata.config import remove_config
+            remove_config()
+        module_logger.info("Error assignment test passed.")
 
 class TestUploadDownload(unittest.TestCase):
     @wrapt_timeout_decorator.timeout(25)
