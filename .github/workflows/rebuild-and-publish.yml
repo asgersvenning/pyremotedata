@@ -60,14 +60,10 @@ jobs:
       run: |
         make -f Makefile html
 
-    - name: Commit updated version
-      run: |
-        git config --global user.name 'github-actions[bot]'
-        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-        git fetch origin
-        git checkout master
-        git add pyproject.toml docs/_build/html
-        git commit -m "Bump version to ${{ env.new_version }} and update documentation [skip ci]"
-        git push origin master
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Deploy documentation to gh-pages branch
+      uses: peaceiris/actions-gh-pages@v4
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_branch: gh-pages
+        publish_dir: docs/_build/html
+        commit_message: "Update documentation for version ${{ env.new_version }} [skip ci]"
