@@ -5,7 +5,7 @@ import time
 import warnings
 from queue import Queue
 from threading import Thread
-from typing import Callable, List, Optional, Tuple, Union
+from typing import Callable, Optional, Union
 
 import torch
 from torch.utils.data import DataLoader, IterableDataset  # , TensorDataset
@@ -50,7 +50,7 @@ class RemotePathDataset(IterableDataset):
     Yields:
         (tuple): A tuple containing the following elements:
             - (torch.Tensor): The image as a tensor.
-            - (Union[str, List[int]]): The label as the remote path or as a list of class indices.
+            - (Union[str, list[int]]): The label as the remote path or as a list of class indices.
             - (Optional[str]): The local path, if `return_local_path` is True.
             - (Optional[str]): The remote path, if `return_remote_path` is True.
     '''
@@ -342,7 +342,7 @@ class RemotePathDataset(IterableDataset):
     def __len__(self):
         return len(self.remote_path_iterator)
     
-    def parse_item(self, local_path : str, remote_path : str) -> Union[Tuple[torch.Tensor, Union[str, List[int]]], Tuple[torch.Tensor, Union[str, List[int]], str], Tuple[torch.Tensor, Union[str, List[int]], str, str]]:
+    def parse_item(self, local_path : str, remote_path : str) -> Union[tuple[torch.Tensor, Union[str, list[int]]], tuple[torch.Tensor, Union[str, list[int]], str], tuple[torch.Tensor, Union[str, list[int]], str, str]]:
         ## Image processing
         # Check if image format is supported (jpeg/jpg/png)
         image_type = os.path.splitext(local_path)[-1]
