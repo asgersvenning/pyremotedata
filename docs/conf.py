@@ -36,6 +36,7 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 html_theme = 'sphinx_material'
 html_css_files = ['custom.css']
+html_extra_path = ['.nojekyll']
 html_static_path = ['_static']
 html_baseurl = '_build/html/'
 

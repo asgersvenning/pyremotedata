@@ -71,7 +71,6 @@ jobs:
     - name: Build Sphinx documentation
       run: |
         make -f Makefile html
-        touch docs/_build/html/.nojekyll
 
     - name: Deploy documentation to gh-pages branch
       uses: peaceiris/actions-gh-pages@v4
@@ -80,3 +79,4 @@ jobs:
         publish_branch: gh-pages
         publish_dir: docs/_build/html
         commit_message: "Update documentation for version ${{ env.new_version }} [skip ci]"
+        force_orphan: true
