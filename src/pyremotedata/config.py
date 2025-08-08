@@ -5,7 +5,16 @@ import yaml
 from pyremotedata import module_logger
 
 
-def ask_user(question, interactive=True):
+def ask_user(question: str, interactive: bool = True) -> str:
+    """Prompt the user for input if interactive mode is enabled.
+
+    Args:
+        question: The prompt to display.
+        interactive: If False, raises an error instead of prompting.
+
+    Returns:
+        The user input.
+    """
     if not interactive:
         raise RuntimeError("Cannot ask user for input when interactive=False: " + question)
     return input(question)
@@ -17,24 +26,42 @@ ENVIRONMENT_VARIABLES = (
     "PYREMOTEDATA_REMOTE_DIRECTORY"
 )
 
-def get_environment_variables(interactive=True):
+def get_environment_variables(interactive: bool = True) -> tuple[str, str, str, str]:
+    """Read configuration from environment or prompt interactively.
+
+    Args:
+        interactive: If True, prompt for missing values. If False,
+            missing values will raise in ``ask_user``.
+
+    Returns:
+        Tuple of (remote_username, remote_uri, local_directory, remote_directory).
+    """
     remote_username = os.getenv(ENVIRONMENT_VARIABLES[0], None) or ask_user(f"{ENVIRONMENT_VARIABLES[0]} not set. Enter your remote name: ", interactive)
     remote_uri = os.getenv(ENVIRONMENT_VARIABLES[1], None) or (ask_user(f"{ENVIRONMENT_VARIABLES[1]} not set. Enter your remote URI (leave empty for 'io.erda.au.dk'): ", interactive) or 'io.erda.au.dk')
     local_directory = os.getenv(ENVIRONMENT_VARIABLES[2], "")
     remote_directory = os.getenv(ENVIRONMENT_VARIABLES[3], None) or ask_user(f"{ENVIRONMENT_VARIABLES[3]} not set. Enter your remote directory: ", interactive)
-    
+
     return remote_username, remote_uri, local_directory, remote_directory
 
 CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'pyremotedata_config.yaml')
 
-def remove_config():
+def remove_config() -> None:
+    """Delete the stored configuration file, if present."""
     if os.path.exists(CONFIG_PATH):
         os.remove(CONFIG_PATH)
         module_logger.info("Removed config file at {}".format(CONFIG_PATH))
     else:
         module_logger.info("No config file found at {}".format(CONFIG_PATH))
 
-def create_default_config(interactive=True):
+def create_default_config(interactive: bool = True) -> None:
+    """Create a default YAML configuration file.
+
+    Values are sourced from the environment or prompted interactively depending
+    on the ``interactive`` flag.
+
+    Args:
+        interactive: Whether to prompt for missing values.
+    """
     remote_username, remote_uri, local_directory, remote_directory = get_environment_variables(interactive)
 
     yaml_content = f"""
@@ -75,7 +102,20 @@ implicit_mount:
     module_logger.info("Created default config file at {}".format(CONFIG_PATH))
     module_logger.info("OBS: It is **strongly** recommended that you **check the config file** and make sure that it is correct before using pyRemoteData.")
 
-def get_config(validate : bool=True):  
+def get_config(validate: bool = True) -> dict | None:
+    """Load configuration from disk, optionally validating against environment.
+
+    When ``validate`` is True, the loaded configuration is compared against the
+    current environment variables. If a mismatch is found, the config file is
+    removed and recreated from scratch to prevent stale settings.
+
+    Args:
+        validate: Whether to validate against environment.
+
+    Returns:
+        The loaded configuration dictionary, or None if parsing
+        fails.
+    """
     if not os.path.exists(CONFIG_PATH):
         interactive = os.getenv("PYREMOTEDATA_AUTO", "yes").lower().strip() != "yes"
         if not interactive or ask_user("Config file not found. Create default config file? (y/n): ", interactive).lower().strip() == 'y':
@@ -115,7 +155,16 @@ def get_config(validate : bool=True):
 
     return config_data
 
-def get_this_config(this, **kwargs):
+def get_this_config(this: str, **kwargs):
+    """Return a specific top-level section from the loaded configuration.
+
+    Args:
+        this: The top-level key to retrieve.
+        **kwargs: Forwarded to :func:`get_config`.
+
+    Returns:
+        The sub-configuration value.
+    """
     if not isinstance(this, str):
         raise TypeError("Expected string, got {}".format(type(this)))
     # Load config
@@ -133,7 +182,16 @@ def get_dataloader_config(**kwargs):
 def get_implicit_mount_config(**kwargs):
     return get_this_config('implicit_mount', **kwargs)
 
-def deparse_args(config, what):
+def deparse_args(config: dict, what: str) -> str:
+    """Convert a nested dict under ``what`` to a CLI-like string of options.
+
+    Args:
+        config: Configuration mapping.
+        what: Key whose nested dict should be converted.
+
+    Returns:
+        Space-separated option string.
+    """
     if not isinstance(what, str):
         raise TypeError("Expected string, got {}".format(type(what)))
     if what not in config:

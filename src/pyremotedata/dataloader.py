@@ -5,7 +5,7 @@ import time
 import warnings
 from queue import Queue
 from threading import Thread
-from typing import Callable, Optional, Union
+from typing import Callable
 
 import torch
 from torch.utils.data import DataLoader, IterableDataset  # , TensorDataset
@@ -35,17 +35,17 @@ class RemotePathDataset(IterableDataset):
     Where `n = (hierarchical - 1)` and `level_0` is the leaf level.
 
     Args:
-        remote_path_iterator (RemotePathIterator): The :py:class:`pyremotedata.implicit_mount.RemotePathIterator` to create the dataset from.
-        prefetch (int): The number of items to prefetch from the :py:class:`pyremotedata.implicit_mount.RemotePathIterator`.
-        transform (callable, optional): A function/transform that takes in an image as a :py:class:`torch.Tensor` and returns a transformed version.
-        target_transform (callable, optional): A function/transform that takes in the label (after potential parsing by `parse_hierarchical`) and transforms it.
-        device (torch.device, optional): The device to move the tensors to.
-        dtype (torch.dtype, optional): The data type to convert the tensors to.
-        hierarchical (int, optional): The number of hierarchical levels to use for the labels. Default: 0, i.e. no hierarchy.
-        hierarchy_parser (callable, optional): A function to parse the hierarchical levels from the remote path. Default: None, i.e. use the default parser.
-        return_remote_path (bool, optional): Whether to return the remote path. Default: False.
-        return_local_path (bool, optional): Whether to return the local path. Default: False.
-        verbose (bool, optional): Whether to print verbose output. Default: False.
+        remote_path_iterator: The :py:class:`pyremotedata.implicit_mount.RemotePathIterator` to create the dataset from.
+        prefetch: The number of items to prefetch from the :py:class:`pyremotedata.implicit_mount.RemotePathIterator`.
+        transform: A function/transform that takes in an image as a :py:class:`torch.Tensor` and returns a transformed version.
+        target_transform: A function/transform that takes in the label (after potential parsing by `parse_hierarchical`) and transforms it.
+        device: The device to move the tensors to.
+        dtype: The data type to convert the tensors to.
+        hierarchical: The number of hierarchical levels to use for the labels. Default: 0, i.e. no hierarchy.
+        hierarchy_parser: A function to parse the hierarchical levels from the remote path. Default: None, i.e. use the default parser.
+        return_remote_path: Whether to return the remote path. Default: False.
+        return_local_path: Whether to return the local path. Default: False.
+        verbose: Whether to print verbose output. Default: False.
 
     Yields:
         (tuple): A tuple containing the following elements:
@@ -58,12 +58,12 @@ class RemotePathDataset(IterableDataset):
             self, 
             remote_path_iterator : "RemotePathIterator", 
             prefetch: int=64, 
-            transform : Optional[Callable]=None, 
-            target_transform : Optional[Callable]=None, 
-            device: Union["torch.device", None]=None, 
-            dtype: Union[torch.dtype, None]=None, 
+            transform : Callable | None=None, 
+            target_transform : Callable | None=None, 
+            device: torch.device | None=None, 
+            dtype: torch.dtype | None=None, 
             hierarchical: int=0, 
-            hierarchy_parser: Optional[Callable]=None,
+            hierarchy_parser: Callable | None=None,
             shuffle: bool=False,
             return_remote_path: bool=False, 
             return_local_path: bool=False, 
@@ -342,7 +342,15 @@ class RemotePathDataset(IterableDataset):
     def __len__(self):
         return len(self.remote_path_iterator)
     
-    def parse_item(self, local_path : str, remote_path : str) -> Union[tuple[torch.Tensor, Union[str, list[int]]], tuple[torch.Tensor, Union[str, list[int]], str], tuple[torch.Tensor, Union[str, list[int]], str, str]]:
+    def parse_item(
+            self, 
+            local_path : str, 
+            remote_path : str
+        ) -> tuple[
+            torch.Tensor | str | list[int], 
+            tuple[torch.Tensor, str | list[int], str], 
+            tuple[torch.Tensor, str | list[int], str, str]
+        ]:
         ## Image processing
         # Check if image format is supported (jpeg/jpg/png)
         image_type = os.path.splitext(local_path)[-1]
@@ -408,9 +416,9 @@ class RemotePathDataLoader(DataLoader):
     - batch_sampler
 
     Args:
-        dataset (RemotePathDataset): The :py:class:`pyremotedata.dataloader.RemotePathDataset` dataset to load from.
-        num_workers (int, optional): The number of worker threads to use for loading. Default: 0. Must be greater than 0.
-        shuffle (bool, optional): Whether to shuffle the dataset between epochs. Default: False.
+        dataset: The :py:class:`pyremotedata.dataloader.RemotePathDataset` dataset to load from.
+        num_workers: The number of worker threads to use for loading. Default: 0. Must be greater than 0.
+        shuffle: Whether to shuffle the dataset between epochs. Default: False.
     """
     def __init__(self, dataset: "RemotePathDataset", num_workers : int=0, shuffle : bool=False, *args, **kwargs):
         # Snipe arguments from the user which would break the custom dataloader (e.g. sampler, shuffle, etc.)

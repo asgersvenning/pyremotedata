@@ -70,7 +70,7 @@ jobs:
     
     - name: Build Sphinx documentation
       run: |
-        make -f Makefile html
+        cd docs && make -f Makefile html && cd ..
 
     - name: Deploy documentation to gh-pages branch
       uses: peaceiris/actions-gh-pages@v4
