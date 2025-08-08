@@ -6,7 +6,7 @@ PyRemoteData can be installed using pip from PyPI or from source.
 Requirements
 -----------
 
-* Python 3.9 or higher
+* Python 3.10 or higher
 * SSH client (for SFTP connections)
 * LFTP (for high-performance file transfers)
 
