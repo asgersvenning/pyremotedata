@@ -29,6 +29,7 @@ jobs:
         pip install setuptools wheel twine
         pip install build
         pip install sphinx sphinx-material
+        pip install sphinx-autodoc-typehints
         pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
 
     - name: Install package in editable mode
