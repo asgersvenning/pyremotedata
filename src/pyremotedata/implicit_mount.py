@@ -588,7 +588,7 @@ class ImplicitMount:
             output = sanitize_path([], self.execute_command(f'cls "{path}" -1'))
         
         # Clear the progress bar if end of top-level
-        if pbar and top:
+        if pbar and _top:
             main_logger.info(f"{CLEAR_LINE}{ESC_EOL}\n")
 
         # Check if the output is a list
