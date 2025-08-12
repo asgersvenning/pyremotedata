@@ -1351,22 +1351,33 @@ class RemotePathIterator:
                     except queue.Empty:
                         break
 
+            # wait here until we either get an item or detect a dead producer
+            while True:
+                if self.download_queue.empty() and not self.download_thread.is_alive():
+                    self.stop_requested = True
+                    if self._error is not None:
+                        raise self._error
+                    raise RuntimeError("Download thread died before iteration finished.")
                 try:
-                    if self.download_queue.empty() and not self.download_thread.is_alive():
+                    next_item: tuple[str, str] = self.download_queue.get(timeout=5.0)
+                    break  # got an item
+                except queue.Empty:
+                    # producer may just be slow; only error if the thread has died
+                    if not self.download_thread or not self.download_thread.is_alive():
                         self.stop_requested = True
                         if self._error is not None:
                             raise self._error
                         raise RuntimeError("Download thread died before iteration finished.")
-                    next_item : tuple[str, str] = self.download_queue.get()
-                    self.consumed_files += 1
-                    if self.consumed_files >= self.batch_size:
-                        self.consumed_files -= self.batch_size
-                        self.last_batch_consumed += 1
-                finally:
-                    if 'next_item' in locals():
-                        self.delete_queue.put(next_item[0])
-
-                yield next_item
+                    # else: keep polling this same loop iteration
+            
+            self.consumed_files += 1
+            if self.consumed_files >= self.batch_size:
+                self.consumed_files -= self.batch_size
+                self.last_batch_consumed += 1
+            
+            self.delete_queue.put(next_item[0])
+            yield next_item
+            
         finally:
             self._cleanup()
 
