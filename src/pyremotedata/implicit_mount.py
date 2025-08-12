@@ -836,6 +836,8 @@ class IOHandler(ImplicitMount):
         Returns:
            The local path of the downloaded file(s) or directory.
         """
+        if len(remote_path) == 0:
+            raise ValueError(f'Downloading zero-length source is not valid: {remote_path=}')
         # If multiple remote paths are specified, use multi_download instead of download, 
         # this function is more flexible than mirror (works for files from different directories) and much faster than executing multiple pget commands
         if not isinstance(remote_path, str) and len(remote_path) > 1:
@@ -849,7 +851,7 @@ class IOHandler(ImplicitMount):
                         result.extend(self._multi_download([r for r, ld in zip(remote_path, local_destination_dirs) if ld == this_local_dir], this_local_dir, **kwargs))
                     return result
             return self._multi_download(remote_path, local_destination, **kwargs)
-        if len(remote_path) == 1:
+        if not isinstance(remote_path, str) and len(remote_path) == 1:
             remote_path = remote_path[0]
             if not isinstance(remote_path, str):
                 raise TypeError("Expected str, got {}".format(type(remote_path)))
@@ -1137,6 +1139,7 @@ class RemotePathIterator:
             if kwargs:
                 main_logger.warning(f'Using cached file index. [{", ".join(kwargs.keys())}] will be ignored.')
             self.remote_paths = self.io_handler.cache[self.io_handler.pwd()]
+        self.remote_paths = list(self.remote_paths) # Ensure locality
         self.temp_dir = self.io_handler.local_dir
         self.batch_size = batch_size
         self.batch_parallel = batch_parallel
@@ -1307,6 +1310,8 @@ class RemotePathIterator:
                 break
     
             batch = self.remote_paths[start:start + self.batch_size]
+            if len(batch) == 0:
+                raise RuntimeError('Invalid zero-length batch encountered! This is a bug.')
             try:
                 local_paths = self._download_batch_with_retry(batch)
             except Exception as e:
