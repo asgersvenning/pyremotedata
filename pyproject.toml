@@ -11,7 +11,7 @@ packages = [
 
 [project]
 name = "pyremotedata"
-version = "0.0.68"
+version = "0.0.69"
 authors = [
   { name="Asger Svenning", email="asgersvenning@gmail.com" },
 ]
