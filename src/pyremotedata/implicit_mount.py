@@ -1263,32 +1263,32 @@ class RemotePathIterator:
 
         return iterators
 
-def _download_batch_with_retry(self, batch: list[str]) -> list[str]:
-    start = time.monotonic()
-    attempt = 0
-    delay = self.retry_base_delay
-    last_exc: BaseException | None = None
-    while True:
-        try:
-            local_paths = self.io_handler.download(batch, n=self.batch_parallel)
-            if not isinstance(local_paths, (list, tuple)) or len(local_paths) != len(batch):
-                raise RuntimeError(f"Downloader returned invalid result length ({len(local_paths)}) for batch of size {len(batch)}")
-            return list(local_paths)
-        except Exception as e:
-            last_exc = e
-            attempt += 1
-            elapsed = time.monotonic() - start
-            remaining = self.retry_timeout - elapsed
-            if remaining <= 0:
-                main_logger.error(f"Batch download timed out after {elapsed:.1f}s and {attempt} attempt(s).")
-                raise TimeoutError(f"Timed out downloading batch of {len(batch)} items") from e
-            wait = min(delay, self.retry_max_delay, remaining)
-            main_logger.warning(
-                f"Batch download failed (attempt {attempt}); waiting {wait:.2f}s. "
-                f"Time left ≈ {remaining:.1f}s."
-            )
-            time.sleep(wait)
-            delay = min(delay * 2.0, self.retry_max_delay)
+    def _download_batch_with_retry(self, batch : list[str]) -> list[str]:
+        start = time.monotonic()
+        attempt = 0
+        delay = self.retry_base_delay
+        last_exc : BaseException | None = None
+        while True:
+            try:
+                local_paths = self.io_handler.download(batch, n=self.batch_parallel)
+                if not isinstance(local_paths, (list, tuple)) or len(local_paths) != len(batch):
+                    raise RuntimeError(f"Downloader returned invalid result length ({len(local_paths)}) for batch of size {len(batch)}")
+                return list(local_paths)
+            except Exception as e:
+                last_exc = e
+                attempt += 1
+                elapsed = time.monotonic() - start
+                remaining = self.retry_timeout - elapsed
+                if remaining <= 0:
+                    main_logger.error(f"Batch download timed out after {elapsed:.1f}s and {attempt} attempt(s).")
+                    raise TimeoutError(f"Timed out downloading batch of {len(batch)} items") from e
+                wait = min(delay, self.retry_max_delay, remaining)
+                main_logger.warning(
+                    f"Batch download failed (attempt {attempt}); waiting {wait:.2f}s. "
+                    f"Time left ≈ {remaining:.1f}s."
+                )
+                time.sleep(wait)
+                delay = min(delay * 2.0, self.retry_max_delay)
 
     def download_files(self) -> None:
         queued_batches = 0
