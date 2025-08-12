@@ -829,7 +829,7 @@ class IOHandler(ImplicitMount):
 
         Args:
             remote_path: The remote path(s) to download.
-            local_destination: The local destination to download the file(s) to. If None, the file(s) will be downloaded to the current local directory.
+            local_destination: The local destination(s) to download the file(s) to. If None, the file(s) will be downloaded to the current local directory.
             blocking: If True, the function will block until the download is complete.
             **kwargs: Extra keyword arguments are passed to the IOHandler.multi_download, IOHandler.pget or IOHandler.mirror functions depending on the type of the remote path(s).
 
@@ -841,16 +841,28 @@ class IOHandler(ImplicitMount):
         # If multiple remote paths are specified, use multi_download instead of download, 
         # this function is more flexible than mirror (works for files from different directories) and much faster than executing multiple pget commands
         if not isinstance(remote_path, str) and len(remote_path) > 1:
-            if local_destination is not None:
-                local_destination_dirs = os.path.dirname(local_destination) if isinstance(local_destination, str) else [os.path.dirname(l) for l in local_destination] 
-                if len(set(local_destination_dirs)) == 1:
-                    local_destination = local_destination_dirs[0]
-                else:
-                    result = []
-                    for this_local_dir in set(local_destination_dirs):
-                        result.extend(self._multi_download([r for r, ld in zip(remote_path, local_destination_dirs) if ld == this_local_dir], this_local_dir, **kwargs))
-                    return result
-            return self._multi_download(remote_path, local_destination, **kwargs)
+            if isinstance(local_destination, list) and len(set(local_destination)) == 1:
+                local_destination = local_destination[0]
+            if not isinstance(local_destination, list):
+                return self._multi_download(remote_path, local_destination, **kwargs)
+
+            # If there are multiple local destinations, split into separate subcalls
+            if len(remote_path) != len(local_destination):
+                raise ValueError(f'When supplying multiple local destionations, they are expected to match 1-1 with remote paths. Got {len(remote_path)=} != {len(local_destination)=}')
+            result = [None for _ in range(len(remote_path))]
+            reindex = {rp : i for i, rp in enumerate(remote_path)}
+            if len(reindex) != len(remote_path):
+                raise ValueError("Duplicate remote paths supplied.")
+            for this_ldir in set(local_destination):
+                this_ldir_paths = [rp for rp, ld in zip(remote_path, local_destination) if ld == this_ldir]
+                if len(this_ldir_paths) == 0:
+                    continue
+                for rp, lp in zip(this_ldir_paths, self._multi_download(this_ldir_paths, this_ldir, **kwargs)):
+                    result[reindex[rp]] = lp
+            if any(map(lambda x : x is None, result)):
+                raise RuntimeError("One or more files failed to download.")
+            return result
+        
         if not isinstance(remote_path, str) and len(remote_path) == 1:
             remote_path = remote_path[0]
             if not isinstance(remote_path, str):
@@ -877,15 +889,12 @@ class IOHandler(ImplicitMount):
         # Otherwise use mirror.
         else:
             if not os.path.exists(local_destination):
-                try:
-                    os.makedirs(local_destination)
-                except FileExistsError:
-                    pass
+                os.makedirs(local_destination, exist_ok=True)
             local_result = self.mirror(remote_path, local_destination, blocking, **kwargs)
             self.last_type = "directory"
         
         # TODO: Check local_result == local_destination (if it can be done in a relatively efficient way)
-
+        
         # Store the last download for later use (nice for debugging)
         self.last_download = local_result
         # Return the local path of the downloaded file or directory
@@ -906,7 +915,7 @@ class IOHandler(ImplicitMount):
             remote_paths: A list of remote paths to download.
             local_destination: The local destination to download the files to. If None, the files will be downloaded to the current local directory.
             blocking: If True, the function will block until the download is complete.
-            n: The number of connections to use for downloading each file.
+            n: Number of files to download in parallel.
             **kwargs: Extra keyword arguments are ignored.
         
         Returns:
@@ -916,42 +925,36 @@ class IOHandler(ImplicitMount):
         # Type checking and default argument configuration
         if not isinstance(remote_paths, list):
             raise TypeError("Expected list, got {}".format(type(remote_paths)))
-        if not (isinstance(local_destination, str) or isinstance(local_destination, list) or local_destination is None):
-            raise TypeError("Expected str or list, got {}".format(type(local_destination)))
+        if len(remote_paths) == 0:
+            raise ValueError("Expected non-empty list for `remote_paths`, got {}".format(remote_paths))
+        if not (isinstance(local_destination, str) or local_destination is None):
+            raise TypeError("Expected str or None, got {}".format(type(local_destination)))
         if isinstance(local_destination, str):
             os.makedirs(local_destination, exist_ok=True)
         elif local_destination is None:
             local_destination = self.local_dir
         local_files = [os.path.join(local_destination, os.path.basename(r)) for r in remote_paths]
-        existing_files = [file for file in local_files if os.path.exists(file)]
-        if existing_files:
-            duplicates = [file in existing_files for file in local_files]
-            duplicate_remote_paths = [file for file, flag in zip(remote_paths, duplicates) if flag]
-            remote_paths = [file for file, flag in zip(remote_paths, duplicates) if not flag]
-            local_files = [file for file, flag in zip(local_files, duplicates) if not flag]
-        
+        if any(map(os.path.exists, local_files)):
+            while os.path.exists(subdir := os.path.join(local_destination, str(uuid.uuid4()))):
+                continue
+            return self._multi_download(remote_paths, subdir, blocking=blocking, n=n, **kwargs)
+
         # Assemble the mget command, options and arguments
-        multi_command = f'mget -O "{local_destination}" -P {n} ' + ' '.join([f'"{r}"' for r in remote_paths])
+        multi_command = f'mget -O "{local_destination}" -P {max(1, min(n, len(remote_paths)))} ' + ' '.join([f'"{r}"' for r in remote_paths])
         # Execute the mget command
         self.execute_command(multi_command, output=blocking, blocking=blocking)
+        
         # Check if the files were downloaded TODO: is this too slow? Should we just assume that the files were downloaded for efficiency?
-        missing_files = []
-        for l in local_files:
-            if not os.path.exists(l):
-                missing_files.append(l)
+        missing_files = [l for l in local_files if not os.path.exists(l)]
         if missing_files:
             raise RuntimeError(f"Failed to download files {missing_files}")
 
         # Store the last download for later use (nice for debugging)
         self.last_download = local_destination
         self.last_type = "multi"
+        
         # Return the local paths of the downloaded files
-        if not existing_files:
-            return local_files
-        else:
-            while os.path.exists(subdir := os.path.join(local_destination, str(uuid.uuid4()))):
-                continue
-            return local_files + self._multi_download(remote_paths=duplicate_remote_paths, local_destination=subdir, blocking=blocking, n=n, **kwargs)
+        return local_files
 
     def clone(
             self, 
