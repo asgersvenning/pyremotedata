@@ -15,6 +15,7 @@ import os
 import queue
 import re
 import shutil
+import stat
 import subprocess
 import tempfile
 import threading
@@ -27,6 +28,46 @@ from pyremotedata import CLEAR_LINE, ESC_EOL, main_logger
 from pyremotedata.config import get_implicit_mount_config
 
 BENIGN_ERR = re.compile("(wait|fg): no current job")
+
+def delete_file_or_dir(
+        path : str | os.PathLike[str],
+        *,
+        missing_ok : bool=True,
+        force : bool=False,
+    ) -> None:
+    p = os.fspath(path)
+    try:
+        st = os.lstat(p)
+    except FileNotFoundError:
+        if missing_ok:
+            return
+        raise
+
+    mode = st.st_mode
+
+    if stat.S_ISLNK(mode) or not stat.S_ISDIR(mode):
+        _unlink(p, force)
+        return
+
+    with os.scandir(p) as it:
+        for entry in it:
+            delete_file_or_dir(entry.path, missing_ok=missing_ok, force=force)
+    try:
+        os.rmdir(p)
+    except PermissionError:
+        if not force:
+            raise
+        os.chmod(p, st.st_mode | stat.S_IWUSR)
+        os.rmdir(p)
+
+def _unlink(p : str, force : bool) -> None:
+    try:
+        os.unlink(p)
+    except PermissionError:
+        if not force:
+            raise
+        os.chmod(p, stat.S_IWUSR)
+        os.unlink(p)
 
 class ImplicitMount:
     """
@@ -1424,7 +1465,7 @@ class RemotePathIterator:
                         continue
                     p = os.path.join(self.temp_dir, f)
                     try:
-                        os.remove(p)
+                        delete_file_or_dir(p)
                     except Exception as e:
                         main_logger.warning(f"Failed to remove file: {p} ({e})")
 
