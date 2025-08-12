@@ -21,7 +21,7 @@ import threading
 import time
 import uuid
 from queue import Queue
-from random import choices, shuffle
+from random import choices, random, shuffle
 
 from pyremotedata import CLEAR_LINE, ESC_EOL, main_logger
 from pyremotedata.config import get_implicit_mount_config
@@ -1107,6 +1107,9 @@ class RemotePathIterator:
             deleting consumed files. Must exceed
             ``batch_size * max_queued_batches`` (2x recommended).
         clear_local: If True, delete consumed files to free space.
+        retry_base_delay: Initial backoff (seconds) for single-item retry.
+        retry_max_delay: Maximum backoff (seconds) per retry step.
+        retry_timeout: Per-file hard timeout (seconds) before raising.
         **kwargs: Forwarded to ``IOHandler.get_file_index`` to build the file
             index. Set ``store=False`` for read-only remotes (slower on first
             run). If ``store=False``, ``override`` must also be False.
@@ -1115,13 +1118,16 @@ class RemotePathIterator:
        `(local_path, remote_path)`: for each downloaded file.
     """
     def __init__(
-            self, 
-            io_handler: "IOHandler", 
-            batch_size : int=64, 
+            self,
+            io_handler : "IOHandler",
+            batch_size : int=64,
             batch_parallel : int=10,
             max_queued_batches : int=3,
             n_local_files : int=2*3*64,
-            clear_local : bool=True, 
+            clear_local : bool=True,
+            retry_base_delay : float=0.5,
+            retry_max_delay : float=30.0,
+            retry_timeout : float=120.0,
             **kwargs
         ):
         self.io_handler = io_handler
@@ -1146,9 +1152,14 @@ class RemotePathIterator:
 
         # State variables
         self.download_thread = None
-        self.last_item = None
         self.last_batch_consumed = 0
         self.consumed_files = 0
+
+        # Retry/backoff configuration
+        self.retry_base_delay : float = float(retry_base_delay)
+        self.retry_max_delay : float = float(retry_max_delay)
+        self.retry_timeout : float = float(retry_timeout)
+        self._error : BaseException | None = None  # set if a file ultimately times out
 
     def __len__(self) -> int:
         return len(self.remote_paths)
@@ -1163,7 +1174,7 @@ class RemotePathIterator:
             raise RuntimeError("Cannot shuffle while iterating.")
         shuffle(self.remote_paths)
 
-    def subset(self, indices: list[int]) -> None:
+    def subset(self, indices : list[int]) -> None:
         """Restrict the iterator to a subset of indices (in-place).
 
         Args:
@@ -1176,7 +1187,6 @@ class RemotePathIterator:
         """
         if self.download_thread is not None:
             raise RuntimeError("Cannot subset while iterating.")
-        # TODO: It is fine that this works with a list of indices, but it should also work with a single index or a slice.
         if isinstance(indices, int):
             indices = [indices]
         if isinstance(indices, list):
@@ -1187,9 +1197,9 @@ class RemotePathIterator:
             raise TypeError(f'Expected `indices` to be a single or a list of indices (int, or list[int]), or a slice, but got {type(indices)}.')
 
     def split(
-            self, 
-            proportion : list[float | int] | None=None, 
-            indices: list[list[int]] | None=None
+            self,
+            proportion : list[float | int] | None=None,
+            indices : list[list[int]] | None=None
         ) -> list["RemotePathIterator"]:
         """Split into multiple iterators that share the same backend.
 
@@ -1212,17 +1222,21 @@ class RemotePathIterator:
             raise ValueError("Either proportion or indices must be specified.")
         if proportion is not None and indices is not None:
             raise ValueError("Only one of proportion or indices must be specified.")
+
         if proportion is not None:
             if not isinstance(proportion, list):
                 raise TypeError("proportion must be a list.")
             if any([not isinstance(i, (float, int)) for i in proportion]):
-                raise TypeError("All proportions must be floats.")
-            if sum(proportion) != 1:
-                proportion = [float(p) / sum(proportion) for p in proportion]
+                raise TypeError("All proportions must be numeric (int or float).")
+            total = float(sum(proportion))
+            if total <= 0:
+                raise ValueError("Sum of proportions must be > 0.")
+            proportion = [float(p) / total for p in proportion]
             allocation = choices(list(range(len(proportion))), weights=proportion, k=len(self.remote_paths))
             indices = [[] for _ in range(len(proportion))]
             for i, a in enumerate(allocation):
                 indices[a].append(i)
+
         if indices is not None:
             if not isinstance(indices, list):
                 raise TypeError("indices must be a list.")
@@ -1234,16 +1248,58 @@ class RemotePathIterator:
                 raise ValueError("indices must be a list of lists of ints in the range [0, len(remote_paths)).")
             if any([len(i) == 0 for i in indices]):
                 raise ValueError("All indices must be non-empty.")
-        else:
-            raise RuntimeError("This should never happen.")
-            
+
         iterators = []
         for i in indices:
-            this = RemotePathIterator(self.io_handler, batch_size=self.batch_size, batch_parallel=self.batch_parallel, max_queued_batches=self.max_queued_batches, n_local_files=self.n_local_files)
+            this = RemotePathIterator(
+                self.io_handler,
+                batch_size=self.batch_size,
+                batch_parallel=self.batch_parallel,
+                max_queued_batches=self.max_queued_batches,
+                n_local_files=self.n_local_files
+            )
             this.subset(i)
             iterators.append(this)
 
         return iterators
+
+    def _process_group(self, idxs : list[int]) -> None:
+        """Download a group with batched API; on failure split; on single item apply retries."""
+        if self.stop_requested or self._error is not None:
+            return
+
+        batch = [self.remote_paths[i] for i in idxs]
+        try:
+            local_paths = self.io_handler.download(batch, n=self.batch_parallel)
+            if not isinstance(local_paths, (list, tuple)) or len(local_paths) != len(batch):
+                raise RuntimeError(f"Downloader returned invalid result length ({len(local_paths)}) for batch of size {len(batch)}")
+            for lp, rp in zip(local_paths, batch):
+                self.download_queue.put((lp, rp))
+            return
+        except Exception as e:
+            if len(idxs) > 1:
+                mid = max(1, len(idxs) // 2)
+                self._process_group(idxs[:mid])
+                self._process_group(idxs[mid:])
+                return
+
+            i = idxs[0]
+            start = time.monotonic()
+            delay = self.retry_base_delay
+            while not self.stop_requested and (time.monotonic() - start) < self.retry_timeout:
+                try:
+                    lp1 = self.io_handler.download([self.remote_paths[i]], n=1)
+                    if not isinstance(lp1, (list, tuple)) or len(lp1) != 1:
+                        raise RuntimeError(f"Downloader returned invalid result for single item: {lp1}")
+                    self.download_queue.put((lp1[0], self.remote_paths[i]))
+                    return
+                except Exception as last:
+                    time.sleep(min(delay, self.retry_max_delay) * (0.5 + random()))
+                    delay = min(delay * 2.0, self.retry_max_delay)
+                    e = last
+            self._error = TimeoutError(f"Timed out downloading {self.remote_paths[i]}")
+            self._error.__cause__ = e
+            self.stop_requested = True
 
     def download_files(self):
         """Producer loop that downloads batches and enqueues results.
@@ -1253,148 +1309,125 @@ class RemotePathIterator:
             testing. Use the iterator protocol instead.
         """
         queued_batches = 0
-        for i in range(0, len(self.remote_paths), self.batch_size):
-            if self.stop_requested:
+        n = len(self.remote_paths)
+        for start in range(0, n, self.batch_size):
+            if self.stop_requested or self._error is not None:
                 break
-                
-            while queued_batches >= self.max_queued_batches and not self.stop_requested:
-                # Wait until a batch has been consumed (or multiple batches, if the consumer is fast and the producer is slow) before downloading another batch
+
+            while queued_batches >= self.max_queued_batches and not self.stop_requested and self._error is None:
+                # Wait until consumer signals that ≥1 batch was consumed (producer can be behind)
                 if self.last_batch_consumed > 0:
                     self.last_batch_consumed -= 1
                     break
-                time.sleep(0.2)  # Wait until a batch has been consumed
-            if self.stop_requested:
+                time.sleep(0.2)
+
+            if self.stop_requested or self._error is not None:
                 break
-            batch = self.remote_paths[i:i + self.batch_size]
-            try:
-                local_paths = self.io_handler.download(batch, n = self.batch_parallel)
-            except Exception as e:
-                main_logger.error(f"Failed to download batch {i} - {i + self.batch_size}: {e}")
-                main_logger.warning("Skipping batch...")
-                if not self.io_handler.lftp_shell is None and self.io_handler.lftp_shell.poll() is None:
-                    continue
-                else:
-                    main_logger.error("LFTP shell died. Download thread killed.")
-                    break
-            finally:
-                for local_path, remote_path in zip(local_paths, batch):
-                    self.download_queue.put((local_path, remote_path))
-                
+
+            idxs = list(range(start, min(start + self.batch_size, n)))
+            self._process_group(idxs)
+            if self._error is not None:
+                break
             queued_batches += 1
 
     def start_download_queue(self) -> None:
         """Start the background thread that performs batch downloads."""
-        self.download_thread = threading.Thread(target=self.download_files)
+        self.download_thread = threading.Thread(target=self.download_files, daemon=True)
         self.download_thread.start()
 
     def __iter__(self):
         """Return an iterator that yields ``(local_path, remote_path)`` pairs."""
-        # Force reset state
         self.not_cleaned = True
         self._cleanup()
 
-        # Prepare state for iteration
         self.stop_requested = False
         self.not_cleaned = True
-        
-        # Start the download thread
+        self._error = None
+
         self.start_download_queue()
 
-        # Main loop body
         try:
-            for _ in range(len(self)):
+            total = len(self.remote_paths)
+            for _ in range(total):
                 if self.stop_requested:
                     break
 
-                # Delete files if the queue is too large
                 while self.clear_local and self.delete_queue.qsize() > self.n_local_files:
                     try:
-                        del_file = self.delete_queue.get(timeout=1)
-                        os.remove(del_file)
-                    except Exception as e:
-                        main_logger.warning(f"Failed to remove file: {e}")
+                        del_file = self.delete_queue.get_nowait()
+                        try:
+                            os.remove(del_file)
+                        except Exception as e:
+                            main_logger.warning(f"Failed to remove file: {e}")
+                    except queue.Empty:
+                        break
 
-                # Get next item from queue or raise error if queue is empty
                 try:
                     if self.download_queue.empty() and not self.download_thread.is_alive():
                         self.stop_requested = True
+                        if self._error is not None:
+                            raise self._error
                         raise RuntimeError("Download thread died before iteration finished.")
-                    next_item : tuple[str, str] = self.download_queue.get() # Timeout not applicable, since there is no guarantees on the size of the files or the speed of the connection
-                    # Update state to ensure that the producer keeps the queue prefilled
-                    # It is a bit complicated because the logic must be able to handle the case where the consumer is faster than the producer,
-                    # in this case the producer may be multiple batches behind the consumer.
+                    next_item : tuple[str, str] = self.download_queue.get()
                     self.consumed_files += 1
                     if self.consumed_files >= self.batch_size:
                         self.consumed_files -= self.batch_size
                         self.last_batch_consumed += 1
-                except queue.Empty: # TODO: Can this happen?
-                    if self.stop_requested:
-                        break
-                    else:
-                        self.stop_requested = True
-                        raise RuntimeError("Download queue is empty but no stop was requested. Check the download thread.")
                 finally:
-                    # Update state
-                    self.delete_queue.put(next_item[0])
-                
-                # Return next item (local path, remote path => can be parsed to get the class label)
+                    if 'next_item' in locals():
+                        self.delete_queue.put(next_item[0])
+
                 yield next_item
         finally:
             self._cleanup()
 
-    def _cleanup(self, force=False) -> None:
+    def _cleanup(self, force : bool=False) -> None:
         """Stop background work and remove temporary files if requested.
 
         Args:
             force: If True, cleanup even if already performed.
         """
         if self.not_cleaned or force:
-            # Force the iterator to stop if it is not already stopped
             self.stop_requested = True
-            # Wait for the download thread to finish
-            if self.download_thread is not None:
-                self.download_thread.join(timeout=1)
-                self.download_thread = None
-                time.sleep(0.01) # Wait a little to make sure the side-effects of the download thread are processed (race-condition) 
-            # Clean up the temporary directory
+            self._error = None
+
+            t = self.download_thread
+            self.download_thread = None
+            if t is not None:
+                t.join(timeout=1)
+                if t.is_alive():
+                    main_logger.error("Download thread did not terminate within 1s; it may still be running.")
+                time.sleep(0.01)
+
             while self.clear_local and not self.download_queue.empty():
                 self.delete_queue.put(self.download_queue.get()[0])
             while not self.delete_queue.empty():
-                    f = self.delete_queue.get()
-                    try:
-                        if os.path.exists(f):
-                            os.remove(f)
-                    except Exception as e:
-                        main_logger.warning(f"Failed to remove file ({f}): {e}")
-            # Remove any remaining files in the temporary directory
-            if self.clear_local and os.path.exists(self.temp_dir):
+                f = self.delete_queue.get()
+                try:
+                    if os.path.exists(f):
+                        os.remove(f)
+                except Exception as e:
+                    main_logger.warning(f"Failed to remove file ({f}): {e}")
+
+            if self.clear_local and os.path.isdir(self.temp_dir):
                 for f in os.listdir(self.temp_dir):
                     if "folder_index.txt" in f:
                         continue
+                    p = os.path.join(self.temp_dir, f)
                     try:
-                        if os.path.exists(f):
-                            os.remove(f)
-                    except:
-                        main_logger.warning(f"Failed to remove file: {f}")
-                        pass
+                        os.remove(p)
+                    except Exception as e:
+                        main_logger.warning(f"Failed to remove file: {p} ({e})")
 
-            ## TODO: DOUBLE CHECK - THIS SHOULD NOT BE NECESSARY (it is at the moment though!)
-            # Check if the download thread is still running
-            if self.download_thread is not None:
-                main_logger.error("Download thread is still running. This should not happen.")
-                self.stop_requested = True
-                self.download_thread.join(timeout=1)
-                self.download_thread = None
-            # Check if the download queue is empty
             if not self.download_queue.empty():
                 main_logger.error("Download queue is not empty. This should not happen.")
                 with self.download_queue.mutex:
                     self.download_queue.queue.clear()
-            # Check if the delete queue is empty
             if not self.delete_queue.empty() and self.clear_local:
                 main_logger.error("Delete queue is not empty. This should not happen.")
-                with self.download_queue.mutex:
-                    self.download_queue.queue.clear()
+                with self.delete_queue.mutex:
+                    self.delete_queue.queue.clear()
             self.not_cleaned = False
         else:
             main_logger.debug("Already cleaned up")
+
