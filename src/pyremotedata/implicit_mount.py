@@ -1263,71 +1263,60 @@ class RemotePathIterator:
 
         return iterators
 
-    def _process_group(self, idxs : list[int]) -> None:
-        """Download a group with batched API; on failure split; on single item apply retries."""
-        if self.stop_requested or self._error is not None:
-            return
-
-        batch = [self.remote_paths[i] for i in idxs]
+def _download_batch_with_retry(self, batch: list[str]) -> list[str]:
+    start = time.monotonic()
+    attempt = 0
+    delay = self.retry_base_delay
+    last_exc: BaseException | None = None
+    while True:
         try:
             local_paths = self.io_handler.download(batch, n=self.batch_parallel)
             if not isinstance(local_paths, (list, tuple)) or len(local_paths) != len(batch):
                 raise RuntimeError(f"Downloader returned invalid result length ({len(local_paths)}) for batch of size {len(batch)}")
-            for lp, rp in zip(local_paths, batch):
-                self.download_queue.put((lp, rp))
-            return
+            return list(local_paths)
         except Exception as e:
-            if len(idxs) > 1:
-                mid = max(1, len(idxs) // 2)
-                self._process_group(idxs[:mid])
-                self._process_group(idxs[mid:])
-                return
+            last_exc = e
+            attempt += 1
+            elapsed = time.monotonic() - start
+            remaining = self.retry_timeout - elapsed
+            if remaining <= 0:
+                main_logger.error(f"Batch download timed out after {elapsed:.1f}s and {attempt} attempt(s).")
+                raise TimeoutError(f"Timed out downloading batch of {len(batch)} items") from e
+            wait = min(delay, self.retry_max_delay, remaining)
+            main_logger.warning(
+                f"Batch download failed (attempt {attempt}); waiting {wait:.2f}s. "
+                f"Time left ≈ {remaining:.1f}s."
+            )
+            time.sleep(wait)
+            delay = min(delay * 2.0, self.retry_max_delay)
 
-            i = idxs[0]
-            start = time.monotonic()
-            delay = self.retry_base_delay
-            while not self.stop_requested and (time.monotonic() - start) < self.retry_timeout:
-                try:
-                    lp1 = self.io_handler.download([self.remote_paths[i]], n=1)
-                    if not isinstance(lp1, (list, tuple)) or len(lp1) != 1:
-                        raise RuntimeError(f"Downloader returned invalid result for single item: {lp1}")
-                    self.download_queue.put((lp1[0], self.remote_paths[i]))
-                    return
-                except Exception as last:
-                    time.sleep(min(delay, self.retry_max_delay) * (0.5 + random()))
-                    delay = min(delay * 2.0, self.retry_max_delay)
-                    e = last
-            self._error = TimeoutError(f"Timed out downloading {self.remote_paths[i]}")
-            self._error.__cause__ = e
-            self.stop_requested = True
-
-    def download_files(self):
-        """Producer loop that downloads batches and enqueues results.
-
-        Notes:
-            Not intended for direct use; primarily useful for debugging and
-            testing. Use the iterator protocol instead.
-        """
+    def download_files(self) -> None:
         queued_batches = 0
         n = len(self.remote_paths)
         for start in range(0, n, self.batch_size):
             if self.stop_requested or self._error is not None:
                 break
-
+    
             while queued_batches >= self.max_queued_batches and not self.stop_requested and self._error is None:
-                # Wait until consumer signals that ≥1 batch was consumed (producer can be behind)
                 if self.last_batch_consumed > 0:
                     self.last_batch_consumed -= 1
                     break
                 time.sleep(0.2)
-
+    
             if self.stop_requested or self._error is not None:
                 break
-
-            idxs = list(range(start, min(start + self.batch_size, n)))
-            self._process_group(idxs)
-            if self._error is not None:
+    
+            batch = self.remote_paths[start:start + self.batch_size]
+            try:
+                local_paths = self._download_batch_with_retry(batch)
+            except Exception as e:
+                self._error = e
+                self.stop_requested = True
                 break
+    
+            for lp, rp in zip(local_paths, batch):
+                self.download_queue.put((lp, rp))
+    
             queued_batches += 1
 
     def start_download_queue(self) -> None:
