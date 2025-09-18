@@ -1104,7 +1104,7 @@ class IOHandler(ImplicitMount):
             nmax : int | None=None, 
             override : bool=False
         ) -> None:
-        self.cache[self.io_handler.pwd()] = self.get_file_index(skip, nmax, override)
+        self.cache[self.pwd()] = self.get_file_index(skip, nmax, override)
 
     def clean(self):
         if self.user_confirmation:
