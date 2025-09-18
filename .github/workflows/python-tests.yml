@@ -14,6 +14,10 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ !(github.event_name == 'push' && contains(github.event.head_commit.message, '[skip ci]')) }}
 
+    concurrency:
+      group: ci-${{ github.event_name == 'schedule' && 'schedule' || github.ref_name }}
+      cancel-in-progress: true
+
     strategy:
       matrix:
         python-version: ['3.10', '3.11', '3.12', '3.13']
