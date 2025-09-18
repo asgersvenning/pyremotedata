@@ -22,7 +22,7 @@ import threading
 import time
 import uuid
 from queue import Queue
-from random import choices, random, shuffle
+from random import choices, shuffle
 
 from pyremotedata import CLEAR_LINE, ESC_EOL, main_logger
 from pyremotedata.config import get_implicit_mount_config
@@ -1116,11 +1116,10 @@ class IOHandler(ImplicitMount):
 
         main_logger.debug("Cleaning up...")
         for path in os.listdir(self.local_dir):
-            if os.path.isfile(path):
-                try:
-                    os.remove(path)
-                except:
-                    main_logger.debug("Error")
+            try:
+                delete_file_or_dir(path)
+            except Exception as e:
+                main_logger.debug(f"Error while deleting {path}: {e}")
         try:
             shutil.rmtree(self.local_dir)
         except Exception as e:
@@ -1393,13 +1392,11 @@ class RemotePathIterator:
                 # process delete queue
                 while self.clear_local and self.delete_queue.qsize() > self.n_local_files:
                     try:
-                        del_file = self.delete_queue.get_nowait()
-                        try:
-                            os.remove(del_file)
-                        except Exception as e:
-                            main_logger.warning(f"Failed to remove file: {e}")
+                        delete_file_or_dir(self.delete_queue.get_nowait())
                     except queue.Empty:
                         break
+                    except Exception as e:
+                        main_logger.warning(f"Failed to remove file: {e}")
                 
                 # wait here until we either get an item or detect a dead producer
                 while True:
@@ -1454,8 +1451,7 @@ class RemotePathIterator:
             while not self.delete_queue.empty():
                 f = self.delete_queue.get()
                 try:
-                    if os.path.exists(f):
-                        os.remove(f)
+                    delete_file_or_dir(f)
                 except Exception as e:
                     main_logger.warning(f"Failed to remove file ({f}): {e}")
 
