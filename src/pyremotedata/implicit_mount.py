@@ -23,6 +23,7 @@ import time
 import uuid
 from queue import Queue
 from random import choices, shuffle
+from tqdm.auto import trange
 
 from pyremotedata import CLEAR_LINE, ESC_EOL, main_logger
 from pyremotedata.config import get_implicit_mount_config
@@ -801,16 +802,17 @@ class IOHandler(ImplicitMount):
                 local_dir = tempfile.TemporaryDirectory().name
             else:
                 local_dir = self.default_config['local_dir']
+            assert isinstance(local_dir, str)
         if not os.path.exists(local_dir):
             os.makedirs(local_dir)
         self.original_local_dir = os.path.abspath(local_dir)
-        self.local_dir = local_dir
+        self.local_dir = self.original_local_dir
         self.user_confirmation = user_confirmation
         self.do_clean = clean
         self.lftp_settings = lftp_settings
         self.last_download = None
         self.last_type = None
-        self.cache = {}
+        self.cache : dict[str, list[str]] = {}
 
     def lcd(self, local_path : str):
         self.local_dir = os.path.abspath(os.path.join(self.local_dir, local_path))
@@ -860,8 +862,8 @@ class IOHandler(ImplicitMount):
 
     def download(
             self, 
-            remote_path : str | list[str],
-            local_destination : str | list[str] | None=None,
+            remote_path : str | list[str] | tuple[str, ...],
+            local_destination : str | list[str] | tuple[str, ...] | None=None,
             blocking : bool=True,
             **kwargs
         ) -> str | list[str]:
@@ -882,9 +884,9 @@ class IOHandler(ImplicitMount):
         # If multiple remote paths are specified, use multi_download instead of download, 
         # this function is more flexible than mirror (works for files from different directories) and much faster than executing multiple pget commands
         if not isinstance(remote_path, str) and len(remote_path) > 1:
-            if isinstance(local_destination, list) and len(set(local_destination)) == 1:
+            if isinstance(local_destination, (list, tuple)) and len(set(local_destination)) == 1:
                 local_destination = local_destination[0]
-            if not isinstance(local_destination, list):
+            if not isinstance(local_destination, (list, tuple)):
                 return self._multi_download(remote_path, local_destination, **kwargs)
 
             # If there are multiple local destinations, split into separate subcalls
@@ -906,11 +908,12 @@ class IOHandler(ImplicitMount):
         
         if not isinstance(remote_path, str) and len(remote_path) == 1:
             remote_path = remote_path[0]
-            if not isinstance(remote_path, str):
-                raise TypeError("Expected str, got {}".format(type(remote_path)))
+        if not isinstance(remote_path, str):
+            raise TypeError("Expected str, got {}".format(type(remote_path)))
         
         if local_destination is None:
             local_destination = self.local_dir
+        assert isinstance(local_destination, str)
 
         # Check if remote and local have file extensions:
         # The function assumes files have extensions and directories do not.
@@ -922,6 +925,9 @@ class IOHandler(ImplicitMount):
         if not remote_has_ext and not os.path.isdir(local_destination):
             raise ValueError("Destination must be a directory if remote does not have a file extension.")
         
+        if not os.path.exists(local_destination):
+            os.makedirs(local_destination, exist_ok=True)
+        
         # Download cases;
         # If the remote is a single file, use pget.
         if remote_has_ext:
@@ -929,8 +935,6 @@ class IOHandler(ImplicitMount):
             self.last_type = "file"
         # Otherwise use mirror.
         else:
-            if not os.path.exists(local_destination):
-                os.makedirs(local_destination, exist_ok=True)
             local_result = self.mirror(remote_path, local_destination, blocking, **kwargs)
             self.last_type = "directory"
         
@@ -943,10 +947,10 @@ class IOHandler(ImplicitMount):
     
     def _multi_download(
             self, 
-            remote_paths : list[str],
-            local_destination : str,
+            remote_paths : list[str] | tuple[str, ...],
+            local_destination : str | None,
             blocking : bool=True,
-            n : int=5, 
+            n : int=15, 
             **kwargs
         ) -> list[str]:
         """
@@ -964,21 +968,20 @@ class IOHandler(ImplicitMount):
         """
         # TODO: This function should really wrap an IOHandler.mget function, which should be implemented in the ImplicitMount class
         # Type checking and default argument configuration
-        if not isinstance(remote_paths, list):
-            raise TypeError("Expected list, got {}".format(type(remote_paths)))
+        if not isinstance(remote_paths, (list, tuple)):
+            raise TypeError("Expected list or tuple, got {}".format(type(remote_paths)))
         if len(remote_paths) == 0:
-            raise ValueError("Expected non-empty list for `remote_paths`, got {}".format(remote_paths))
+            raise ValueError("Expected non-empty list or tuple for `remote_paths`, got {}".format(remote_paths))
         if not (isinstance(local_destination, str) or local_destination is None):
             raise TypeError("Expected str or None, got {}".format(type(local_destination)))
-        if isinstance(local_destination, str):
-            os.makedirs(local_destination, exist_ok=True)
-        elif local_destination is None:
+        if local_destination is None:
             local_destination = self.local_dir
         local_files = [os.path.join(local_destination, os.path.basename(r)) for r in remote_paths]
         if any(map(os.path.exists, local_files)):
             while os.path.exists(subdir := os.path.join(local_destination, str(uuid.uuid4()))):
                 continue
             return self._multi_download(remote_paths, subdir, blocking=blocking, n=n, **kwargs)
+        os.makedirs(local_destination, exist_ok=True)
 
         # Assemble the mget command, options and arguments
         multi_command = f'mget -O "{local_destination}" -P {max(1, min(n, len(remote_paths)))} ' + ' '.join([f'"{r}"' for r in remote_paths])
@@ -997,19 +1000,23 @@ class IOHandler(ImplicitMount):
         # Return the local paths of the downloaded files
         return local_files
 
-    def clone(
+    def sync(
             self, 
-            local_destination : str | None, 
-            blocking : bool=True, 
+            local_destination : str | None=None, 
+            progress : bool=False,
+            batch_size : int=128,
+            replace_local : bool=False,
             **kwargs
         ) -> list[str] | None:
         """
-        Clones the current remote directory to the given local destination.
+        Synchronized the current remote directory to the given local destination.
 
         Args:
-            local_destination: The local destination to clone the current remote directory to.
-            blocking: If True, the function will block until the download is complete.
-            **kwargs: Keyword arguments to pass to the mirror function.
+            local_destination: The local destination to synchronize the current remote directory to.
+            progress: Show a progress bar.
+            batch_size: Number of files passed to each download call.
+            replace_local: By default existing files are skipped, if this is enabled, existing files are deleted and refetched.
+            **kwargs: Passed to IOHandler.download.
         
         Returns:
            The output of ``ImplicitMount.mirror``, which depend on the arguments passed to the function. Most likely a list of the newly downloaded files.
@@ -1018,13 +1025,32 @@ class IOHandler(ImplicitMount):
             raise TypeError("Expected str or None, got {}".format(type(local_destination)))
         if local_destination is None:
             local_destination = self.local_dir
-        local_destination = os.path.abspath(local_destination + os.sep + self.pwd().split("/")[-1])
+        local_destination = os.path.abspath(os.path.join(local_destination, self.pwd().split("/")[-1]))
         if not os.path.exists(local_destination):
             try:
                 os.makedirs(local_destination)
             except FileExistsError:
                 pass
-        return self.mirror(".", local_destination, blocking, **kwargs)
+        if self.pwd() not in self.cache:
+            self.cache_file_index()
+        files = self.cache[self.pwd()]
+        ldest = [os.path.join(local_destination, *f.split("/")) for f in files]
+        ldest, files = zip(*sorted([(l, f) for l, f in zip(ldest, files) if replace_local or not os.path.exists(l)]))
+        ldir = [os.path.dirname(dst) for dst in ldest]
+        for bi in trange(-(-len(files)//batch_size), desc=f"Synchronizing: ({self.pwd()}) ==> ({local_destination}) ...", unit="file", unit_scale=batch_size, disable=not progress, dynamic_ncols=True):
+            bs, be = bi*batch_size, min((bi+1)*batch_size, len(files))
+            if replace_local:
+                for ld in ldest[bs:be]:
+                    if os.path.exists(ld):
+                        os.remove(ld)
+            lres = self.download(files[bs:be], ldir[bs:be], **kwargs)
+            if isinstance(lres, str):
+                lres = [lres]
+            for r, e, f in zip(lres, ldest[bs:be], files[bs:be]):
+                if r != e:
+                    raise RuntimeError(f'Unexpected download location for {f}, expected {e}, but got {r}?!')
+        return ldest
+        # return self.mirror(".", local_destination, blocking, **kwargs)
     
     def get_file_index(
             self, 
