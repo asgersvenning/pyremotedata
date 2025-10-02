@@ -50,6 +50,21 @@ Downloading Files
        # Download directory
        local_path = io.download("/remote/directory", "/local/directory")
 
+Synchronizing directories
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+.. code-block:: python
+
+   from pyremotedata.implicit_mount import IOHandler
+   
+   with IOHandler() as io:
+        # Navigate to the directory
+        io.cd("my_directory")
+
+        # Synchronize directory to local storage
+        io.sync("<local_parent_directory>", progress=True) 
+
 Uploading Files
 ~~~~~~~~~~~~~~
 

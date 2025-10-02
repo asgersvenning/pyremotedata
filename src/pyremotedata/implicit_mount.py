@@ -1006,8 +1006,9 @@ class IOHandler(ImplicitMount):
             progress : bool=False,
             batch_size : int=128,
             replace_local : bool=False,
+            refresh_cache : bool=False,
             **kwargs
-        ) -> list[str] | None:
+        ) -> list[str]:
         """
         Synchronized the current remote directory to the given local destination.
 
@@ -1016,10 +1017,11 @@ class IOHandler(ImplicitMount):
             progress: Show a progress bar.
             batch_size: Number of files passed to each download call.
             replace_local: By default existing files are skipped, if this is enabled, existing files are deleted and refetched.
+            refresh_cache: Recompute file index of remote directory, can be extremely slow. Disabled by default.
             **kwargs: Passed to IOHandler.download.
         
         Returns:
-           The output of ``ImplicitMount.mirror``, which depend on the arguments passed to the function. Most likely a list of the newly downloaded files.
+           A list of paths to the local paths that have been synchronized, not including existing files if ``replace_local=False``.
         """
         if not isinstance(local_destination, str) and local_destination is not None:
             raise TypeError("Expected str or None, got {}".format(type(local_destination)))
@@ -1032,7 +1034,7 @@ class IOHandler(ImplicitMount):
             except FileExistsError:
                 pass
         if self.pwd() not in self.cache:
-            self.cache_file_index()
+            self.cache_file_index(override=refresh_cache)
         files = self.cache[self.pwd()]
         ldest = [os.path.join(local_destination, *f.split("/")) for f in files]
         ldest, files = zip(*sorted([(l, f) for l, f in zip(ldest, files) if replace_local or not os.path.exists(l)]))
@@ -1049,8 +1051,7 @@ class IOHandler(ImplicitMount):
             for r, e, f in zip(lres, ldest[bs:be], files[bs:be]):
                 if r != e:
                     raise RuntimeError(f'Unexpected download location for {f}, expected {e}, but got {r}?!')
-        return ldest
-        # return self.mirror(".", local_destination, blocking, **kwargs)
+        return list(ldest)
     
     def get_file_index(
             self, 
@@ -1075,15 +1076,29 @@ class IOHandler(ImplicitMount):
         if override and not store:
             raise ValueError("override cannot be 'True' if store is 'False'!")
         # Check if file index exists
-        glob_result = self.execute_command('glob -f --exist *folder_index.txt && echo "YES" || echo "NO"')
+        glob_result = self.execute_command('glob -f --exist .*folder_index.txt && echo "YES" || echo "NO"')
         if isinstance(glob_result, list) and len(glob_result) == 1:
             glob_result = glob_result[0]
         file_index_exists = glob_result == "YES"
-        if not file_index_exists and self.verbose:
-            main_logger.debug(f"Folder index does not exist in {self.pwd()}")
+        if not file_index_exists:
+            # Backwards compatibility check for folder index with old naming convention (non-hidden)
+            bc_glob_result = self.execute_command('glob -f --exist *folder_index.txt && echo "YES" || echo "NO"')
+            if isinstance(bc_glob_result, list) and len(bc_glob_result) == 1:
+                bc_glob_result = bc_glob_result[0]
+            bc_file_index_exists = bc_glob_result == "YES"
+            if bc_file_index_exists:
+                bc_file_index = self.execute_command('glob -f du -sh *folder_index.txt | sort -hr | cut -f 2 | head -n 1')
+                if not (isinstance(bc_file_index, list) and len(bc_file_index) == 1 and isinstance(bc_file_index := bc_file_index[0], str)):
+                    main_logger.warning('Deprecated folder index detected, but failed to rename!')
+                else:
+                    self.execute_command(f'mv "{bc_file_index}" .folder_index.txt')
+                    file_index_exists = True
+                    main_logger.debug(f'Detected deprecated folder index {bc_file_index} and renamed to .folder_index.txt in {self.pwd()}')
+            elif self.verbose:
+                main_logger.debug(f"Folder index does not exist in {self.pwd()}")
         # If override is True, delete the file index if it exists
         if override and file_index_exists:
-            self.execute_command("rm folder_index.txt")
+            self.execute_command("rm .folder_index.txt")
             # Now the file index does not exist (duh)
             file_index_exists = False
         # If the file index does not exist, create it
@@ -1091,19 +1106,19 @@ class IOHandler(ImplicitMount):
             main_logger.debug("Creating folder index...")
             # Traverse the remote directory and write the file index to a file
             files = self.ls(recursive=True, use_cache=False, pbar=True)
-            local_index_path = os.path.join(self.local_dir, "folder_index.txt")
+            local_index_path = os.path.join(self.local_dir, ".folder_index.txt")
             with open(local_index_path, "w") as f:
                 for file in files:
                     f.write(file + "\n")
             # Store the file index on the remote if 'store' is True, otherwise delete it
             if store:
                 # Self has an implicit reference to the local working directory, however the scripts does not necessarily have the same working directory
-                self.put("folder_index.txt")
+                self.put(".folder_index.txt")
                 os.remove(local_index_path)
         
         # Download the file index if 'store' is True or it already exists on the remote, otherwise read it from the local directory
         if store or file_index_exists:
-            file_index_path = self.download("folder_index.txt")
+            file_index_path = self.download(".folder_index.txt")
         else:
             file_index_path = local_index_path
         # Read the file index
@@ -1114,7 +1129,7 @@ class IOHandler(ImplicitMount):
                     continue
                 if nmax is not None and i >= (skip + nmax):
                     break
-                if len(line) < 3 or "folder_index.txt" == line[:16]:
+                if len(line) < 3 or "folder_index.txt" == line[:17]:
                     continue
                 if pattern is not None and re.search(pattern, line) is None:
                     continue
@@ -1160,7 +1175,7 @@ class IOHandler(ImplicitMount):
                     main_logger.error("\t" + "\n\t".join(files_in_dir))
             raise e
 
-class RemotePathIterator:
+class RemotePathIterator:# 
     """Buffered iterator for streaming many remote files efficiently.
 
     Downloads are performed in a background thread and yielded as
