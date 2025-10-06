@@ -1227,7 +1227,7 @@ class IOHandler(ImplicitMount):
         """
         if isinstance(local_path, str):
             if not os.path.exists(local_path):
-                raise RuntimeError("Missing download target: " + local_path)
+                raise RuntimeError("Missing upload target: " + local_path)
             if os.path.isdir(local_path):
                 if not (isinstance(remote_destination, str) or remote_destination is None):
                     raise ValueError("Uploading directories should have a single destination!")
@@ -1377,7 +1377,7 @@ class IOHandler(ImplicitMount):
             # Store the file index on the remote if 'store' is True, otherwise delete it
             if store:
                 # Self has an implicit reference to the local working directory, however the scripts does not necessarily have the same working directory
-                self.upload(".folder_index.txt")
+                self.upload(local_index_path)
                 os.remove(local_index_path)
         
         # Download the file index if 'store' is True or it already exists on the remote, otherwise read it from the local directory
