@@ -131,7 +131,8 @@ class ImplicitMount:
             password : str | None=None,
             remote : str | None=None, 
             port : int=2222,
-            verbose : bool=main_logger.isEnabledFor(logging.DEBUG)
+            verbose : bool=main_logger.isEnabledFor(logging.DEBUG),
+            **kwargs
         ):
         # Default argument configuration and type checking
         if not (user is None or password is None or port is None):
@@ -157,6 +158,16 @@ class ImplicitMount:
             raise TypeError("Expected str, got {}".format(type(remote)))
         if not isinstance(verbose, bool):
             raise TypeError("Expected bool, got {}".format(type(verbose)))
+        
+        local_dir = kwargs.get("local_dir", self.default_config.get("local_dir", None))
+        if not isinstance(local_dir, str) or local_dir == "":
+            local_dir = tempfile.TemporaryDirectory().name
+            self.default_config["local_dir"] = local_dir
+        assert isinstance(local_dir, str)
+        if not os.path.exists(local_dir):
+            os.makedirs(local_dir)
+        self._local_dir = local_dir
+        self.original_local_dir = os.path.abspath(self._local_dir)
         
         # Set attributes
         self.user = user
@@ -440,6 +451,7 @@ class ImplicitMount:
         # Execute the mount command on the lftp shell (connect to the remote directory)
         self.execute_command(lftp_mount_cmd, output=False, blocking=False)
         self.cd(self.default_config['default_remote_dir'])
+        self.execute_command(f"lcd {self._local_dir}")
 
         if self.verbose:
             main_logger.info("Waiting for connection...")
@@ -970,20 +982,17 @@ class ImplicitMount:
         Args:
            local_path: Local directory to change to.
         """
-        self.execute_command(f"lcd {local_path}", output=False)
+        self._local_dir = os.path.abspath(os.path.join(self._local_dir, local_path)) if not local_path.startswith("/") else local_path
+        self.execute_command(f"lcd {self._local_dir}", output=False)
 
-    def lpwd(self) -> str:
+    def lpwd(self):
         """
-        Get the current local directory using the LFTP command `lpwd`.
+        Get the current local directory.
 
         Returns:
            The current local directory.
         """
-        output = self.execute_command("lpwd")
-        if isinstance(output, list) and len(output) == 1:
-            return output[0]
-        else:
-            raise TypeError("Expected list of length 1, got {}: {}".format(type(output), output))
+        return self._local_dir
 
     def mirror(
             self, 
@@ -1087,7 +1096,6 @@ class IOHandler(ImplicitMount):
     """
     def __init__(
             self, 
-            local_dir : str | None=None, 
             user_confirmation : bool=False, 
             clean: bool=False, 
             user : str | None=None, 
@@ -1102,39 +1110,21 @@ class IOHandler(ImplicitMount):
             remote=remote,
             **kwargs
         )
-        if local_dir is None or local_dir == "":
-            if self.default_config["local_dir"] is None or self.default_config['local_dir'] == "":
-                local_dir = tempfile.TemporaryDirectory().name
-            else:
-                local_dir = self.default_config['local_dir']
-            assert isinstance(local_dir, str)
-        if not os.path.exists(local_dir):
-            os.makedirs(local_dir)
-        self.original_local_dir = os.path.abspath(local_dir)
-        self.local_dir = self.original_local_dir
         self.user_confirmation = user_confirmation
         self.do_clean = clean
         self.lftp_settings = lftp_settings
         self.cache : dict[str, list[str]] = {}
-
-    def lcd(self, local_path : str):
-        self.local_dir = os.path.abspath(os.path.join(self.local_dir, local_path))
-        super().lcd(self.local_dir)
-
-    def lpwd(self):
-        main_logger.info("'lpwd()' should not be used for 'IOHandler' objects, use the 'local_dir' attribute instead.")
 
     def __enter__(self) -> "IOHandler":
         """
         Opens the remote connection in a background shell.
         """
         self.mount(self.lftp_settings or {})
-        self.lcd(self.local_dir)
 
         # Print local directory:
         # if the local directory is not specified in the config, 
         # it is a temporary directory, so it is nice to know where it is located
-        main_logger.debug(f"Local directory: {self.local_dir}")
+        main_logger.debug(f"Local directory: {self._local_dir}")
 
         # Return self
         return self
