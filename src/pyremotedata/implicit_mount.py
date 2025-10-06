@@ -1026,7 +1026,6 @@ class ImplicitMount:
             if reverse is None:
                 raise ValueError('When mirroring (downloading) remote source must be specified.')
         if output:
-            print(f'{remote=} {local=} {reverse=}')
             # Capture the state of the directory before the operation
             if reverse:
                 pre_existing_files = [] if not self.exists(remote) else self.ls(remote)
@@ -1173,7 +1172,7 @@ class IOHandler(ImplicitMount):
             self, 
             remote_path : str | list[str] | tuple[str, ...],
             local_destination : str | list[str] | tuple[str, ...] | None=None,
-            n : int=15,
+            n : int=14,
             blocking : bool=True,
             **kwargs
         ):
@@ -1183,7 +1182,7 @@ class IOHandler(ImplicitMount):
         Args:
             remote_path: The remote path(s) to download.
             local_destination: The local destination(s) to download the file(s) to. If None, the file(s) will be downloaded to the current local directory.
-            n: Parallel connections to use if relevant (default=15).
+            n: Parallel connections to use if relevant (default=14).
             blocking: If True, the function will block until the download is complete.
             **kwargs: Extra keyword arguments are passed to the IOHandler.multi_download, IOHandler.pget or IOHandler.mirror functions depending on the type of the remote path(s).
 
@@ -1209,7 +1208,7 @@ class IOHandler(ImplicitMount):
             self, 
             local_path : str | list[str] | tuple[str, ...],
             remote_destination : str | list[str] | tuple[str, ...] | None=None,
-            n : int=15,
+            n : int=14,
             blocking : bool=True,
             **kwargs
         ):
@@ -1219,7 +1218,7 @@ class IOHandler(ImplicitMount):
         Args:
             local_path: The local file(s) or directory to upload.
             remote_destination: The destination of uploaded files. If None will upload to current remote directory.
-            n: Parallel connections to use if relevant (default=15).
+            n: Parallel connections to use if relevant (default=14).
             blocking: If True, the function will block until the download is complete.
             **kwargs: Extra keyword arguments are passed to the IOHandler.multi_download, IOHandler.pget or IOHandler.mirror functions depending on the type of the remote path(s).
 

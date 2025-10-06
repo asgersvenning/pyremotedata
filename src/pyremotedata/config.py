@@ -64,7 +64,7 @@ def remove_config() -> None:
         module_logger.info("No config file found at {}".format(CONFIG_PATH))
 
 DEFAULT_LFTP_CONFIG = {
-    'mirror:use-pget-n': 5, # Enable this to split a single file into multiple chunks and download them in parallel, when using mirror
+    # 'mirror:use-pget-n': 1, # Enable this to split a single file into multiple chunks and download them in parallel, when using mirror
     'net:limit-rate': 0,  # No limit on transfer rate, maximizing throughput.
     'xfer:parallel': 5,  # Enable this to split a single file into multiple chunks and download them in parallel
     'mirror:parallel-directories': "on",  # Enable this to download multiple directories in parallel
@@ -83,7 +83,7 @@ DEFAULT_LFTP_CONFIG = {
     'xfer:clobber': "true",  # Overwrite existing files.
 }
 LFTP_CONFIG_COMMENTS = {
-    'mirror:use-pget-n': "Enable this to split a single file into multiple chunks and download them in parallel, when using mirror",
+    # 'mirror:use-pget-n': "Enable this to split a single file into multiple chunks and download them in parallel, when using mirror",
     'net:limit-rate': "No limit on transfer rate, maximizing throughput.",
     'xfer:parallel': "Enable this to split a single file into multiple chunks and download them in parallel",
     'mirror:parallel-directories': "Enable this to download multiple directories in parallel",
