@@ -634,7 +634,7 @@ class ImplicitMount:
     def pget(
             self, 
             remote_path : str, 
-            local_destination : str, 
+            local_path : str | None, 
             blocking : bool=True,
             execute : bool=True,
             output : bool | None=None, 
@@ -645,7 +645,7 @@ class ImplicitMount:
 
         Args:
             remote_path: Remote file path to download.
-            local_destination: Local directory to store the file.
+            local_path: Local path destination, defaults to remote basename in current local directory.
             blocking: If True, wait for completion.
             execute: If False, return the command string instead of
                 executing.
@@ -659,18 +659,19 @@ class ImplicitMount:
         if output is None:
             output = blocking
         # Construct and return the absolute local path
-        file_name = os.path.basename(remote_path)
-        abs_local_path = os.path.abspath(os.path.join(local_destination, file_name))
-        if os.path.exists(abs_local_path):
-            while os.path.exists(subdir := os.path.join(local_destination, str(uuid.uuid4()))):
+        file_name = remote_path.split("/")[-1]
+        if local_path is None:
+            local_path = os.path.abspath(file_name)
+        if os.path.exists(local_path):
+            while os.path.exists(subdir := os.path.join(os.path.dirname(local_path), str(uuid.uuid4()))):
                 pass
             os.makedirs(subdir)
-            return self.pget(remote_path=remote_path, local_destination=subdir, blocking=blocking, execute=execute, output=output, default_args=default_args, **kwargs)
+            return self.pget(remote_path=remote_path, local_path=os.path.join(subdir, file_name), blocking=blocking, execute=execute, output=output, default_args=default_args, **kwargs)
         
         default_args = default_args or {}
         default_args = {"n" : 5, **default_args}
 
-        full_command = f'pget "{remote_path}" -o "{local_destination}"'
+        full_command = f'pget "{remote_path}" -o "{local_path}"'
         exec_output = self.execute_command(
             full_command, 
             output=output, 
@@ -682,7 +683,7 @@ class ImplicitMount:
         if not execute:
             return exec_output
         
-        return abs_local_path
+        return local_path
     
     def put(
             self,
