@@ -1355,7 +1355,7 @@ class IOHandler(ImplicitMount):
             main_logger.debug("Creating folder index...")
             # Traverse the remote directory and write the file index to a file
             files = self.ls(recursive=True, use_cache=False, pbar=True)
-            local_index_path = os.path.join(self.local_dir, ".folder_index.txt")
+            local_index_path = os.path.join(self.lpwd(), ".folder_index.txt")
             with open(local_index_path, "w") as f:
                 for file in files:
                     f.write(file + "\n")
@@ -1399,25 +1399,25 @@ class IOHandler(ImplicitMount):
     def clean(self):
         if self.user_confirmation:
             # Ask for confirmation
-            confirmation = input(f"Are you sure you want to delete all files in the current directory {self.local_dir}? (y/n)")
+            confirmation = input(f"Are you sure you want to delete all files in the current directory {self.lpwd()}? (y/n)")
             if confirmation.lower() != "y":
                 main_logger.debug("Aborted")
                 return
 
         main_logger.debug("Cleaning up...")
-        for path in os.listdir(self.local_dir):
+        for path in os.listdir(self.lpwd()):
             try:
                 delete_file_or_dir(path)
             except Exception as e:
                 main_logger.debug(f"Error while deleting {path}: {e}")
         try:
-            shutil.rmtree(self.local_dir)
+            shutil.rmtree(self.lpwd())
         except Exception as e:
             main_logger.error("Error while cleaning local backend directory!")
-            files_in_dir = os.listdir(self.local_dir)
+            files_in_dir = os.listdir(self.lpwd())
             if files_in_dir:
                 n_files = len(files_in_dir)
-                main_logger.error(f"{n_files} files in local directory ({self.local_dir}):")
+                main_logger.error(f"{n_files} files in local directory ({self.lpwd()}):")
                 if n_files > 5:
                     main_logger.error("\t" + "\n\t".join(files_in_dir[:5]) + "\n\t...")
                 else:
@@ -1473,7 +1473,7 @@ class RemotePathIterator:
                 main_logger.warning(f'Using cached file index. [{", ".join(kwargs.keys())}] will be ignored.')
             self.remote_paths = self.io_handler.cache[self.io_handler.pwd()]
         self.remote_paths = list(self.remote_paths) # Ensure locality
-        self.temp_dir = self.io_handler.local_dir
+        self.temp_dir = self.io_handler.lpwd()
         self.batch_size = batch_size
         self.batch_parallel = batch_parallel
         self.max_queued_batches = max_queued_batches
