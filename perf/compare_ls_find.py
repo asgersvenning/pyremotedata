@@ -1,11 +1,14 @@
-from pyremotedata.implicit_mount import IOHandler
-
-from argparse import ArgumentParser
-
+import os
 import random
+import tempfile
 import time
+from argparse import ArgumentParser
+from math import floor, log10
 
-from math import log10, floor
+from tqdm.auto import trange
+
+from pyremotedata.config import ask_user
+from pyremotedata.implicit_mount import IOHandler
 
 units = {
     86400 : "day",
@@ -213,30 +216,51 @@ def time_find(io : IOHandler, verbose : bool=False):
         print(f"`find -d 9999`:\n  * {timer} to find {len(result)} files.\n")
     return timer.duration
 
+def time_rm(io : IOHandler, verbose : bool=False):
+    timer = Timer()
+    with timer:
+        cwd = io.pwd()
+        io.cd("..")
+        io.rm(cwd, force=True)
+    if verbose:
+        print(f"`rm`:\n  * {timer} to remove {cwd}")
+    return timer.duration
+
 if __name__ == "__main__":
     parser = ArgumentParser("compare_ls_find")
     parser.add_argument("-d", "--directory", type=str, required=True)
 
-    directory = parser.parse_args().directory
+    args = parser.parse_args()
+    directory : str = args.directory
 
     timings : dict[str, list[Duration]] = {
         "ls" : [],
-        "find" : []
+        "find" : [],
+        "rm" : []
     }
-        
-    for i in range(10):
-        with IOHandler() as io:
-            io.cd(directory)
-            if random.uniform(0, 1) > 0.5:
-                ls_time = time_ls(io)
-                find_time = time_find(io)
-            else:
-                find_time = time_find(io)
-                ls_time = time_ls(io)
-            if i > 3:
-                timings["ls"].append(ls_time)
-                timings["find"].append(find_time)
-        time.sleep(0.025)
+
+    with tempfile.TemporaryDirectory() as td:
+        for _ in trange(1000, desc="Creating random files..."):
+            with tempfile.NamedTemporaryFile(dir=td, delete=False) as f:
+                f.write(os.urandom(10_000))
+        for i in trange(10, desc="Timing LFTP..."):
+            with IOHandler() as io:
+                io.cd("/")
+                io.upload(td, directory)
+                io.cd(directory)
+                io.execute_command("cache flush")
+                if random.uniform(0, 1) > 0.5:
+                    ls_time = time_ls(io)
+                    find_time = time_find(io)
+                else:
+                    find_time = time_find(io)
+                    ls_time = time_ls(io)
+                rm_time = time_rm(io)
+                if i > 3:
+                    timings["ls"].append(ls_time)
+                    timings["find"].append(find_time)
+                    timings["rm"].append(rm_time)
+            time.sleep(0.025)
 
     for method, ts in timings.items():
         total = sum(ts) / len(ts)
