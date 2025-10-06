@@ -848,7 +848,7 @@ class ImplicitMount:
             return retval
         if not isinstance(retval, list):
             raise RuntimeError(f'Unexpected return value: {retval}')
-        return dict(line.split("\t")[::-1] for line in retval)
+        return dict((size_path[1], int(size_path[0])) for line in retval if (size_path := line.split("\t")))
 
     def ls(
             self, 
