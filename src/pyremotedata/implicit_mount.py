@@ -21,12 +21,14 @@ import tempfile
 import threading
 import time
 import uuid
+from enum import Enum
 from queue import Queue
 from random import choices, shuffle
+
 from tqdm.auto import trange
 
 from pyremotedata import CLEAR_LINE, ESC_EOL, main_logger
-from pyremotedata.config import get_implicit_mount_config
+from pyremotedata.config import DEFAULT_LFTP_CONFIG, get_implicit_mount_config
 
 BENIGN_ERR = re.compile("(wait|fg): no current job")
 
@@ -70,6 +72,23 @@ def _unlink(p : str, force : bool) -> None:
         os.chmod(p, stat.S_IWUSR)
         os.unlink(p)
 
+class RemoteType(int, Enum):
+    MISSING = 0
+    FILE = 1
+    DIRECTORY = 2
+    @classmethod
+    def _missing_(cls, value):
+        if value is None:
+            return cls.NONE
+        if isinstance(value, str):
+            name = value.strip().upper()
+            try:
+                return cls[name]
+            except KeyError:
+                raise ValueError(f'Only remote modes "MISSING", "FILE" and "DIRECTORY" are defined, not {value!r}.')
+        # let IntEnum's default handling raise for bad ints:
+        return super()._missing_(value)
+
 class ImplicitMount:
     """
     This is a low-level wrapper of LFTP, which provides a pythonic interface for executing LFTP commands and reading the output.
@@ -81,7 +100,7 @@ class ImplicitMount:
     Args:
         user: The username to use for connecting to the remote directory.
         password: The *SFTP* password to possibly use when connecting to the remote host.
-        remote: The remote server to connect to.
+        remote: The remote server to connect to. If `user` and `password` are supplied, this will default to 'io.erda.au.dk' for convenience.
         port: The port to connect to (default: 2222).
         verbose: If True, print the commands executed by the class.
 
@@ -112,10 +131,23 @@ class ImplicitMount:
             password : str | None=None,
             remote : str | None=None, 
             port : int=2222,
-            verbose : bool=main_logger.isEnabledFor(logging.DEBUG)
+            verbose : bool=main_logger.isEnabledFor(logging.DEBUG),
+            **kwargs
         ):
         # Default argument configuration and type checking
-        self.default_config = get_implicit_mount_config(validate=(isinstance(user, str) and isinstance(remote, str)))
+        if not (user is None or password is None or port is None):
+            if remote is None:
+                # Since 99.9% of use-cases are for ERDA at the moment, the decrease in friction this 
+                # default adds is worth the non-generality (may be changed in the future)
+                main_logger.info("Defaulting to 'io.erda.au.dk' because user and password have been manually passed!")
+            self.default_config = {
+                "default_remote_dir" : "/",
+                "local_dir" : None,
+                "remote" : "io.erda.au.dk",
+                "lftp": DEFAULT_LFTP_CONFIG.copy()
+            }
+        else:
+            self.default_config = get_implicit_mount_config(validate=(isinstance(user, str) and isinstance(remote, str)))
         if user is None:
             user = self.default_config['user']
         if remote is None:
@@ -126,6 +158,16 @@ class ImplicitMount:
             raise TypeError("Expected str, got {}".format(type(remote)))
         if not isinstance(verbose, bool):
             raise TypeError("Expected bool, got {}".format(type(verbose)))
+        
+        local_dir = kwargs.get("local_dir", self.default_config.get("local_dir", None))
+        if not isinstance(local_dir, str) or local_dir == "":
+            local_dir = tempfile.TemporaryDirectory().name
+            self.default_config["local_dir"] = local_dir
+        assert isinstance(local_dir, str)
+        if not os.path.exists(local_dir):
+            os.makedirs(local_dir)
+        self._local_dir = local_dir
+        self.original_local_dir = os.path.abspath(self._local_dir)
         
         # Set attributes
         self.user = user
@@ -321,7 +363,11 @@ class ImplicitMount:
         formatted_args = self.format_options(**args)
 
         # Combine command and arguments
-        full_command = f"{command} {formatted_args}" if formatted_args else command
+        if " " in command:
+            cmd, other = command.split(" ", 1)
+        else:
+            cmd, other = command, ""
+        full_command = f"{cmd} {formatted_args} {other}" if formatted_args else command
         if output:
             if uuid_str is None:
                 uuid_str = str(uuid.uuid4())
@@ -350,9 +396,15 @@ class ImplicitMount:
             Exception: If the subprocess fails to start.
             RuntimeError: If the connection to the remote directory fails.
         """
-        # set mirror:use-pget-n 5;set net:limit-rate 0;set xfer:parallel 5;set mirror:parallel-directories true;set ftp:sync-mode off;"
         # Merge default settings and user settings. User settings will override default settings.
         lftp_settings = {**self.default_config['lftp'], **lftp_settings} if lftp_settings is not None else self.default_config['lftp']
+        
+        # Password connect:
+        if isinstance(self.password, str) and len(self.password) > 0 and self.password != "":
+            if "sftp:connect-program" in lftp_settings:
+                raise KeyError(f"LFTP setting 'sftp:connect-program' cannot be used with password connection!")
+            lftp_settings["sftp:connect-program"] = "ssh -a -x -o PreferredAuthentications=password -o PubkeyAuthentication=no"
+
         # Format settings
         lftp_settings_str = ""
         for key, value in lftp_settings.items():
@@ -399,6 +451,7 @@ class ImplicitMount:
         # Execute the mount command on the lftp shell (connect to the remote directory)
         self.execute_command(lftp_mount_cmd, output=False, blocking=False)
         self.cd(self.default_config['default_remote_dir'])
+        self.execute_command(f"lcd {self._local_dir}")
 
         if self.verbose:
             main_logger.info("Waiting for connection...")
@@ -433,20 +486,178 @@ class ImplicitMount:
         self.lftp_shell.stderr.close()
         self.lftp_shell = None
 
+    def exists(
+        self,
+        path : str,
+        mode : str="any",
+        execute : bool=True,
+        **kwargs
+        ):
+        """
+        Check if a path (file/directory/link) exists.
+
+        Args:
+            path: Path to check.
+            mode: Which types of file to match. Not-case sensitive, 
+                currently "any" (default), "file" and "directory" are supported.
+            **kwargs: Additional arguments passed to execute_command.
+        
+        Returns:
+            Boolean if `execute=True` else the command.
+        """
+        if not isinstance(mode, str):
+            raise TypeError(f'Unexpected exist type: {type(mode)}')
+        mode = mode.strip().lower()
+        # Some paths are "base-cases" that should exist in all cases:
+        # - Current directory
+        # - Parent directory of current directory
+        # - Root directory
+        if path in [".", "..", "/", "/.", "./"]:
+            if not execute:
+                return "NO CMD"
+            return mode in ["any", "directory"]
+        parts = path.split("/")
+        # Recursively check if the parent directories exist to avoid error in glob expansion
+        if len(parts) > 1:
+            if not self.exists("/".join(parts[:-1]), mode="directory"):
+                return False
+        else:
+            parts.insert(0, ".")
+        # Get glob mode-argument
+        match mode:
+            case "any":
+                type_arg = "-a"
+            case "file":
+                type_arg = "-f"
+            case "directory":
+                type_arg = "-d"
+        # Check if file is hidden, needs special handling: https://en.wikipedia.org/wiki/Glob_(programming)#Origin
+        hidden = parts[-1].startswith(".")
+        exist_glob = f'{"/".join(parts[:-1])}/{"." if hidden else ""}*{parts[-1].removeprefix(".")}'
+        glob_result = self.execute_command(f'glob {type_arg} --exist "{exist_glob}" && echo "YES" || echo "NO"')
+        if not execute:
+            return glob_result
+        if isinstance(glob_result, list) and len(glob_result) == 1:
+            glob_result = glob_result[0]
+        else:
+            raise RuntimeError(f'Unexpected return value: {glob_result}')
+        return glob_result == "YES"
+    
+    def pathtype(
+        self,
+        remote_path : str
+        ):
+        if not self.exists(remote_path, mode="any"):
+            return RemoteType.MISSING
+        if self.exists(remote_path, mode="directory"):
+            return RemoteType.DIRECTORY
+        if self.exists(remote_path, mode="file"):
+            return RemoteType.FILE
+        raise RuntimeError(f'Unknown remote path type "{remote_path}" exists, but is not a file or directory?')
+
+    def get(
+            self,
+            remote_path : str | list[str] | tuple[str, ...],
+            local_path : str | list[str] | tuple[str, ...] | None=None,
+            execute : bool=True,
+            **kwargs
+        ):
+        """Download file(s) using LFTP ``get``.
+
+        Args:
+            remote_path: Remote file path to download.
+            local_path: Local download destination path. If
+                None, downloads to the current local directory.
+            blocking: If True, wait for completion.
+            execute: If False, return the command string.
+            output: If True, return absolute remote path(s).
+            **kwargs: Additional options forwarded to ``put``.
+
+        Returns:
+            Command string(s) when ``execute`` is False; otherwise, local destination path(s) based on the type of `remote_path`.
+        """
+        rettype = type(remote_path)
+        if not isinstance(remote_path, (str, list, tuple)):
+            raise TypeError(f'Invalid download path type: {type(remote_path)}')
+        if isinstance(remote_path, str):
+            remote_path = [remote_path]
+        if local_path is None:
+            local_path = [os.path.basename(rp) for rp in remote_path]
+        elif isinstance(local_path, str):
+            local_path = [local_path]
+        if len(remote_path) != len(local_path):
+            raise ValueError(f'Number of local paths (destination) must match number of remote paths (source), but: {len(remote_path)=} & {len(local_path)=}')
+        if len(remote_path) == 0:
+            return rettype()
+        if len(remote_path) > 1:
+            retorder = {rp : None for rp in remote_path}
+            cmds = []
+            local_destination_dirs = ["/".join(lp.split("/")[:-1]) or "." for lp in local_path]
+            for local_destination_dir in set(local_destination_dirs):
+                dir_remote_paths = [rp for rp, ldd in zip(remote_path, local_destination_dirs) if ldd == local_destination_dir]
+                dir_retval = self.mget(dir_remote_paths, local_destination_dir=local_destination_dir, execute=execute, **kwargs)
+                if not execute:
+                    cmds.append(dir_retval)
+                    continue
+                for rv, rp in zip(dir_retval, dir_remote_paths):
+                    retorder[rp] = rv
+            if not execute:
+                return cmds
+            retval = [retorder[rp] for rp in remote_path]
+            return rettype(retval)
+        kwargs.pop("P", None)
+        remote_path, local_path = remote_path[0], local_path[0]
+        exec_output = self.execute_command(
+            # f"get " + " ".join(f'{rp} -o {lp}' for rp, lp in zip(remote_path, local_path)),
+            f'get "{remote_path}" -o "{local_path}"',
+            execute=execute,
+            **kwargs
+        )
+        if not execute:
+            return exec_output
+        retval = f'{self.lpwd()}/{local_path}'
+        if rettype != str:
+            return rettype([retval])
+        return retval
+    
+    def mget(
+        self,
+        remote_paths : list[str] | tuple[str, ...],
+        local_destination_dir : str,
+        execute : bool=True,
+        default_args : dict | None=None,
+        **kwargs
+        ):
+        default_args = default_args or {}
+        default_args = {"P" : 5, **default_args}
+        exec_output = self.execute_command(
+            "mget " + " ".join([f'"{rp}"' for rp in remote_paths]),
+            execute=execute,
+            default_args=default_args,
+            O=local_destination_dir,
+            **kwargs
+        )
+        if not execute:
+            return exec_output
+        lpwd = self.lpwd()
+        return [f'{lpwd}/{os.path.basename(rp)}' for rp in remote_paths]
+        
+
     def pget(
             self, 
             remote_path : str, 
-            local_destination : str, 
+            local_path : str | None, 
             blocking : bool=True,
             execute : bool=True,
             output : bool | None=None, 
+            default_args : dict | None=None,
             **kwargs
         ) -> str | None:
         """Download a single file using LFTP ``pget``.
 
         Args:
             remote_path: Remote file path to download.
-            local_destination: Local directory to store the file.
+            local_path: Local path destination, defaults to remote basename in current local directory.
             blocking: If True, wait for completion.
             execute: If False, return the command string instead of
                 executing.
@@ -460,43 +671,44 @@ class ImplicitMount:
         if output is None:
             output = blocking
         # Construct and return the absolute local path
-        file_name = os.path.basename(remote_path)
-        abs_local_path = os.path.abspath(os.path.join(local_destination, file_name))
-        if os.path.exists(abs_local_path):
-            while os.path.exists(subdir := os.path.join(local_destination, str(uuid.uuid4()))):
+        file_name = remote_path.split("/")[-1]
+        if local_path is None:
+            local_path = os.path.abspath(file_name)
+        if os.path.exists(local_path):
+            while os.path.exists(subdir := os.path.join(os.path.dirname(local_path), str(uuid.uuid4()))):
                 pass
             os.makedirs(subdir)
-            return self.pget(remote_path=remote_path, local_destination=subdir, blocking=blocking, execute=execute, output=output, **kwargs)
+            return self.pget(remote_path=remote_path, local_path=os.path.join(subdir, file_name), blocking=blocking, execute=execute, output=output, default_args=default_args, **kwargs)
+        
+        default_args = default_args or {}
+        default_args = {"n" : 5, **default_args}
 
-        default_args = {'n': 5}
-        args = {**default_args, **kwargs}
-        formatted_args = self.format_options(**args)
-        full_command = f'pget {formatted_args} "{remote_path}" -o "{local_destination}"'
+        full_command = f'pget "{remote_path}" -o "{local_path}"'
         exec_output = self.execute_command(
             full_command, 
             output=output, 
             blocking=blocking,
-            execute=execute
+            execute=execute,
+            default_args=default_args,
+            **kwargs
         )
         if not execute:
             return exec_output
         
-        return abs_local_path
+        return local_path
     
     def put(
             self,
-            local_path : str,
-            remote_destination : str | None=None,
-            blocking : bool=True,
+            local_path : str | list[str] | tuple[str, ...],
+            remote_path : str | list[str] | tuple[str, ...] | None=None,
             execute : bool=True,
-            output : bool | None=None,
             **kwargs
         ):
         """Upload file(s) using LFTP ``put``.
 
         Args:
-            local_path: Local file path to upload.
-            remote_destination: Remote destination path. If
+            local_path: Local file(s) to upload.
+            remote_path: Remote file path(s) to upload to. If
                 None, uploads to the current remote directory.
             blocking: If True, wait for completion.
             execute: If False, return the command string.
@@ -504,51 +716,139 @@ class ImplicitMount:
             **kwargs: Additional options forwarded to ``put``.
 
         Returns:
-            Command string when ``execute`` is False; otherwise, list of
-            absolute remote paths of the uploaded file(s).
+            Command string(s) when ``execute`` is False; otherwise, remote destination path(s) based on the type of `remote_path`.
         """
-        def source_destination(local_path: str | list[str], remote_destination: str | list[str] | None=None):
-            if isinstance(local_path, str):
-                local_path = [local_path]
-            if not isinstance(local_path, list):
-                raise TypeError("Expected list or str, got {}".format(type(local_path)))
-            if remote_destination is None:
-                if isinstance(local_path, list):
-                    remote_destination = [os.path.basename(p) for p in local_path]
-                elif isinstance(local_path, str):
-                    remote_destination = os.path.basename(local_path)
-                else:
-                    raise TypeError("Expected list or str, got {}".format(type(local_path)))
-            elif isinstance(remote_destination, str):
-                remote_destination = [remote_destination]
-            if not isinstance(remote_destination, list):
-                raise TypeError("Expected list or str, got {}".format(type(remote_destination)))
-            if len(local_path) != len(remote_destination):
-                raise ValueError("Expected local_path and remote_destination to have the same length, got {} and {} instead.".format(len(local_path), len(remote_destination)))
-            return remote_destination, " ".join([f'"{l}" -o "{r}""'for l, r in zip(local_path, remote_destination)])
-        
-        if output is None:
-            output = blocking
-        # OBS: The online manual for LFTP is invalid for put (at least on ERDA); the included "P" option for the put command does not exist
-        default_args = {}
-        args = {**default_args, **kwargs}
-        formatted_args = self.format_options(**args)
-        remote_destination, src_to_dst = source_destination(local_path, remote_destination)
-        full_command = f"put {formatted_args} {src_to_dst}"
+        rettype = type(local_path)
+        if not isinstance(local_path, (str, list, tuple)):
+            raise TypeError(f'Invalid upload path type: {type(local_path)}')
+        if isinstance(local_path, str):
+            local_path = [local_path]
+        if remote_path is None:
+            remote_path = [os.path.basename(lp) for lp in local_path]
+        elif isinstance(remote_path, str):
+            remote_path = [remote_path]
+        if len(remote_path) != len(local_path):
+            raise ValueError(f'Number of local paths (destination) must match number of remote paths (source), but: {len(remote_path)=} & {len(local_path)=}')
+        if len(local_path) == 0:
+            return rettype()
+        if len(local_path) > 1:
+            retorder = {lp : None for lp in local_path}
+            cmds = []
+            remote_destination_dirs = ["/".join(rp.split("/")[:-1]) or "." for rp in remote_path]
+            for remote_destination_dir in set(remote_destination_dirs):
+                dir_local_paths = [lp for lp, rdd in zip(local_path, remote_destination_dirs) if rdd == remote_destination_dir]
+                dir_retval = self.mput(dir_local_paths, remote_destination_dir=remote_destination_dir, execute=execute, **kwargs)
+                if not execute:
+                    cmds.append(dir_retval)
+                    continue
+                for rv, lp in zip(dir_retval, dir_local_paths):
+                    retorder[lp] = rv
+            if not execute:
+                return cmds
+            retval = [retorder[lp] for lp in local_path]
+            return rettype(retval)
+        remote_path, local_path = remote_path[0], local_path[0]
+        kwargs.pop("P", None)
         exec_output = self.execute_command(
-            full_command, 
-            output=output, 
-            blocking=blocking,
-            execute=execute
+            f'put "{local_path}" -o "{remote_path}"',
+            execute=execute,
+            **kwargs
         )
         if not execute:
             return exec_output
+        retval = f'{self.pwd()}/{remote_path}'
+        if rettype != str:
+            return rettype([retval])
+        return retval
+    
+    def mput(
+        self,
+        local_paths : list[str] | tuple[str, ...],
+        remote_destination_dir : str,
+        execute : bool=True,
+        default_args : dict | None=None,
+        **kwargs
+        ):
+        default_args = default_args or {}
+        default_args = {"P" : 5, **default_args}
+        exec_output = self.execute_command(
+            "mput " + " ".join(local_paths),
+            execute=execute,
+            default_args=default_args,
+            O=remote_destination_dir,
+            **kwargs
+        )
+        if not execute:
+            return exec_output
+        pwd = self.pwd()
+        return [f'{pwd}/{os.path.basename(lp)}' for lp in local_paths]
+    
+    def rm(
+        self,
+        path : str | list[str] | tuple[str, ...],
+        force : bool=False,
+        execute : bool=True,
+        blocking : bool=True,
+        **kwargs
+        ) -> str | None:
+        """
+        Remove a file or directory.
+
+        Args:
+            path: File or directory to delete.
+            force: Force deletion of path (rm -rf), directories can only be deleted with this argument (empty or not).
+            **kwargs: Additional arguments passed to execute_command.
         
-        # Construct and return the absolute remote path
-        file_name = os.path.basename(os.path.abspath(local_path))
-        rpwd = self.pwd()
-        abs_remote_path = [rpwd + "/" + r for r in remote_destination]
-        return abs_remote_path
+        Returns:
+            The command `execute=False` else None
+        """
+        if isinstance(path, str):
+            path = [path]
+        args = {"r" : None, "f" : None}
+        if not force:
+            args.pop("r", None)
+            args.pop("f", None)
+        kwargs = {**kwargs, **args}
+        retval = self.execute_command('rm ' + ' & rm '.join(path), blocking=blocking, execute=execute, output=False, **kwargs)
+        if not execute:
+            return retval
+        
+    def du(
+        self,
+        path : str,
+        all : bool=False,
+        bytes : bool=True,
+        execute : bool=True,
+        blocking : bool=True,
+        default_args : dict | None=None,
+        **kwargs
+        ):
+        """
+        Get the size of a directory/path.
+
+        Args:
+            path: Path to examine.
+            all: Return size of all files and subdirectories of path, including path itself, separately.
+            bytes: Return size in bytes, otherwise in KB.
+            **kwargs: Passed to execute_command.
+        
+        Returns:
+            A dict with path(s) as keys and size as values, if `blocking=False` None and if `execute=False` the command.
+        """
+        default_args = default_args or {}
+        default_args = {"all" : None, "bytes" : None, **default_args}
+        if not all:
+            default_args.pop("all", None)
+        if not bytes:
+            default_args.pop("bytes", None)
+        retval = self.execute_command(f'du "{path}" | cat', blocking=blocking, execute=execute, default_args=default_args, **kwargs)
+        if not blocking:
+            return None
+        if not execute:
+            return retval
+        if not isinstance(retval, list):
+            raise RuntimeError(f'Unexpected return value: {retval}')
+        return dict((size_path[1], int(size_path[0])) for line in retval if (size_path := line.split("\t")))
 
     def ls(
             self, 
@@ -627,7 +927,7 @@ class ImplicitMount:
                     sanitize_path(output, path)
         # Non-recursive case
         else:
-            output = sanitize_path([], self.execute_command(f'cls "{path}" -1'))
+            output = sanitize_path([], self.execute_command(f'cls -1 "{path}"'))
         
         # Clear the progress bar if end of top-level
         if pbar and _top:
@@ -639,20 +939,25 @@ class ImplicitMount:
         
         return output
     
-    def lls(self, local_path: str = "", **kwargs) -> list[str]:
+    def lls(self, local_path: str = ".", **kwargs) -> list[str] | str | None:
         """List files in a local directory via the LFTP shell.
+
+        Args:
+            local_path: 
 
         Notes:
             Prefer native Python/OS listing. This is mainly useful for
             consistency and debugging through the same LFTP session.
         """
-        recursive = kwargs.get("R", kwargs.get("recursive", False))
+        if os.name != "posix":
+            raise NotImplementedError("IOHandler.lls() is not supported in non-Unix-like OSs (Windows)")
+        recursive = kwargs.pop("R", kwargs.pop("recursive", False))
         if not (recursive is False):
             if local_path == "":
                 local_path = "."
-            output = self.execute_command(f'!find "{local_path}" -type f -exec realpath --relative-to="{local_path}" {{}} \\;')
+            output = self.execute_command(f'!find "{local_path}" -type f -exec realpath --relative-to="{local_path}" {{}} \\; | cat', **kwargs)
         else: 
-            output = self.execute_command(f'!ls "{local_path}"', **kwargs)
+            output = self.execute_command(f'!ls "{local_path}" | cat', **kwargs)
         
         # Check if the output is a list
         if not isinstance(output, list):
@@ -677,58 +982,68 @@ class ImplicitMount:
         Args:
            local_path: Local directory to change to.
         """
-        self.execute_command(f"lcd {local_path}", output=False)
+        self._local_dir = os.path.abspath(os.path.join(self._local_dir, local_path)) if not local_path.startswith("/") else local_path
+        self.execute_command(f"lcd {self._local_dir}", output=False)
 
-    def lpwd(self) -> str:
+    def lpwd(self):
         """
-        Get the current local directory using the LFTP command `lpwd`.
+        Get the current local directory.
 
         Returns:
            The current local directory.
         """
-        output = self.execute_command("lpwd")
-        if isinstance(output, list) and len(output) == 1:
-            return output[0]
-        else:
-            raise TypeError("Expected list of length 1, got {}: {}".format(type(output), output))
-    
-    def _get_current_files(self, dir_path : str) -> list[str]:
-        return self.lls(dir_path, R="")
+        return self._local_dir
 
     def mirror(
             self, 
-            remote_path : str,
-            local_destination : str, 
+            remote : str,
+            local : str,
+            reverse : bool=False,
+            output : bool=True,
             blocking : bool=True,
             execute : bool=True,
-            do_return : bool=True,
+            default_args : dict | None=None,
             **kwargs
         ) -> list[str] | None:
         """Mirror a remote directory to a local destination (LFTP ``mirror``).
 
         Args:
-            remote_path: Remote directory to download.
-            local_destination: Local destination directory.
-            blocking: If True, wait for completion.
-            execute: If False, return the command string.
-            do_return: If True, return the newly downloaded files.
+            remote: Remote directory to download (if not reverse).
+            local: Local destination directory (if not reverse).
+            reverse: Upload from `local` to `destination`.
             **kwargs: Additional options forwarded to ``mirror``.
 
         Returns:
-           List of newly downloaded files if ``do_return`` is True, otherwise None. 
-           If ``execute`` is False, returns the command string.
+           List of newly downloaded files or following `ImplicitMount.execute_command`.
         """
-        if do_return:
+        if "R" in kwargs:
+            raise RuntimeError(f'Passing `R` to IOHandler.mirror is not supported, please use `reverse` instead.')
+        if reverse:
+            kwargs["R"] = None
+            if remote is None:
+                remote = self.pwd()
+            if local is None:
+                raise ValueError('When reverse mirroring (uploading) local source must be specified.')
+        else:
+            if local is None:
+                local = self.lpwd()
+            if reverse is None:
+                raise ValueError('When mirroring (downloading) remote source must be specified.')
+        if output:
             # Capture the state of the directory before the operation
-            pre_existing_files = self._get_current_files(local_destination)
+            if reverse:
+                pre_existing_files = [] if not self.exists(remote) else self.ls(remote, recursive=True)
+            else:
+                pre_existing_files = [] if not os.path.exists(local) else self.lls(local, recursive=True)
             # Ensure that the pre_existing_files list is unique
             pre_existing_files = set(pre_existing_files)
 
         # Execute the mirror command
-        default_args = {'P': 5, 'use-cache': None}
+        default_args = default_args or {}
+        default_args = {'P': 5, 'use-cache': None, **default_args}
         exec_output = self.execute_command(
-            f'mirror "{remote_path}" "{local_destination}"', 
-            output=blocking, 
+            f'mirror "{local}" "{remote}"' if reverse else f'mirror "{remote}" "{local}"', 
+            output=False, 
             blocking=blocking, 
             execute=execute,
             default_args=default_args, 
@@ -737,18 +1052,17 @@ class ImplicitMount:
         if not execute:
             return exec_output
         
-        if do_return:
+        if output:
             # Capture the state of the directory after the operation
-            post_download_files = self._get_current_files(local_destination)
+            if reverse:
+                post_download_files = [] if not self.exists(remote) else self.ls(remote, recursive=True)
+            else:
+                post_download_files = [] if not os.path.exists(local) else self.lls(local, recursive=True)
             # Ensure that the post_download_files list is unique
             post_download_files = set(post_download_files)
-
             # Calculate the set difference to get the newly downloaded files
             new_files = post_download_files - pre_existing_files
-            
             return list(new_files)
-        else:
-            return None
 
 class IOHandler(ImplicitMount):
     """
@@ -782,7 +1096,6 @@ class IOHandler(ImplicitMount):
     """
     def __init__(
             self, 
-            local_dir : str | None=None, 
             user_confirmation : bool=False, 
             clean: bool=False, 
             user : str | None=None, 
@@ -797,41 +1110,21 @@ class IOHandler(ImplicitMount):
             remote=remote,
             **kwargs
         )
-        if local_dir is None or local_dir == "":
-            if self.default_config['local_dir'] is None or self.default_config['local_dir'] == "":
-                local_dir = tempfile.TemporaryDirectory().name
-            else:
-                local_dir = self.default_config['local_dir']
-            assert isinstance(local_dir, str)
-        if not os.path.exists(local_dir):
-            os.makedirs(local_dir)
-        self.original_local_dir = os.path.abspath(local_dir)
-        self.local_dir = self.original_local_dir
         self.user_confirmation = user_confirmation
         self.do_clean = clean
         self.lftp_settings = lftp_settings
-        self.last_download = None
-        self.last_type = None
         self.cache : dict[str, list[str]] = {}
-
-    def lcd(self, local_path : str):
-        self.local_dir = os.path.abspath(os.path.join(self.local_dir, local_path))
-        super().lcd(self.local_dir)
-
-    def lpwd(self):
-        raise TypeError("'lpwd()' should not be used for 'IOHandler' objects, use the 'local_dir' attribute instead.")
 
     def __enter__(self) -> "IOHandler":
         """
         Opens the remote connection in a background shell.
         """
         self.mount(self.lftp_settings or {})
-        self.lcd(self.local_dir)
 
         # Print local directory:
         # if the local directory is not specified in the config, 
         # it is a temporary directory, so it is nice to know where it is located
-        main_logger.debug(f"Local directory: {self.local_dir}")
+        main_logger.debug(f"Local directory: {self._local_dir}")
 
         # Return self
         return self
@@ -864,156 +1157,93 @@ class IOHandler(ImplicitMount):
             self, 
             remote_path : str | list[str] | tuple[str, ...],
             local_destination : str | list[str] | tuple[str, ...] | None=None,
+            n : int=14,
             blocking : bool=True,
             **kwargs
-        ) -> str | list[str]:
+        ):
         """
         Downloads one or more files or a directory from the remote directory to the given local destination.
 
         Args:
             remote_path: The remote path(s) to download.
             local_destination: The local destination(s) to download the file(s) to. If None, the file(s) will be downloaded to the current local directory.
+            n: Parallel connections to use if relevant (default=14).
             blocking: If True, the function will block until the download is complete.
             **kwargs: Extra keyword arguments are passed to the IOHandler.multi_download, IOHandler.pget or IOHandler.mirror functions depending on the type of the remote path(s).
 
         Returns:
-           The local path of the downloaded file(s) or directory.
+           The local path(s) of the downloaded file(s) or directory.
         """
-        if len(remote_path) == 0:
-            raise ValueError(f'Downloading zero-length source is not valid: {remote_path=}')
-        # If multiple remote paths are specified, use multi_download instead of download, 
-        # this function is more flexible than mirror (works for files from different directories) and much faster than executing multiple pget commands
-        if not isinstance(remote_path, str) and len(remote_path) > 1:
-            if isinstance(local_destination, (list, tuple)) and len(set(local_destination)) == 1:
-                local_destination = local_destination[0]
-            if not isinstance(local_destination, (list, tuple)):
-                return self._multi_download(remote_path, local_destination, **kwargs)
+        if isinstance(remote_path, str):
+            match self.pathtype(remote_path):
+                case RemoteType.MISSING:
+                    raise RuntimeError("Missing download target: " + remote_path)
+                case RemoteType.DIRECTORY:
+                    if not (isinstance(local_destination, str) or local_destination is None):
+                        raise ValueError("Downloading directories should have a single destination!")
+                    return self.mirror(remote_path, local_destination, blocking=blocking, P=n, **kwargs)
+                case RemoteType.FILE:
+                    return self.pget(remote_path, local_destination, blocking=blocking, n=n, **kwargs)
+                case _:
+                    raise RuntimeError('Remote download path exists, but is not a file or directory?')
+        n = min(len(remote_path), n)
+        return self.get(remote_path, local_destination, blocking=blocking, P=n, **kwargs)
 
-            # If there are multiple local destinations, split into separate subcalls
-            if len(remote_path) != len(local_destination):
-                raise ValueError(f'When supplying multiple local destionations, they are expected to match 1-1 with remote paths. Got {len(remote_path)=} != {len(local_destination)=}')
-            result = [None for _ in range(len(remote_path))]
-            reindex = {rp : i for i, rp in enumerate(remote_path)}
-            if len(reindex) != len(remote_path):
-                raise ValueError("Duplicate remote paths supplied.")
-            for this_ldir in set(local_destination):
-                this_ldir_paths = [rp for rp, ld in zip(remote_path, local_destination) if ld == this_ldir]
-                if len(this_ldir_paths) == 0:
-                    continue
-                for rp, lp in zip(this_ldir_paths, self._multi_download(this_ldir_paths, this_ldir, **kwargs)):
-                    result[reindex[rp]] = lp
-            if any(map(lambda x : x is None, result)):
-                raise RuntimeError("One or more files failed to download.")
-            return result
-        
-        if not isinstance(remote_path, str) and len(remote_path) == 1:
-            remote_path = remote_path[0]
-        if not isinstance(remote_path, str):
-            raise TypeError("Expected str, got {}".format(type(remote_path)))
-        
-        if local_destination is None:
-            local_destination = self.local_dir
-        assert isinstance(local_destination, str)
-
-        # Check if remote and local have file extensions:
-        # The function assumes files have extensions and directories do not.
-        remote_has_ext, local_has_ext = os.path.splitext(remote_path)[1] != "", os.path.splitext(local_destination)[1] != ""
-        # If both remote and local have file extensions, the local destination should be a file path.
-        if remote_has_ext and local_has_ext and os.path.isdir(local_destination):
-            raise ValueError("Destination must be a file path if both remote and local have file extensions.")
-        # If the remote does not have a file extension, the local destination should be a directory.
-        if not remote_has_ext and not os.path.isdir(local_destination):
-            raise ValueError("Destination must be a directory if remote does not have a file extension.")
-        
-        if not os.path.exists(local_destination):
-            os.makedirs(local_destination, exist_ok=True)
-        
-        # Download cases;
-        # If the remote is a single file, use pget.
-        if remote_has_ext:
-            local_result = self.pget(remote_path, local_destination, blocking, **kwargs)
-            self.last_type = "file"
-        # Otherwise use mirror.
-        else:
-            local_result = self.mirror(remote_path, local_destination, blocking, **kwargs)
-            self.last_type = "directory"
-        
-        # TODO: Check local_result == local_destination (if it can be done in a relatively efficient way)
-        
-        # Store the last download for later use (nice for debugging)
-        self.last_download = local_result
-        # Return the local path of the downloaded file or directory
-        return local_result
-    
-    def _multi_download(
+    def upload(
             self, 
-            remote_paths : list[str] | tuple[str, ...],
-            local_destination : str | None,
+            local_path : str | list[str] | tuple[str, ...],
+            remote_destination : str | list[str] | tuple[str, ...] | None=None,
+            n : int=14,
             blocking : bool=True,
-            n : int=15, 
             **kwargs
-        ) -> list[str]:
+        ):
         """
-        Downloads a list of files from the remote directory to the given local destination.
+        Downloads one or more files or a directory from the remote directory to the given local destination.
 
         Args:
-            remote_paths: A list of remote paths to download.
-            local_destination: The local destination to download the files to. If None, the files will be downloaded to the current local directory.
+            local_path: The local file(s) or directory to upload.
+            remote_destination: The destination of uploaded files. If None will upload to current remote directory.
+            n: Parallel connections to use if relevant (default=14).
             blocking: If True, the function will block until the download is complete.
-            n: Number of files to download in parallel.
-            **kwargs: Extra keyword arguments are ignored.
-        
+            **kwargs: Extra keyword arguments are passed to the IOHandler.multi_download, IOHandler.pget or IOHandler.mirror functions depending on the type of the remote path(s).
+
         Returns:
-           A list of the local paths of the downloaded files.
+           The local path(s) of the downloaded file(s) or directory.
         """
-        # TODO: This function should really wrap an IOHandler.mget function, which should be implemented in the ImplicitMount class
-        # Type checking and default argument configuration
-        if not isinstance(remote_paths, (list, tuple)):
-            raise TypeError("Expected list or tuple, got {}".format(type(remote_paths)))
-        if len(remote_paths) == 0:
-            raise ValueError("Expected non-empty list or tuple for `remote_paths`, got {}".format(remote_paths))
-        if not (isinstance(local_destination, str) or local_destination is None):
-            raise TypeError("Expected str or None, got {}".format(type(local_destination)))
-        if local_destination is None:
-            local_destination = self.local_dir
-        local_files = [os.path.join(local_destination, os.path.basename(r)) for r in remote_paths]
-        if any(map(os.path.exists, local_files)):
-            while os.path.exists(subdir := os.path.join(local_destination, str(uuid.uuid4()))):
-                continue
-            return self._multi_download(remote_paths, subdir, blocking=blocking, n=n, **kwargs)
-        os.makedirs(local_destination, exist_ok=True)
-
-        # Assemble the mget command, options and arguments
-        multi_command = f'mget -O "{local_destination}" -P {max(1, min(n, len(remote_paths)))} ' + ' '.join([f'"{r}"' for r in remote_paths])
-        # Execute the mget command
-        self.execute_command(multi_command, output=blocking, blocking=blocking)
-        
-        # Check if the files were downloaded TODO: is this too slow? Should we just assume that the files were downloaded for efficiency?
-        missing_files = [l for l in local_files if not os.path.exists(l)]
-        if missing_files:
-            raise RuntimeError(f"Failed to download files {missing_files}")
-
-        # Store the last download for later use (nice for debugging)
-        self.last_download = local_destination
-        self.last_type = "multi"
-        
-        # Return the local paths of the downloaded files
-        return local_files
+        if isinstance(local_path, str):
+            if not os.path.exists(local_path):
+                raise RuntimeError("Missing upload target: " + local_path)
+            if os.path.isdir(local_path):
+                if not (isinstance(remote_destination, str) or remote_destination is None):
+                    raise ValueError("Uploading directories should have a single destination!")
+                return self.mirror(remote_destination, local_path, reverse=True, blocking=blocking, P=n, **kwargs)
+            if os.path.isfile(local_path):
+                return self.put(local_path, remote_destination, blocking=blocking, **kwargs)
+            raise RuntimeError('Local upload path exists, but is not a file or directory?')
+        n = min(len(local_path), n)
+        return self.put(local_path, remote_destination, blocking=blocking, P=n, **kwargs)
 
     def sync(
             self, 
-            local_destination : str | None=None, 
+            local_destination : str | None=None,
+            direction : str="down",
+            allow_root : bool=False,
             progress : bool=False,
             batch_size : int=128,
             replace_local : bool=False,
             refresh_cache : bool=False,
             **kwargs
-        ) -> list[str]:
+        ):
         """
         Synchronized the current remote directory to the given local destination.
 
         Args:
-            local_destination: The local destination to synchronize the current remote directory to.
+            local_destination: The local destination to synchronize the current remote directory to, defaults to "<CURRENT_LOCAL_DIRECTORY_PATH>/<CURRENT_REMOTE_DIRECTORY_NAME>".
+                OBS: If the current remote directory is root, then <CURRENT_REMOTE_DIRECTORY_NAME> is replaced with "ROOT".
+            direction: Synchronization directory; one of non-case-sensitive ["down", "up", "both"] (default="down"). 
+                "down": Download contents of current remote directory to local destination.
+                "up": Upload contents of local destination to current remote directory.
+                "both": First synchronize "down", then synchronize "up".
             progress: Show a progress bar.
             batch_size: Number of files passed to each download call.
             replace_local: By default existing files are skipped, if this is enabled, existing files are deleted and refetched.
@@ -1026,8 +1256,13 @@ class IOHandler(ImplicitMount):
         if not isinstance(local_destination, str) and local_destination is not None:
             raise TypeError("Expected str or None, got {}".format(type(local_destination)))
         if local_destination is None:
-            local_destination = self.local_dir
-        local_destination = os.path.abspath(os.path.join(local_destination, self.pwd().split("/")[-1]))
+            cur_remote_dir = self.pwd().split("/")[-1]
+            if cur_remote_dir == "" and not allow_root:
+                raise RuntimeError(f'Attempted to synchronize root of remote, but `{allow_root=}`!')
+            local_destination = os.path.join(self.lpwd(), cur_remote_dir or "ROOT")
+        local_destination = os.path.normpath(os.path.abspath(os.path.expandvars(os.path.expanduser(local_destination))))
+        if os.path.dirname(local_destination) == local_destination and not allow_root:
+            raise RuntimeError(f'Attempted to synchronize root of local, but {allow_root=}!')
         if not os.path.exists(local_destination):
             try:
                 os.makedirs(local_destination)
@@ -1035,23 +1270,43 @@ class IOHandler(ImplicitMount):
                 pass
         if self.pwd() not in self.cache:
             self.cache_file_index(override=refresh_cache)
-        files = self.cache[self.pwd()]
-        ldest = [os.path.join(local_destination, *f.split("/")) for f in files]
-        ldest, files = zip(*sorted([(l, f) for l, f in zip(ldest, files) if replace_local or not os.path.exists(l)]))
-        ldir = [os.path.dirname(dst) for dst in ldest]
-        for bi in trange(-(-len(files)//batch_size), desc=f"Synchronizing: ({self.pwd()}) ==> ({local_destination}) ...", unit="file", unit_scale=batch_size, disable=not progress, dynamic_ncols=True):
-            bs, be = bi*batch_size, min((bi+1)*batch_size, len(files))
-            if replace_local:
-                for ld in ldest[bs:be]:
-                    if os.path.exists(ld):
-                        os.remove(ld)
-            lres = self.download(files[bs:be], ldir[bs:be], **kwargs)
-            if isinstance(lres, str):
-                lres = [lres]
-            for r, e, f in zip(lres, ldest[bs:be], files[bs:be]):
-                if r != e:
-                    raise RuntimeError(f'Unexpected download location for {f}, expected {e}, but got {r}?!')
-        return list(ldest)
+        down_files = []
+        if direction in ["down", "both"]:
+            down_files = self.cache[self.pwd()]
+            ldest = [os.path.join(local_destination, *f.split("/")) for f in down_files]
+            ldest, down_files = zip(*sorted([(l, f) for l, f in zip(ldest, down_files) if replace_local or not os.path.exists(l)]))
+            down_files : list[str]
+            ldir = [os.path.dirname(dst) for dst in ldest]
+            for bi in trange(-(-len(down_files)//batch_size), desc=f"Synchronizing down: ({self.pwd()}) ==> ({local_destination}) ...", unit="file", unit_scale=batch_size, disable=not progress, dynamic_ncols=True):
+                bs, be = bi*batch_size, min((bi+1)*batch_size, len(down_files))
+                if replace_local:
+                    for ld in ldest[bs:be]:
+                        if os.path.exists(ld):
+                            os.remove(ld)
+                lres = self.download(down_files[bs:be], ldir[bs:be], **kwargs)
+                if isinstance(lres, str):
+                    lres = [lres]
+                for r, e, f in zip(lres, ldest[bs:be], down_files[bs:be]):
+                    if r != e:
+                        raise RuntimeError(f'Unexpected download location for {f}, expected {e}, but got {r}?!')
+        up_files = []
+        if direction in ["up", "both"]:
+            up_files = self.lls(local_destination)
+            if not isinstance(up_files, list):
+                raise RuntimeError(f'Unexpected return value: {up_files}')
+            skippers = set([os.path.join(f.split("/")) for f in down_files])
+            up_files = [f for f in up_files if f not in skippers]
+            rdest = [f'{self.pwd()}/{f}' for f in up_files]
+            rdir = ["/".join(f.split("/")[:-1]) for f in rdest]
+            for bi in trange(-(-len(down_files)//batch_size), desc=f"Synchronizing up: ({self.pwd()}) ==> ({local_destination}) ...", unit="file", unit_scale=batch_size, disable=not progress, dynamic_ncols=True):
+                bs, be = bi*batch_size, min((bi+1)*batch_size, len(down_files))
+                rres = self.upload(up_files[bs:be], rdir[bs:be], **kwargs)
+                if isinstance(rres, str):
+                    rres = [rres]
+                for r, e, f in zip(rres, rdest[bs:be], up_files[bs:be]):
+                    if r != e:
+                        raise RuntimeError(f'Unexpected upload location for {f}, expected {e}, but got {r}?!')
+        return list(set(down_files).union(set(up_files)))
     
     def get_file_index(
             self, 
@@ -1076,16 +1331,10 @@ class IOHandler(ImplicitMount):
         if override and not store:
             raise ValueError("override cannot be 'True' if store is 'False'!")
         # Check if file index exists
-        glob_result = self.execute_command('glob -f --exist .*folder_index.txt && echo "YES" || echo "NO"')
-        if isinstance(glob_result, list) and len(glob_result) == 1:
-            glob_result = glob_result[0]
-        file_index_exists = glob_result == "YES"
+        file_index_exists = self.exists(".folder_index.txt")
         if not file_index_exists:
             # Backwards compatibility check for folder index with old naming convention (non-hidden)
-            bc_glob_result = self.execute_command('glob -f --exist *folder_index.txt && echo "YES" || echo "NO"')
-            if isinstance(bc_glob_result, list) and len(bc_glob_result) == 1:
-                bc_glob_result = bc_glob_result[0]
-            bc_file_index_exists = bc_glob_result == "YES"
+            bc_file_index_exists = self.exists("folder_index.txt")
             if bc_file_index_exists:
                 bc_file_index = self.execute_command('glob -f du -sh *folder_index.txt | sort -hr | cut -f 2 | head -n 1')
                 if not (isinstance(bc_file_index, list) and len(bc_file_index) == 1 and isinstance(bc_file_index := bc_file_index[0], str)):
@@ -1106,14 +1355,14 @@ class IOHandler(ImplicitMount):
             main_logger.debug("Creating folder index...")
             # Traverse the remote directory and write the file index to a file
             files = self.ls(recursive=True, use_cache=False, pbar=True)
-            local_index_path = os.path.join(self.local_dir, ".folder_index.txt")
+            local_index_path = os.path.join(self.lpwd(), ".folder_index.txt")
             with open(local_index_path, "w") as f:
                 for file in files:
                     f.write(file + "\n")
             # Store the file index on the remote if 'store' is True, otherwise delete it
             if store:
                 # Self has an implicit reference to the local working directory, however the scripts does not necessarily have the same working directory
-                self.put(".folder_index.txt")
+                self.upload(local_index_path)
                 os.remove(local_index_path)
         
         # Download the file index if 'store' is True or it already exists on the remote, otherwise read it from the local directory
@@ -1150,32 +1399,32 @@ class IOHandler(ImplicitMount):
     def clean(self):
         if self.user_confirmation:
             # Ask for confirmation
-            confirmation = input(f"Are you sure you want to delete all files in the current directory {self.local_dir}? (y/n)")
+            confirmation = input(f"Are you sure you want to delete all files in the current directory {self.lpwd()}? (y/n)")
             if confirmation.lower() != "y":
                 main_logger.debug("Aborted")
                 return
 
         main_logger.debug("Cleaning up...")
-        for path in os.listdir(self.local_dir):
+        for path in os.listdir(self.lpwd()):
             try:
                 delete_file_or_dir(path)
             except Exception as e:
                 main_logger.debug(f"Error while deleting {path}: {e}")
         try:
-            shutil.rmtree(self.local_dir)
+            shutil.rmtree(self.lpwd())
         except Exception as e:
             main_logger.error("Error while cleaning local backend directory!")
-            files_in_dir = os.listdir(self.local_dir)
+            files_in_dir = os.listdir(self.lpwd())
             if files_in_dir:
                 n_files = len(files_in_dir)
-                main_logger.error(f"{n_files} files in local directory ({self.local_dir}):")
+                main_logger.error(f"{n_files} files in local directory ({self.lpwd()}):")
                 if n_files > 5:
                     main_logger.error("\t" + "\n\t".join(files_in_dir[:5]) + "\n\t...")
                 else:
                     main_logger.error("\t" + "\n\t".join(files_in_dir))
             raise e
 
-class RemotePathIterator:# 
+class RemotePathIterator:
     """Buffered iterator for streaming many remote files efficiently.
 
     Downloads are performed in a background thread and yielded as
@@ -1224,7 +1473,7 @@ class RemotePathIterator:#
                 main_logger.warning(f'Using cached file index. [{", ".join(kwargs.keys())}] will be ignored.')
             self.remote_paths = self.io_handler.cache[self.io_handler.pwd()]
         self.remote_paths = list(self.remote_paths) # Ensure locality
-        self.temp_dir = self.io_handler.local_dir
+        self.temp_dir = self.io_handler.lpwd()
         self.batch_size = batch_size
         self.batch_parallel = batch_parallel
         self.max_queued_batches = max_queued_batches

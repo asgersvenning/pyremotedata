@@ -19,6 +19,16 @@ def ask_user(question: str, interactive: bool = True) -> str:
         raise RuntimeError("Cannot ask user for input when interactive=False: " + question)
     return input(question)
 
+def escape_str(s):
+    if not isinstance(s, str):
+        return s
+    if s[0] == "'" and s[-1] == "'":
+        return s
+    if s[0] == '"' and s[-1] == '"':
+        return s
+    return f'"{s}"'
+    
+
 ENVIRONMENT_VARIABLES = (
     "PYREMOTEDATA_REMOTE_USERNAME", 
     "PYREMOTEDATA_REMOTE_URI", 
@@ -53,6 +63,45 @@ def remove_config() -> None:
     else:
         module_logger.info("No config file found at {}".format(CONFIG_PATH))
 
+DEFAULT_LFTP_CONFIG = {
+    # 'mirror:use-pget-n': 1, # Enable this to split a single file into multiple chunks and download them in parallel, when using mirror
+    'net:limit-rate': 0,  # No limit on transfer rate, maximizing throughput.
+    'xfer:parallel': 5,  # Enable this to split a single file into multiple chunks and download them in parallel
+    'mirror:parallel-directories': "on",  # Enable this to download multiple directories in parallel
+    'ftp:sync-mode': 'off',  # Enable this to disable synchronization mode, which is used to prevent data corruption when downloading multiple files in parallel
+    'cmd:parallel': 1,  # If you write bespoke scripts that execute multiple commands in parallel, you can increase this value.
+    'net:connection-limit': 0,  # No limit on connections, maximizing throughput.
+    'cmd:verify-path': "on",  # To reduce latency, we skip path verification.
+    'cmd:verify-host': "on",  # For initial security, it's good to verify the host.
+    'sftp:auto-confirm': "yes", # Automatically accept fingerprint
+    'sftp:size-read': 0x5000,  # Increased block size for better read throughput.
+    'sftp:size-write': 0x5000,  # Increased block size for better write throughput.
+    'sftp:max-packets-in-flight' : 512,  # Increased number of packets in flight for better throughput.
+    'xfer:verify': "off",  # Disabling this for maximum speed.
+    'cmd:interactive': "false",  # Disabled for automated transfers.
+    'cmd:trace': "false",  # Disabled unless debugging is required.
+    'xfer:clobber': "true",  # Overwrite existing files.
+}
+LFTP_CONFIG_COMMENTS = {
+    # 'mirror:use-pget-n': "Enable this to split a single file into multiple chunks and download them in parallel, when using mirror",
+    'net:limit-rate': "No limit on transfer rate, maximizing throughput.",
+    'xfer:parallel': "Enable this to split a single file into multiple chunks and download them in parallel",
+    'mirror:parallel-directories': "Enable this to download multiple directories in parallel",
+    'ftp:sync-mode': "Enable this to disable synchronization mode, which is used to prevent data corruption when downloading multiple files in parallel",
+    'cmd:parallel': "If you write bespoke scripts that execute multiple commands in parallel, you can increase this value.",
+    'net:connection-limit': "No limit on connections, maximizing throughput.",
+    'cmd:verify-path': "To reduce latency, we skip path verification.",
+    'cmd:verify-host': "For initial security, it's good to verify the host.",
+    'sftp:auto-confirm': "Automatically accept fingerprint",
+    'sftp:size-read': "Increased block size for better read throughput.",
+    'sftp:size-write': "Increased block size for better write throughput.",
+    'sftp:max-packets-in-flight' : "Increased number of packets in flight for better throughput.",
+    'xfer:verify': "Disabling this for maximum speed.",
+    'cmd:interactive': "Disabled for automated transfers.",
+    'cmd:trace': "Disabled unless debugging is required.",
+    'xfer:clobber': "Overwrite existing files."
+}
+
 def create_default_config(interactive: bool = True) -> None:
     """Create a default YAML configuration file.
 
@@ -77,22 +126,7 @@ implicit_mount:
 
     # Lftp configuration (Can be left as-is)
     lftp:
-        'mirror:use-pget-n': 5  # Enable this to split a single file into multiple chunks and download them in parallel, when using mirror
-        'net:limit-rate': 0  # No limit on transfer rate, maximizing throughput.
-        'xfer:parallel': 5  # Enable this to split a single file into multiple chunks and download them in parallel
-        'mirror:parallel-directories': "on"  # Enable this to download multiple directories in parallel
-        'ftp:sync-mode': 'off'  # Enable this to disable synchronization mode, which is used to prevent data corruption when downloading multiple files in parallel
-        'cmd:parallel': 1  # If you write bespoke scripts that execute multiple commands in parallel, you can increase this value.
-        'net:connection-limit': 0  # No limit on connections, maximizing throughput.
-        'cmd:verify-path': "on"  # To reduce latency, we skip path verification.
-        'cmd:verify-host': "on"  # For initial security, it's good to verify the host.
-        'sftp:size-read': 0x5000  # Increased block size for better read throughput.
-        'sftp:size-write': 0x5000  # Increased block size for better write throughput.
-        'sftp:max-packets-in-flight' : 512  # Increased number of packets in flight for better throughput.
-        'xfer:verify': "off"  # Disabling this for maximum speed.
-        'cmd:interactive': "false"  # Disabled for automated transfers.
-        'cmd:trace': "false"  # Disabled unless debugging is required.
-        'xfer:clobber': "true"  # Overwrite existing files.
+        {"      ".join([f"'{k}': {escape_str(v)} # {LFTP_CONFIG_COMMENTS.get(k, '')}" for k, v in DEFAULT_LFTP_CONFIG.items()])}
 
 """
     
@@ -117,7 +151,7 @@ def get_config(validate: bool = True) -> dict | None:
         fails.
     """
     if not os.path.exists(CONFIG_PATH):
-        interactive = os.getenv("PYREMOTEDATA_AUTO", "yes").lower().strip() != "yes"
+        interactive = os.getenv("PYREMOTEDATA_AUTO", "no").lower().strip() != "yes"
         if not interactive or ask_user("Config file not found. Create default config file? (y/n): ", interactive).lower().strip() == 'y':
             create_default_config(interactive)
         else:
@@ -216,3 +250,5 @@ def deparse_args(config: dict, what: str) -> str:
     
     return arg_str
 
+if __name__ == "__main__":
+    create_default_config(interactive=True)

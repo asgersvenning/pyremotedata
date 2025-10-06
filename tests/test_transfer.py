@@ -87,7 +87,7 @@ class TestUploadDownload(unittest.TestCase):
                 # Upload a test file to the mock SFTP server
                 test_file_size = 10 # MB
                 n_rep = 10
-                generate_test_file_command = f"bash -c 'openssl rand -out {os.path.join(handler.local_dir, 'localfile.txt')} -base64 {int(test_file_size * (10**6) * 3/4)}'"
+                generate_test_file_command = f"bash -c 'openssl rand -out {os.path.join(handler.lpwd(), 'localfile.txt')} -base64 {int(test_file_size * (10**6) * 3/4)}'"
                 module_logger.info(f'Generating test file with command: {generate_test_file_command}')
                 os.system(generate_test_file_command)
                 start_upload = time.time()
@@ -100,7 +100,7 @@ class TestUploadDownload(unittest.TestCase):
                 download_result = handler.execute_command(f'repeat -c {n_rep} -d 0.01 "(!rm -f testfile.txt) && {download_result}"')
                 end_download = time.time()
                 # Get the local directory where the file should be downloaded to
-                local_directory = handler.local_dir
+                local_directory = handler.lpwd()
                 # Sanity checks
                 local_file_exists = os.path.exists(os.path.join(local_directory, 'testfile.txt'))
                 local_file_size = os.path.getsize(os.path.join(local_directory, 'testfile.txt')) / 10**6
@@ -111,8 +111,8 @@ class TestUploadDownload(unittest.TestCase):
                     raise RuntimeError(f"Something went wrong with the download. The file size (~{local_file_size:.2f} MB) is not correct.")
             
                 # Cleanup
-                os.remove(os.path.join(handler.local_dir, "localfile.txt"))
-                os.remove(os.path.join(handler.local_dir, "testfile.txt"))
+                os.remove(os.path.join(handler.lpwd(), "localfile.txt"))
+                os.remove(os.path.join(handler.lpwd(), "testfile.txt"))
             
             from pyremotedata.config import remove_config
             remove_config()
