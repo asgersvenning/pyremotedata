@@ -603,13 +603,10 @@ class ImplicitMount:
         )
         if not execute:
             return exec_output
-        lpwd = self.lpwd()
-        retval = [f'{lpwd}/{lp}' for lp in local_path]
-        if rettype == str:
-            if not len(retval) == 1:
-                raise RuntimeError(f'Expected one local destination, but got {len(retval)} instead.')
-            return retval[0]
-        return rettype(retval)
+        retval = f'{self.lpwd()}/{local_path}'
+        if rettype != str:
+            return rettype([retval])
+        return retval
     
     def mget(
         self,
@@ -746,13 +743,10 @@ class ImplicitMount:
         )
         if not execute:
             return exec_output
-        pwd = self.pwd()
-        retval = [f'{pwd}/{rp}' for rp in remote_path]
-        if rettype == str:
-            if not len(retval) == 1:
-                raise RuntimeError(f'Expected one local destination, but got {len(retval)} instead.')
-            return retval[0]
-        return rettype(retval)
+        retval = f'{self.pwd()}/{remote_path}'
+        if rettype != str:
+            return rettype([retval])
+        return retval
     
     def mput(
         self,
