@@ -1028,7 +1028,7 @@ class ImplicitMount:
         if output:
             # Capture the state of the directory before the operation
             if reverse:
-                pre_existing_files = [] if not self.exists(remote) else self.ls(remote)
+                pre_existing_files = [] if not self.exists(remote) else self.ls(remote, recursive=True)
             else:
                 pre_existing_files = [] if not os.path.exists(local) else self.lls(local, recursive=True)
             # Ensure that the pre_existing_files list is unique
@@ -1051,7 +1051,7 @@ class ImplicitMount:
         if output:
             # Capture the state of the directory after the operation
             if reverse:
-                post_download_files = [] if not self.exists(remote) else self.ls(remote)
+                post_download_files = [] if not self.exists(remote) else self.ls(remote, recursive=True)
             else:
                 post_download_files = [] if not os.path.exists(local) else self.lls(local, recursive=True)
             # Ensure that the post_download_files list is unique
