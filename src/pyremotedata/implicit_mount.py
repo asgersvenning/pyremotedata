@@ -1197,9 +1197,11 @@ class IOHandler(ImplicitMount):
                         raise ValueError("Downloading directories should have a single destination!")
                     return self.mirror(remote_path, local_destination, blocking=blocking, P=n, **kwargs)
                 case RemoteType.FILE:
-                    if isinstance(local_destination, str):
+                    if not (local_destination is None or isinstance(local_destination, str)):
                         raise ValueError("Downloading single files should have a single destination!")
-                    return self.pget(remote_path, f'{local_destination}/{remote_path.split("/")[-1]}', blocking=blocking, n=n, **kwargs)
+                    if local_destination is not None:
+                        local_destination = f'{local_destination}/{remote_path.split("/")[-1]}'
+                    return self.pget(remote_path, local_destination, blocking=blocking, n=n, **kwargs)
                 case _:
                     raise RuntimeError('Remote download path exists, but is not a file or directory?')
         n = min(len(remote_path), n)
@@ -1243,7 +1245,11 @@ class IOHandler(ImplicitMount):
                     raise ValueError("Uploading directories should have a single destination!")
                 return self.mirror(remote_destination, local_path, reverse=True, blocking=blocking, P=n, **kwargs)
             if os.path.isfile(local_path):
-                return self.put(local_path, f'{remote_destination}/{local_path.split("/")[-1]}', blocking=blocking, **kwargs)
+                if not (remote_destination is None or isinstance(remote_destination, str)):
+                    raise ValueError("Uploading single files should have a single destination!")
+                if remote_destination is not None:
+                    remote_destination = f'{remote_destination}/{local_path.split("/")[-1]}'
+                return self.put(local_path, remote_destination, blocking=blocking, **kwargs)
             raise RuntimeError('Local upload path exists, but is not a file or directory?')
         n = min(len(local_path), n)
         if remote_destination is not None:
