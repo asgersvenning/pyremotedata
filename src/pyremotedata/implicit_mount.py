@@ -1180,7 +1180,7 @@ class IOHandler(ImplicitMount):
 
         Args:
             remote_path: The remote path(s) to download.
-            local_destination: The local destination(s) to download the file(s) to. If None, the file(s) will be downloaded to the current local directory.
+            local_destination: The local destination directory(s) to download the file(s) to. If None, the file(s) will be downloaded to the current local directory.
             n: Parallel connections to use if relevant (default=14).
             blocking: If True, the function will block until the download is complete.
             **kwargs: Extra keyword arguments are passed to the IOHandler.multi_download, IOHandler.pget or IOHandler.mirror functions depending on the type of the remote path(s).
@@ -1197,10 +1197,21 @@ class IOHandler(ImplicitMount):
                         raise ValueError("Downloading directories should have a single destination!")
                     return self.mirror(remote_path, local_destination, blocking=blocking, P=n, **kwargs)
                 case RemoteType.FILE:
-                    return self.pget(remote_path, local_destination, blocking=blocking, n=n, **kwargs)
+                    if isinstance(local_destination, str):
+                        raise ValueError("Downloading single files should have a single destination!")
+                    return self.pget(remote_path, f'{local_destination}/{remote_path.split("/")[-1]}', blocking=blocking, n=n, **kwargs)
                 case _:
                     raise RuntimeError('Remote download path exists, but is not a file or directory?')
         n = min(len(remote_path), n)
+        if local_destination is not None:
+            if not isinstance(local_destination, (list, tuple)):
+                if not isinstance(local_destination, str):
+                    raise ValueError(f"Downloading multiple files should have a single destination dir or list of these, not {local_destination}")
+                local_destination = [f'{local_destination}/{rp.split("/")[-1]}' for rp in remote_path]
+            else:
+                if len(local_destination) != len(remote_path):
+                    raise ValueError(f'Destination and remote paths (source) have different lengths: {len(local_destination) != {len(remote_path)}}')
+                local_destination = [f'{lp}/{rp.split("/")[-1]}' for lp, rp in zip(local_destination, remote_path)]
         return self.get(remote_path, local_destination, blocking=blocking, P=n, **kwargs)
 
     def upload(
@@ -1216,7 +1227,7 @@ class IOHandler(ImplicitMount):
 
         Args:
             local_path: The local file(s) or directory to upload.
-            remote_destination: The destination of uploaded files. If None will upload to current remote directory.
+            remote_destination: Remote destination directory(s) of uploaded files. If None will upload to current remote directory.
             n: Parallel connections to use if relevant (default=14).
             blocking: If True, the function will block until the download is complete.
             **kwargs: Extra keyword arguments are passed to the IOHandler.multi_download, IOHandler.pget or IOHandler.mirror functions depending on the type of the remote path(s).
@@ -1232,9 +1243,18 @@ class IOHandler(ImplicitMount):
                     raise ValueError("Uploading directories should have a single destination!")
                 return self.mirror(remote_destination, local_path, reverse=True, blocking=blocking, P=n, **kwargs)
             if os.path.isfile(local_path):
-                return self.put(local_path, remote_destination, blocking=blocking, **kwargs)
+                return self.put(local_path, f'{remote_destination}/{local_path.split("/")[-1]}', blocking=blocking, **kwargs)
             raise RuntimeError('Local upload path exists, but is not a file or directory?')
         n = min(len(local_path), n)
+        if remote_destination is not None:
+            if not isinstance(remote_destination, (list, tuple)):
+                if not isinstance(remote_destination, str):
+                    raise ValueError(f"Uploading multiple files should have a single destination dir, or list of these, not {remote_destination}")
+                remote_destination = [f'{remote_destination}/{lp.split("/")[-1]}' for lp in local_path]
+            else:
+                if len(remote_destination) != len(local_path):
+                    raise ValueError(f'Destination and local paths (source) have different lengths: {len(remote_destination) != {len(local_path)}}')
+                remote_destination = [f'{rp}/{lp.split("/")[-1]}' for rp, lp in zip(remote_destination, local_path)]
         return self.put(local_path, remote_destination, blocking=blocking, P=n, **kwargs)
 
     def sync(
@@ -1252,8 +1272,8 @@ class IOHandler(ImplicitMount):
         Synchronized the current remote directory to the given local destination.
 
         Args:
-            local_destination: The local destination to synchronize the current remote directory to, defaults to "<CURRENT_LOCAL_DIRECTORY_PATH>/<CURRENT_REMOTE_DIRECTORY_NAME>".
-                OBS: If the current remote directory is root, then <CURRENT_REMOTE_DIRECTORY_NAME> is replaced with "ROOT".
+            local_destination: The local destination to synchronize the current remote directory to, 
+                defaults to "<CURRENT_LOCAL_DIRECTORY_PATH>/<CURRENT_REMOTE_DIRECTORY_NAME>".
             direction: Synchronization directory; one of non-case-sensitive ["down", "up", "both"] (default="down"). 
                 "down": Download contents of current remote directory to local destination.
                 "up": Upload contents of local destination to current remote directory.
@@ -1271,9 +1291,12 @@ class IOHandler(ImplicitMount):
             raise TypeError("Expected str or None, got {}".format(type(local_destination)))
         if local_destination is None:
             cur_remote_dir = self.pwd().split("/")[-1]
-            if cur_remote_dir == "" and not allow_root:
-                raise RuntimeError(f'Attempted to synchronize root of remote, but `{allow_root=}`!')
-            local_destination = os.path.join(self.lpwd(), cur_remote_dir or "ROOT")
+            if cur_remote_dir == "":
+                if not allow_root:
+                    raise RuntimeError(f'Attempted to synchronize root of remote, but `{allow_root=}`!')
+                local_destination = self.lpwd()
+            else:
+                local_destination = os.path.join(self.lpwd(), cur_remote_dir)
         local_destination = os.path.normpath(os.path.abspath(os.path.expandvars(os.path.expanduser(local_destination))))
         if os.path.dirname(local_destination) == local_destination and not allow_root:
             raise RuntimeError(f'Attempted to synchronize root of local, but {allow_root=}!')
