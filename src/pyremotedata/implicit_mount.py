@@ -618,7 +618,7 @@ class ImplicitMount:
         )
         if not execute:
             return exec_output
-        retval = f'{self.lpwd()}/{local_path}'
+        retval = local_path if local_path.startswith("/") else f'{self.lpwd()}/{local_path}'
         if rettype != str:
             return rettype([retval])
         return retval
@@ -646,8 +646,8 @@ class ImplicitMount:
         )
         if not execute:
             return exec_output
-        lpwd = self.lpwd()
-        return [f'{lpwd}/{os.path.basename(rp)}' for rp in remote_paths]
+        ldst = local_destination_dir if local_destination_dir.startswith("/") else f'{self.lpwd()}/{local_destination_dir}'
+        return [f'{ldst}/{os.path.basename(rp)}' for rp in remote_paths]
         
 
     def pget(
@@ -706,7 +706,7 @@ class ImplicitMount:
         if not execute:
             return exec_output
         
-        return local_path
+        return local_path if local_path.startswith("/") else f'{self.lpwd()}/{local_path}'
     
     def put(
             self,
@@ -769,7 +769,7 @@ class ImplicitMount:
         )
         if not execute:
             return exec_output
-        retval = f'{self.pwd()}/{remote_path}'
+        retval = remote_path if remote_path.startswith("/") else f'{self.pwd()}/{remote_path}'
         if rettype != str:
             return rettype([retval])
         return retval
@@ -794,8 +794,8 @@ class ImplicitMount:
         )
         if not execute:
             return exec_output
-        pwd = self.pwd()
-        return [f'{pwd}/{os.path.basename(lp)}' for lp in local_paths]
+        ldst = remote_destination_dir if remote_destination_dir.startswith("/") else f'{self.pwd()}/{remote_destination_dir}'
+        return [f'{ldst}/{os.path.basename(lp)}' for lp in local_paths]
     
     def rm(
         self,
