@@ -607,6 +607,9 @@ class ImplicitMount:
             return rettype(retval)
         kwargs.pop("P", None)
         remote_path, local_path = remote_path[0], local_path[0]
+        local_dir = os.path.dirname(local_path)
+        if not os.path.exists(local_dir):
+            os.makedirs(local_dir)
         exec_output = self.execute_command(
             # f"get " + " ".join(f'{rp} -o {lp}' for rp, lp in zip(remote_path, local_path)),
             f'get "{remote_path}" -o "{local_path}"',
@@ -628,6 +631,10 @@ class ImplicitMount:
         default_args : dict | None=None,
         **kwargs
         ):
+        if not os.path.exists(local_destination_dir):
+            os.makedirs(local_destination_dir)
+        elif not os.path.isdir(local_destination_dir):
+            raise ValueError(f'`local_destination_dir`: {local_destination_dir} is not a directory.')
         default_args = default_args or {}
         default_args = {"P" : 5, **default_args}
         exec_output = self.execute_command(
@@ -679,7 +686,11 @@ class ImplicitMount:
                 pass
             os.makedirs(subdir)
             return self.pget(remote_path=remote_path, local_path=os.path.join(subdir, file_name), blocking=blocking, execute=execute, output=output, default_args=default_args, **kwargs)
-        
+
+        local_dir = os.path.dirname(local_path)
+        if not os.path.exists(local_dir):
+            os.makedirs(local_dir)
+
         default_args = default_args or {}
         default_args = {"n" : 5, **default_args}
 
@@ -748,6 +759,8 @@ class ImplicitMount:
             retval = [retorder[lp] for lp in local_path]
             return rettype(retval)
         remote_path, local_path = remote_path[0], local_path[0]
+        remote_dir = "/".join(remote_path.split("/")[:-1])
+        self.execute_command(f'mkdir -p "{remote_dir}"')
         kwargs.pop("P", None)
         exec_output = self.execute_command(
             f'put "{local_path}" -o "{remote_path}"',
@@ -769,6 +782,7 @@ class ImplicitMount:
         default_args : dict | None=None,
         **kwargs
         ):
+        self.execute_command(f'mkdir -p "{remote_destination_dir}"')
         default_args = default_args or {}
         default_args = {"P" : 5, **default_args}
         exec_output = self.execute_command(
