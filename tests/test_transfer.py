@@ -82,7 +82,7 @@ class TestUploadDownload(unittest.TestCase):
             # Import the module
             from pyremotedata.implicit_mount import IOHandler
             # Open the connection
-            with IOHandler(local_dir=local_directory) as handler:
+            with IOHandler() as handler:
                 module_logger.info(handler.pwd())
                 # Upload a test file to the mock SFTP server
                 test_file_size = 10 # MB
