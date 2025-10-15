@@ -82,7 +82,7 @@ class TestUploadDownload(unittest.TestCase):
             # Import the module
             from pyremotedata.implicit_mount import IOHandler
             # Open the connection
-            with IOHandler() as handler:
+            with IOHandler(local_dir=local_directory) as handler:
                 module_logger.info(handler.pwd())
                 # Upload a test file to the mock SFTP server
                 test_file_size = 10 # MB
@@ -91,12 +91,12 @@ class TestUploadDownload(unittest.TestCase):
                 module_logger.info(f'Generating test file with command: {generate_test_file_command}')
                 os.system(generate_test_file_command)
                 start_upload = time.time()
-                upload_result = handler.put("localfile.txt", "testfile.txt", execute=False)
+                upload_result = handler.put("localfile.txt", execute=False)
                 upload_result = handler.execute_command(f'repeat -c {n_rep} -d 0.01 "rm -f testfile.txt && {upload_result}"')
                 end_upload = time.time()
                 # Download the test file from the mock SFTP server
                 start_download = time.time()
-                download_result = handler.download("testfile.txt", "testfile.txt", execute=False)
+                download_result = handler.download("testfile.txt", execute=False)
                 download_result = handler.execute_command(f'repeat -c {n_rep} -d 0.01 "(!rm -f testfile.txt) && {download_result}"')
                 end_download = time.time()
                 # Get the local directory where the file should be downloaded to

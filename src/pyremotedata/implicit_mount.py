@@ -686,7 +686,7 @@ class ImplicitMount:
         # Construct and return the absolute local path
         file_name = remote_path.split("/")[-1]
         if local_path is None:
-            local_path = os.path.abspath(file_name)
+            local_path = os.path.basename(file_name)
         if os.path.exists(local_path):
             while os.path.exists(subdir := os.path.join(os.path.dirname(local_path), str(uuid.uuid4()))):
                 pass
