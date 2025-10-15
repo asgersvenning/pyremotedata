@@ -1325,7 +1325,7 @@ class IOHandler(ImplicitMount):
         if direction in ["down", "both"]:
             down_files = self.cache[self.pwd()]
             ldest = [os.path.join(local_destination, *f.split("/")) for f in down_files]
-            ldest, down_files = zip(*sorted([(l, f) for l, f in zip(ldest, down_files) if replace_local or not os.path.exists(l)]))
+            ldest, down_files = list(map(list, zip(*sorted([(l, f) for l, f in zip(ldest, down_files) if replace_local or not os.path.exists(l)])))) or [[],[]]
             down_files : list[str]
             ldir = [os.path.dirname(dst) for dst in ldest]
             for bi in trange(-(-len(down_files)//batch_size), desc=f"Synchronizing down: ({self.pwd()}) ==> ({local_destination}) ...", unit="file", unit_scale=batch_size, disable=not progress, dynamic_ncols=True):
