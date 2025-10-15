@@ -72,6 +72,8 @@ def _unlink(p : str, force : bool) -> None:
         os.chmod(p, stat.S_IWUSR)
         os.unlink(p)
 
+IMMUTABLE_DIRECTORIES = ("", ".", "..", "./", "/")
+
 class RemoteType(int, Enum):
     MISSING = 0
     FILE = 1
@@ -607,8 +609,8 @@ class ImplicitMount:
             return rettype(retval)
         kwargs.pop("P", None)
         remote_path, local_path = remote_path[0], local_path[0]
-        local_dir = os.path.dirname(local_path)
-        if not os.path.exists(local_dir):
+        local_dir = os.path.normpath(os.path.dirname(local_path))
+        if local_dir not in IMMUTABLE_DIRECTORIES and (local_dir != local_path) and not os.path.exists(local_dir):
             os.makedirs(local_dir)
         exec_output = self.execute_command(
             # f"get " + " ".join(f'{rp} -o {lp}' for rp, lp in zip(remote_path, local_path)),
@@ -631,7 +633,11 @@ class ImplicitMount:
         default_args : dict | None=None,
         **kwargs
         ):
-        if not os.path.exists(local_destination_dir):
+        if (
+            local_destination_dir not in IMMUTABLE_DIRECTORIES and 
+            (local_destination_dir != os.path.dirname(local_destination_dir)) and 
+            not os.path.exists(local_destination_dir)
+        ):
             os.makedirs(local_destination_dir)
         elif not os.path.isdir(local_destination_dir):
             raise ValueError(f'`local_destination_dir`: {local_destination_dir} is not a directory.')
@@ -688,7 +694,7 @@ class ImplicitMount:
             return self.pget(remote_path=remote_path, local_path=os.path.join(subdir, file_name), blocking=blocking, execute=execute, output=output, default_args=default_args, **kwargs)
 
         local_dir = os.path.dirname(local_path)
-        if not os.path.exists(local_dir):
+        if local_dir not in IMMUTABLE_DIRECTORIES and not os.path.exists(local_dir):
             os.makedirs(local_dir)
 
         default_args = default_args or {}
@@ -760,7 +766,8 @@ class ImplicitMount:
             return rettype(retval)
         remote_path, local_path = remote_path[0], local_path[0]
         remote_dir = "/".join(remote_path.split("/")[:-1])
-        self.execute_command(f'mkdir -p "{remote_dir}"')
+        if remote_dir not in IMMUTABLE_DIRECTORIES and remote_dir != remote_path:
+            self.execute_command(f'mkdir -p "{remote_dir}"')
         kwargs.pop("P", None)
         exec_output = self.execute_command(
             f'put "{local_path}" -o "{remote_path}"',
@@ -782,7 +789,8 @@ class ImplicitMount:
         default_args : dict | None=None,
         **kwargs
         ):
-        self.execute_command(f'mkdir -p "{remote_destination_dir}"')
+        if remote_destination_dir not in IMMUTABLE_DIRECTORIES:
+            self.execute_command(f'mkdir -p "{remote_destination_dir}"')
         default_args = default_args or {}
         default_args = {"P" : 5, **default_args}
         exec_output = self.execute_command(
