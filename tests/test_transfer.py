@@ -91,7 +91,7 @@ class TestUploadDownload(unittest.TestCase):
                 module_logger.info(f'Generating test file with command: {generate_test_file_command}')
                 os.system(generate_test_file_command)
                 start_upload = time.time()
-                upload_result = handler.put("localfile.txt", execute=False)
+                upload_result = handler.put("localfile.txt", "testfile.txt", execute=False)
                 upload_result = handler.execute_command(f'repeat -c {n_rep} -d 0.01 "rm -f testfile.txt && {upload_result}"')
                 end_upload = time.time()
                 # Download the test file from the mock SFTP server
