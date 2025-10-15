@@ -26,8 +26,15 @@ extensions = [
     "sphinx.ext.coverage",
     "sphinx.ext.mathjax",
     "sphinx.ext.githubpages",
-    "sphinx.ext.autosectionlabel",
+    "sphinx.ext.autosectionlabel"
 ]
+intersphinx_mapping = {
+    'pyremotedata': ("https://asgersvenning.com/pyremotedata/", None),
+    'python': ('https://docs.python.org/3', None),  
+    "sphinx_docs": ("https://www.sphinx-doc.org/en/master", None),
+    "MyST parser docs": ("https://myst-parser.readthedocs.io/en/latest", None)
+}
+
 autosummary_generate = True
 autosummary_generate_overwrite = True
 
@@ -38,7 +45,7 @@ napoleon_use_rtype = False
 typehints_use_signature = True
 typehints_use_signature_return = True
 typehints_document_description_target = True
-typehints_document_rtype = True
+typehints_document_rtype = False
 typehints_fully_qualified = False
 always_use_bars_union = True
 
@@ -51,53 +58,67 @@ toc_object_entries = True
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
-
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = 'sphinx_material'
+extensions.append("sphinx_immaterial")
+html_theme = 'sphinx_immaterial'
 html_css_files = ['custom.css']
 html_extra_path = ['.nojekyll']
 html_static_path = ['_static']
 html_baseurl = ''
-
-html_sidebars = {
-    "**": ["logo-text.html", "globaltoc.html", "localtoc.html", "searchbox.html"]
-}
+html_logo = 'images/cloud_sync.svg'
 
 html_theme_options = {
-    # Set the name of the project to appear in the navigation.
-    'nav_title': 'PyRemoteData',
-
-    # Specify a base_url used to generate sitemap.xml. If not
-    # specified, then no sitemap will be built.
-    'base_url': 'https://asgersvenning.github.io/pyremotedata/',
-
-    # Set the color and the accent color
-    'color_primary': 'blue',
-    'color_accent': 'light-blue',
-
+    "icon": {
+        "repo": "fontawesome/brands/github",
+        "edit": "material/file-edit-outline",
+    },
     # Set the repo location to get a badge with stats
-    'repo_url': 'https://github.com/asgersvenning/pyremotedata',
-    'repo_name': 'pyremotedata',
-
-    # Visible levels of the global TOC; -1 means unlimited
-    'globaltoc_depth': 2,
-    # If False, expand all TOC entries
-    'globaltoc_collapse': False,
-    # If True, show hidden TOC entries
-    'globaltoc_includehidden': True,
-    
+    "repo_url": "https://github.com/asgersvenning/pyremotedata",
+    'site_url': 'https://asgersvenning.com/pyremotedata',
+    'repo_name': 'PyRemoteData',
+    "edit_uri": "blob/main/docs",
+    "globaltoc_collapse": True,
+    'features': [
+        "navigation.expand",
+        "navigation.sections",
+        # "navigation.tabs",
+        "navigation.top",
+        "navigation.footer",
+        "search.share",
+        "search.suggest",
+        "toc.follow",
+        "toc.sticky",
+        "content.tabs.link",
+        "content.code.copy",
+        "content.action.edit",
+        "content.action.view",
+        "content.tooltips",
+        "announce.dismiss",
+    ],
+    "palette": [
+        {
+            "media": "(prefers-color-scheme)",
+            "toggle": {
+                "icon": "material/brightness-auto",
+                "name": "Switch to light mode",
+            },
+            'scheme' : 'default',
+            'primary' : 'blue',
+            'accent' : 'light-blue'
+        }
+    ],
+    "toc_title_is_page_title": True,
+    "version_dropdown": True,
     # Additional theme options
-    'nav_links': [
-        {'href': 'https://github.com/asgersvenning/pyremotedata', 'internal': False, 'title': 'GitHub'},
+    'social': [
+        {'link': 'https://github.com/asgersvenning/pyremotedata', 'name': 'Source on GitHub', 'icon': 'fontawesome/brands/github'},
+        {'icon': 'fontawesome/brands/python', 'link': "https://pypi.org/project/pyremotedata/"}
     ],
 }
 
-intersphinx_mapping = {
-    'pyremotedata': ("https://asgersvenning.github.io/pyremotedata/" + html_baseurl, None),
-    'python': ('https://docs.python.org/3', None),
-}
+python_type_aliases = {}
 
 ### Custom code to remove custom Sphinx comments from docstrings
 

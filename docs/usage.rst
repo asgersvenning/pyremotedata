@@ -1,17 +1,13 @@
 Usage Guide
-==========
+===========
 
 This guide covers the main features and use cases of PyRemoteData.
 
-.. contents:: On this page
-   :local:
-   :depth: 2
-
 Basic File Operations
---------------------
+---------------------
 
 Listing Files
-~~~~~~~~~~~~
+~~~~~~~~~~~~~
 
 .. code-block:: python
 
@@ -25,8 +21,13 @@ Listing Files
        files = io.ls("/path/to/directory")
        print(f"Files in /path/to/directory: {files}")
 
+.. info::
+
+    See :meth:`pyremotedata.implicit_mount.ImplicitMount.ls`.
+
+
 Changing working directory
-~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
@@ -37,7 +38,7 @@ Changing working directory
        print(f"Working directory: {io.pwd()}")
 
 Downloading Files
-~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
@@ -45,10 +46,53 @@ Downloading Files
    
    with IOHandler() as io:
        # Download single file
-       local_path = io.download("/remote/file.txt", "/local/file.txt")
+       local_path = io.download("/remote/file.txt", "/local")
        
        # Download directory
        local_path = io.download("/remote/directory", "/local/directory")
+
+.. info::
+
+    See :meth:`pyremotedata.implicit_mount.IOHandler.download`.
+
+
+Uploading Files
+~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+   from pyremotedata.implicit_mount import IOHandler
+   
+   with IOHandler() as io:
+       # Upload single file
+       io.upload("/local/file.txt", "/remote")
+       
+       # Upload directory (use mirror for directories)
+       io.upload("/local/directory", "/remote")
+
+.. info::
+
+    See :meth:`pyremotedata.implicit_mount.IOHandler.upload`.
+
+
+Advanced Operations
+-------------------
+
+Batch Operations
+~~~~~~~~~~~~~~~~
+
+Perform operations on multiple files:
+
+.. code-block:: python
+
+   from pyremotedata.implicit_mount import IOHandler
+   
+   with IOHandler() as io:
+        files = io.ls("/remote/dataset")
+        
+        # Download multiple files at once
+        txt_files = [f"/remote/dataset/{file}" for file in files if file.endswith('.txt')]
+        local_paths = io.download(txt_files, "/local/dataset")
 
 Synchronizing directories
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -65,46 +109,16 @@ Synchronizing directories
         # Synchronize directory to local storage
         io.sync("<local_parent_directory>", progress=True) 
 
-Uploading Files
-~~~~~~~~~~~~~~
+.. info::
 
-.. code-block:: python
-
-   from pyremotedata.implicit_mount import IOHandler
-   
-   with IOHandler() as io:
-       # Upload single file
-       io.put("/local/file.txt", "/remote/file.txt")
-       
-       # Upload directory (use mirror for directories)
-       io.mirror("/local/directory", "/remote/directory")
-
-Advanced Operations
-------------------
-
-Batch Operations
-~~~~~~~~~~~~~~~
-
-Perform operations on multiple files:
-
-.. code-block:: python
-
-   from pyremotedata.implicit_mount import IOHandler
-   
-   with IOHandler() as io:
-        files = io.ls("/remote/dataset")
-        
-        # Download multiple files at once
-        txt_files = [f"/remote/dataset/{file}" for file in files if file.endswith('.txt')]
-        local_paths = io.download(txt_files, "/local/dataset")
-
+    See :meth:`pyremotedata.implicit_mount.IOHandler.sync`.
 
 
 Performance Optimization
-----------------------
+------------------------
 
 Why RemotePathIterator?
-~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
 
 `RemotePathIterator` streams many files efficiently by batching and prefetching downloads in a background thread while your main thread consumes files. This is ideal when:
 
@@ -113,7 +127,7 @@ Why RemotePathIterator?
 - You want automatic local cleanup to avoid filling disks
 
 Basic Pattern
-~~~~~~~~~~~~
+~~~~~~~~~~~~~
 
 .. code-block:: python
 
@@ -141,8 +155,13 @@ Basic Pattern
            # Process the file
            process_file(local_path, remote_path)
 
+.. info::
+
+    See :meth:`pyremotedata.implicit_mount.RemotePathIterator`.
+
+
 Controlling Throughput and Memory
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - **batch_size**: Larger batches reduce command overhead; increase until memory or server limits are hit
 - **batch_parallel**: More parallel transfers increase network utilization; tune for server fairness and stability
@@ -173,7 +192,7 @@ Dataset Splits and Reuse
            validate_step(lp, rp)
 
 Indexing Strategies
-~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
 
 `RemotePathIterator` uses `io.get_file_index()` underneath. You can speed up repeated runs by persisting the index on the remote folder (default).
 
@@ -188,7 +207,7 @@ Indexing Strategies
 
 
 Best Practices
--------------
+--------------
 
 * **Use context managers**: Always use `with` statements to ensure proper cleanup
 * **Handle large files**: Use streaming for files larger than available memory

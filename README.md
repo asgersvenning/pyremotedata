@@ -60,6 +60,7 @@ handler = IOHandler()
 
 with handler as io:
     print(io.ls())
+    local_file = io.download("/remote/file/or/directory")
 
 # The configuration is persistent, but can be removed using the following:
 from pyremotedata.config import remove_config

@@ -1,24 +1,20 @@
 Quick Start Guide
-================
+=================
 
 This guide will help you get started with PyRemoteData in just a few minutes.
 
-.. contents:: On this page
-   :local:
-   :depth: 2
-
 Installation
------------
+------------
 
 .. code-block:: bash
 
    pip install pyremotedata
 
 Basic Usage
-----------
+-----------
 
 Interactive Setup
-~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
@@ -32,7 +28,7 @@ Interactive Setup
        print(f"Found {len(files)} files")
 
 Automated Setup
-~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~
 
 For non-interactive environments, set environment variables before importing:
 
@@ -54,14 +50,14 @@ For non-interactive environments, set environment variables before importing:
        print(f"Available files: {files}")
 
 File Operations
---------------
+---------------
 
 Download a file:
 
 .. code-block:: python
 
    with IOHandler() as io:
-       local_path = io.download("/remote/file.txt", "/local/file.txt")
+       local_path = io.download("/remote/file.txt")
        print(f"Downloaded to: {local_path}")
 
 Upload a file:
@@ -69,7 +65,7 @@ Upload a file:
 .. code-block:: python
 
    with IOHandler() as io:
-       io.put("/local/file.txt", "/remote/file.txt")
+       remote_path = io.upload("/local/file.txt")
        print("File uploaded successfully")
 
 Next Steps

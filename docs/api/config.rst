@@ -1,9 +1,5 @@
 Configuration Module
-===================
-
-.. contents:: On this page
-   :local:
-   :depth: 2
+====================
 
 The `pyremotedata.config` module provides configuration loading and access for PyRemoteData. Most users only need a small subset of the API.
 

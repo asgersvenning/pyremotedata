@@ -570,9 +570,7 @@ class ImplicitMount:
             remote_path: Remote file path to download.
             local_path: Local download destination path. If
                 None, downloads to the current local directory.
-            blocking: If True, wait for completion.
             execute: If False, return the command string.
-            output: If True, return absolute remote path(s).
             **kwargs: Additional options forwarded to ``put``.
 
         Returns:
@@ -660,9 +658,7 @@ class ImplicitMount:
             self, 
             remote_path : str, 
             local_path : str | None, 
-            blocking : bool=True,
             execute : bool=True,
-            output : bool | None=None, 
             default_args : dict | None=None,
             **kwargs
         ) -> str | None:
@@ -671,18 +667,12 @@ class ImplicitMount:
         Args:
             remote_path: Remote file path to download.
             local_path: Local path destination, defaults to remote basename in current local directory.
-            blocking: If True, wait for completion.
             execute: If False, return the command string instead of
                 executing.
-            output: If True, return the absolute local path
-                of the downloaded file. If None, inferred from ``blocking``.
 
         Returns:
-            Absolute local path if ``output`` is True, otherwise
-            None. If ``execute`` is False, returns the command string.
+            Absolute local path.
         """
-        if output is None:
-            output = blocking
         # Construct and return the absolute local path
         file_name = remote_path.split("/")[-1]
         if local_path is None:
@@ -691,7 +681,7 @@ class ImplicitMount:
             while os.path.exists(subdir := os.path.join(os.path.dirname(local_path), str(uuid.uuid4()))):
                 pass
             os.makedirs(subdir)
-            return self.pget(remote_path=remote_path, local_path=os.path.join(subdir, file_name), blocking=blocking, execute=execute, output=output, default_args=default_args, **kwargs)
+            return self.pget(remote_path=remote_path, local_path=os.path.join(subdir, file_name), execute=execute, default_args=default_args, **kwargs)
 
         local_dir = os.path.dirname(local_path)
         if local_dir not in IMMUTABLE_DIRECTORIES and not os.path.exists(local_dir):
@@ -702,9 +692,7 @@ class ImplicitMount:
 
         full_command = f'pget "{remote_path}" -o "{local_path}"'
         exec_output = self.execute_command(
-            full_command, 
-            output=output, 
-            blocking=blocking,
+            full_command,
             execute=execute,
             default_args=default_args,
             **kwargs
@@ -727,9 +715,7 @@ class ImplicitMount:
             local_path: Local file(s) to upload.
             remote_path: Remote file path(s) to upload to. If
                 None, uploads to the current remote directory.
-            blocking: If True, wait for completion.
             execute: If False, return the command string.
-            output: If True, return absolute remote path(s).
             **kwargs: Additional options forwarded to ``put``.
 
         Returns:
@@ -1040,6 +1026,7 @@ class ImplicitMount:
         """
         if "R" in kwargs:
             raise RuntimeError(f'Passing `R` to IOHandler.mirror is not supported, please use `reverse` instead.')
+        # Infer default destination
         if reverse:
             kwargs["R"] = None
             if remote is None:
@@ -1051,13 +1038,17 @@ class ImplicitMount:
                 local = self.lpwd()
             if reverse is None:
                 raise ValueError('When mirroring (downloading) remote source must be specified.')
+        # Prune trailing forward slash (path separators)
+        while remote.endswith("/"):
+            remote = remote.removesuffix("/")
+        while local.endswith("/"):
+            local = local.removesuffix("/")
+        # Capture the state of the directory before the operation
         if output:
-            # Capture the state of the directory before the operation
             if reverse:
-                pre_existing_files = [] if not self.exists(remote) else self.ls(remote, recursive=True)
+                pre_existing_files = [] if not self.exists(remote) else [f'{remote}/{p}' for p in self.ls(remote, recursive=True)]
             else:
-                pre_existing_files = [] if not os.path.exists(local) else self.lls(local, recursive=True)
-            # Ensure that the pre_existing_files list is unique
+                pre_existing_files = [] if not os.path.exists(local) else [f'{local}/{p}' for p in self.lls(local, recursive=True)]
             pre_existing_files = set(pre_existing_files)
 
         # Execute the mirror command
@@ -1074,15 +1065,15 @@ class ImplicitMount:
         if not execute:
             return exec_output
         
+        # Capture the state of the directory after the operation
         if output:
-            # Capture the state of the directory after the operation
             if reverse:
-                post_download_files = [] if not self.exists(remote) else self.ls(remote, recursive=True)
+                post_download_files = [] if not self.exists(remote) else [f'{remote}/{p}' for p in self.ls(remote, recursive=True)]
             else:
-                post_download_files = [] if not os.path.exists(local) else self.lls(local, recursive=True)
-            # Ensure that the post_download_files list is unique
+                post_download_files = [] if not os.path.exists(local) else [f'{local}/{p}' for p in self.lls(local, recursive=True)]
             post_download_files = set(post_download_files)
-            # Calculate the set difference to get the newly downloaded files
+            
+            # Return new files in destination after operation (assumes that no other processes modify the destination)
             new_files = post_download_files - pre_existing_files
             return list(new_files)
 
@@ -1118,6 +1109,7 @@ class IOHandler(ImplicitMount):
     """
     def __init__(
             self, 
+            local_dir : str | None=None,
             user_confirmation : bool=False, 
             clean: bool=False, 
             user : str | None=None, 
@@ -1130,6 +1122,7 @@ class IOHandler(ImplicitMount):
             user=user,
             password=password,
             remote=remote,
+            local_dir=local_dir,
             **kwargs
         )
         self.user_confirmation = user_confirmation
@@ -1233,7 +1226,7 @@ class IOHandler(ImplicitMount):
             **kwargs
         ):
         """
-        Downloads one or more files or a directory from the remote directory to the given local destination.
+        Uploads one or more files or a directory to the remote destination.
 
         Args:
             local_path: The local file(s) or directory to upload.
