@@ -67,6 +67,7 @@ html_css_files = ['custom.css']
 html_extra_path = ['.nojekyll']
 html_static_path = ['_static']
 html_baseurl = ''
+html_favicon = 'images/favicon.ico'
 html_logo = 'images/cloud_sync.svg'
 
 html_theme_options = {
