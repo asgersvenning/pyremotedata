@@ -84,7 +84,7 @@ def validate_directory(path : str):
         raise ValueError(f'Directory "{path}" is not a valid directory.')
     if (
         path in IMMUTABLE_DIRECTORIES or 
-        path != os.path.dirname(path)
+        path == os.path.dirname(path)
     ):
         return
     if not os.path.exists(path):
