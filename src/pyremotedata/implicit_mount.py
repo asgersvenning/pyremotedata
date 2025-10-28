@@ -79,7 +79,20 @@ def make_new_path(path : str):
     os.makedirs(new_head, exist_ok=True)
     return os.path.join(new_head, tail)
 
-IMMUTABLE_DIRECTORIES = ("", ".", "..", f".{os.sep}", os.sep)
+def validate_directory(path : str):
+    if not isinstance(path, str) or path == "":
+        raise ValueError(f'Directory "{path}" is not a valid directory.')
+    if (
+        path in IMMUTABLE_DIRECTORIES or 
+        path != os.path.dirname(path)
+    ):
+        return
+    if not os.path.exists(path):
+        os.makedirs(path, exist_ok=True)
+    if not os.path.isdir(path):
+        raise ValueError(f'Directory "{path}" is not a directory.')
+
+IMMUTABLE_DIRECTORIES = (".", "..", f".{os.sep}", os.sep)
 
 class RemoteType(int, Enum):
     MISSING = 0
@@ -616,10 +629,7 @@ class ImplicitMount:
         kwargs.pop("P", None)
         remote_path, local_path = remote_path[0], local_path[0]
         local_dir = os.path.normpath(os.path.dirname(local_path))
-        if not os.path.exists(local_dir):
-            if local_dir in IMMUTABLE_DIRECTORIES:
-                raise RuntimeError(f'Local directory "{local_destination_dir}" is immutable, but doesn\'t exist')
-            os.makedirs(local_dir, exist_ok=True)
+        validate_directory(local_dir)
         exec_output = self.execute_command(
             # f"get " + " ".join(f'{rp} -o {lp}' for rp, lp in zip(remote_path, local_path)),
             f'get "{remote_path}" -o "{local_path}"',
@@ -641,16 +651,7 @@ class ImplicitMount:
         default_args : dict | None=None,
         **kwargs
         ):
-        if (
-            local_destination_dir in IMMUTABLE_DIRECTORIES or 
-            local_destination_dir != os.path.dirname(local_destination_dir)
-        ):
-            if not os.path.exists(local_destination_dir):
-                raise RuntimeError(f'Local directory "{local_destination_dir}" is immutable, but doesn\'t exist')
-        if not os.path.exists(local_destination_dir):
-            os.makedirs(local_destination_dir, exist_ok=True)
-        if not os.path.isdir(local_destination_dir):
-            raise ValueError(f'`local_destination_dir`: {local_destination_dir} is not a directory.')
+        validate_directory(local_destination_dir)
         default_args = default_args or {}
         default_args = {"P" : 5, **default_args}
         exec_output = self.execute_command(
@@ -693,13 +694,8 @@ class ImplicitMount:
                 new_path = make_new_path(local_path)
                 return self.pget(remote_path=remote_path, local_path=new_path, execute=execute, default_args=default_args, **kwargs)
 
-        local_dir = os.path.dirname(local_path)
-        if not os.path.exists(local_dir):
-            if local_dir not in IMMUTABLE_DIRECTORIES:
-                raise RuntimeError(f'Local directory "{local_dir}" is immutable, but doesn\'t exist')
-            os.makedirs(local_dir, exist_ok=True)
-        if not os.path.isdir(local_dir):
-            raise ValueError(f'Local directory {local_dir} is not a directory!')
+        local_dir = os.path.dirname(os.path.abspath(local_path))
+        validate_directory(local_dir)
 
         default_args = default_args or {}
         default_args = {"n" : 5, **default_args}
