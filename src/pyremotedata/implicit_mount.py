@@ -72,6 +72,13 @@ def _unlink(p : str, force : bool) -> None:
         os.chmod(p, stat.S_IWUSR)
         os.unlink(p)
 
+def make_new_path(path : str):
+    head, tail = os.path.split(path)
+    while os.path.exists(new_head := os.path.join(head, str(uuid.uuid4()))):
+        pass
+    os.makedirs(new_head)
+    return os.path.join(new_head, tail)
+
 IMMUTABLE_DIRECTORIES = ("", ".", "..", "./", "/")
 
 class RemoteType(int, Enum):
@@ -583,6 +590,7 @@ class ImplicitMount:
             remote_path = [remote_path]
         if local_path is None:
             local_path = [os.path.basename(rp) for rp in remote_path]
+            local_path = [p if not os.path.exists(p) else make_new_path(p) for p in local_path]
         elif isinstance(local_path, str):
             local_path = [local_path]
         if len(remote_path) != len(local_path):
@@ -677,11 +685,9 @@ class ImplicitMount:
         file_name = remote_path.split("/")[-1]
         if local_path is None:
             local_path = os.path.basename(file_name)
-        if os.path.exists(local_path):
-            while os.path.exists(subdir := os.path.join(os.path.dirname(local_path), str(uuid.uuid4()))):
-                pass
-            os.makedirs(subdir)
-            return self.pget(remote_path=remote_path, local_path=os.path.join(subdir, file_name), execute=execute, default_args=default_args, **kwargs)
+            if os.path.exists(local_path):
+                new_path = make_new_path(local_path)
+                return self.pget(remote_path=remote_path, local_path=new_path, execute=execute, default_args=default_args, **kwargs)
 
         local_dir = os.path.dirname(local_path)
         if local_dir not in IMMUTABLE_DIRECTORIES and not os.path.exists(local_dir):
