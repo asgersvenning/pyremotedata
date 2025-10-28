@@ -589,7 +589,7 @@ class ImplicitMount:
         if isinstance(remote_path, str):
             remote_path = [remote_path]
         if local_path is None:
-            local_path = [rp.replace("/", os.sep) for rp in remote_path]
+            local_path = [rp.removeprefix("/").replace("/", os.sep) for rp in remote_path]
             local_path = [p if not os.path.exists(p) else make_new_path(p) for p in local_path]
         elif isinstance(local_path, str):
             local_path = [local_path]
@@ -640,12 +640,14 @@ class ImplicitMount:
         **kwargs
         ):
         if (
-            local_destination_dir not in IMMUTABLE_DIRECTORIES and 
-            (local_destination_dir != os.path.dirname(local_destination_dir)) and 
-            not os.path.exists(local_destination_dir)
+            local_destination_dir in IMMUTABLE_DIRECTORIES or 
+            local_destination_dir != os.path.dirname(local_destination_dir)
         ):
+            if not os.path.exists(local_destination_dir):
+                raise RuntimeError(f'Local directory "{local_destination_dir}" is immutable, but doesn\'t exist')
+        if not os.path.exists(local_destination_dir):
             os.makedirs(local_destination_dir)
-        elif not os.path.isdir(local_destination_dir):
+        if not os.path.isdir(local_destination_dir):
             raise ValueError(f'`local_destination_dir`: {local_destination_dir} is not a directory.')
         default_args = default_args or {}
         default_args = {"P" : 5, **default_args}
