@@ -602,7 +602,7 @@ class ImplicitMount:
         if isinstance(remote_path, str):
             remote_path = [remote_path]
         if local_path is None:
-            local_path = [rp.removeprefix("/").replace("/", os.sep) for rp in remote_path]
+            local_path = [os.path.join(self.lpwd(), rp.removeprefix("/").replace("/", os.sep)) for rp in remote_path]
             local_path = [p if not os.path.exists(p) else make_new_path(p) for p in local_path]
         elif isinstance(local_path, str):
             local_path = [local_path]
@@ -646,11 +646,13 @@ class ImplicitMount:
     def mget(
         self,
         remote_paths : list[str] | tuple[str, ...],
-        local_destination_dir : str,
+        local_destination_dir : str | None=None,
         execute : bool=True,
         default_args : dict | None=None,
         **kwargs
         ):
+        if local_destination_dir is None:
+            local_destination_dir = self.lpwd()
         validate_directory(local_destination_dir)
         default_args = default_args or {}
         default_args = {"P" : 5, **default_args}
@@ -689,7 +691,7 @@ class ImplicitMount:
         # Construct and return the absolute local path
         file_name = remote_path.split("/")[-1]
         if local_path is None:
-            local_path = os.path.basename(file_name)
+            local_path = os.path.join(self.lpwd(), os.path.basename(file_name))
             if os.path.exists(local_path):
                 new_path = make_new_path(local_path)
                 return self.pget(remote_path=remote_path, local_path=new_path, execute=execute, default_args=default_args, **kwargs)
