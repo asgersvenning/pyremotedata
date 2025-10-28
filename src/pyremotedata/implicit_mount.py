@@ -589,7 +589,7 @@ class ImplicitMount:
         if isinstance(remote_path, str):
             remote_path = [remote_path]
         if local_path is None:
-            local_path = [os.path.basename(rp) for rp in remote_path]
+            local_path = [rp.replace("/", os.sep) for rp in remote_path]
             local_path = [p if not os.path.exists(p) else make_new_path(p) for p in local_path]
         elif isinstance(local_path, str):
             local_path = [local_path]
@@ -600,7 +600,7 @@ class ImplicitMount:
         if len(remote_path) > 1:
             retorder = {rp : None for rp in remote_path}
             cmds = []
-            local_destination_dirs = ["/".join(lp.split("/")[:-1]) or "." for lp in local_path]
+            local_destination_dirs = [os.sep.join(lp.split(os.sep)[:-1]) or "." for lp in local_path]
             for local_destination_dir in set(local_destination_dirs):
                 dir_remote_paths = [rp for rp, ldd in zip(remote_path, local_destination_dirs) if ldd == local_destination_dir]
                 dir_retval = self.mget(dir_remote_paths, local_destination_dir=local_destination_dir, execute=execute, **kwargs)
