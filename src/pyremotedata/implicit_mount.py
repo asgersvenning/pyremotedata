@@ -92,7 +92,7 @@ def validate_directory(path : str):
     if not os.path.isdir(path):
         raise ValueError(f'Directory "{path}" is not a directory.')
 
-IMMUTABLE_DIRECTORIES = (".", "..", f".{os.sep}", os.sep)
+IMMUTABLE_DIRECTORIES = (".", "..", f".{os.sep}", os.sep, "/", "./")
 
 class RemoteType(int, Enum):
     MISSING = 0
@@ -660,7 +660,7 @@ class ImplicitMount:
             "mget " + " ".join([f'"{rp}"' for rp in remote_paths]),
             execute=execute,
             default_args=default_args,
-            O=local_destination_dir,
+            O=f'"{local_destination_dir}"',
             **kwargs
         )
         if not execute:
