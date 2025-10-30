@@ -92,7 +92,7 @@ def validate_directory(path : str):
     if not os.path.isdir(path):
         raise ValueError(f'Directory "{path}" is not a directory.')
 
-IMMUTABLE_DIRECTORIES = (".", "..", f".{os.sep}", os.sep, "/", "./")
+IMMUTABLE_DIRECTORIES = ("", ".", "..", f".{os.sep}", os.sep, "/", "./")
 
 class RemoteType(int, Enum):
     MISSING = 0
