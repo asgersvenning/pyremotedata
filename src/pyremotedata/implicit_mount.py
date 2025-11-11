@@ -20,6 +20,7 @@ import subprocess
 import tempfile
 import threading
 import time
+import urllib.parse
 import uuid
 from enum import Enum
 from queue import Queue
@@ -788,7 +789,7 @@ class ImplicitMount:
         **kwargs
         ):
         if remote_destination_dir not in IMMUTABLE_DIRECTORIES:
-            self.execute_command(f'mkdir -p "{remote_destination_dir}"')
+            self.execute_command(f'mkdir -pf "{remote_destination_dir}"')
         default_args = default_args or {}
         default_args = {"P" : 5, **default_args}
         exec_output = self.execute_command(
@@ -992,7 +993,8 @@ class ImplicitMount:
         """Return the current remote directory (LFTP ``pwd``)."""
         output = self.execute_command("pwd")
         if isinstance(output, list) and len(output) == 1:
-            return output[0]
+            retval = output[0]
+            return retval.removeprefix(f'sftp://{urllib.parse.quote(self.user)}:@{urllib.parse.quote(self.remote)}:{self.port}')
         else:
             raise TypeError("Expected list of length 1, got {}: {}".format(type(output), output))
 
@@ -1316,6 +1318,7 @@ class IOHandler(ImplicitMount):
                 local_destination = self.lpwd()
             else:
                 local_destination = os.path.join(self.lpwd(), cur_remote_dir)
+        local_destination = local_destination.removesuffix("/")
         local_destination = os.path.normpath(os.path.abspath(os.path.expandvars(os.path.expanduser(local_destination))))
         if os.path.dirname(local_destination) == local_destination and not allow_root:
             raise RuntimeError(f'Attempted to synchronize root of local, but {allow_root=}!')
@@ -1347,21 +1350,22 @@ class IOHandler(ImplicitMount):
                         raise RuntimeError(f'Unexpected download location for {f}, expected {e}, but got {r}?!')
         up_files = []
         if direction in ["up", "both"]:
-            up_files = self.lls(local_destination)
+            up_files = self.lls(local_destination, R=True)
             if not isinstance(up_files, list):
                 raise RuntimeError(f'Unexpected return value: {up_files}')
             skippers = set([os.path.join(f.split("/")) for f in down_files])
             up_files = [f for f in up_files if f not in skippers]
             rdest = [f'{self.pwd()}/{f}' for f in up_files]
             rdir = ["/".join(f.split("/")[:-1]) for f in rdest]
-            for bi in trange(-(-len(down_files)//batch_size), desc=f"Synchronizing up: ({self.pwd()}) ==> ({local_destination}) ...", unit="file", unit_scale=batch_size, disable=not progress, dynamic_ncols=True):
-                bs, be = bi*batch_size, min((bi+1)*batch_size, len(down_files))
-                rres = self.upload(up_files[bs:be], rdir[bs:be], **kwargs)
+            for bi in trange(-(-len(up_files)//batch_size), desc=f"Synchronizing up: ({self.pwd()}) ==> ({local_destination}) ...", unit="file", unit_scale=batch_size, disable=not progress, dynamic_ncols=True):
+                bs, be = bi*batch_size, min((bi+1)*batch_size, len(up_files))
+                rres = self.upload([f'{local_destination}/{f}' for f in up_files[bs:be]], rdir[bs:be], **kwargs)
                 if isinstance(rres, str):
                     rres = [rres]
                 for r, e, f in zip(rres, rdest[bs:be], up_files[bs:be]):
                     if r != e:
                         raise RuntimeError(f'Unexpected upload location for {f}, expected {e}, but got {r}?!')
+            self._update_file_index(rdest)
         return list(set(down_files).union(set(up_files)))
     
     def get_file_index(
@@ -1389,44 +1393,17 @@ class IOHandler(ImplicitMount):
         # Check if file index exists
         file_index_exists = self.exists(".folder_index.txt")
         if not file_index_exists:
-            # Backwards compatibility check for folder index with old naming convention (non-hidden)
-            bc_file_index_exists = self.exists("folder_index.txt")
-            if bc_file_index_exists:
-                bc_file_index = self.execute_command('glob -f du -sh *folder_index.txt | sort -hr | cut -f 2 | head -n 1')
-                if not (isinstance(bc_file_index, list) and len(bc_file_index) == 1 and isinstance(bc_file_index := bc_file_index[0], str)):
-                    main_logger.warning('Deprecated folder index detected, but failed to rename!')
-                else:
-                    self.execute_command(f'mv "{bc_file_index}" .folder_index.txt')
-                    file_index_exists = True
-                    main_logger.debug(f'Detected deprecated folder index {bc_file_index} and renamed to .folder_index.txt in {self.pwd()}')
-            elif self.verbose:
-                main_logger.debug(f"Folder index does not exist in {self.pwd()}")
-        # If override is True, delete the file index if it exists
-        if override and file_index_exists:
-            self.execute_command("rm .folder_index.txt")
-            # Now the file index does not exist (duh)
-            file_index_exists = False
-        # If the file index does not exist, create it
-        if not file_index_exists:
+            file_index_exists = self._check_old_file_index()
+        # If the file index does not exist or we override, create it and return early
+        if not file_index_exists or override:
             main_logger.debug("Creating folder index...")
             # Traverse the remote directory and write the file index to a file
             files = self.ls(recursive=True, use_cache=False, pbar=True)
-            local_index_path = os.path.join(self.lpwd(), ".folder_index.txt")
-            with open(local_index_path, "w") as f:
-                for file in files:
-                    f.write(file + "\n")
-            # Store the file index on the remote if 'store' is True, otherwise delete it
             if store:
-                # Self has an implicit reference to the local working directory, however the scripts does not necessarily have the same working directory
-                self.upload(local_index_path)
-                os.remove(local_index_path)
-        
-        # Download the file index if 'store' is True or it already exists on the remote, otherwise read it from the local directory
-        if store or file_index_exists:
-            file_index_path = self.download(".folder_index.txt")
-        else:
-            file_index_path = local_index_path
-        # Read the file index
+                self._make_file_index(files)
+            return files
+        # Otherwise download and read the index
+        file_index_path = self.download(".folder_index.txt")
         file_index = []
         with open(file_index_path, "r") as f:
             for i, line in enumerate(f):
@@ -1439,10 +1416,45 @@ class IOHandler(ImplicitMount):
                 if pattern is not None and re.search(pattern, line) is None:
                     continue
                 file_index.append(line.strip())
-        # Delete the file index if 'store' is True, otherwise return the path to the file index
-        if not store:
-            os.remove(file_index_path)
+        os.remove(file_index_path)
         return file_index
+    
+    def _check_old_file_index(self):
+        # Backwards compatibility check for folder index with old naming convention (non-hidden)
+        bc_file_index_exists = self.exists("folder_index.txt")
+        if bc_file_index_exists:
+            bc_file_index = self.execute_command('glob -f du -sh *folder_index.txt | sort -hr | cut -f 2 | head -n 1')
+            if not (isinstance(bc_file_index, list) and len(bc_file_index) == 1 and isinstance(bc_file_index := bc_file_index[0], str)):
+                main_logger.warning('Deprecated folder index detected, but failed to rename!')
+            else:
+                self.execute_command(f'mv "{bc_file_index}" .folder_index.txt')
+                main_logger.debug(f'Detected deprecated folder index {bc_file_index} and renamed to .folder_index.txt in {self.pwd()}')
+                return True
+        elif self.verbose:
+            main_logger.debug(f"Folder index does not exist in {self.pwd()}")
+        return False
+
+    def _make_file_index(self, files : list[str]):
+        local_index_path = os.path.join(self.lpwd(), ".folder_index.txt")
+        with open(local_index_path, "w") as f:
+            for file in files:
+                f.write(file + "\n")
+        if self.exists(".folder_index.txt"):
+            self.execute_command("rm .folder_index.txt")
+        self.upload(local_index_path)
+        os.remove(local_index_path)
+        return local_index_path
+
+    def _update_file_index(self, new_files : list[str]):
+        file_index = self.cache.get(self.pwd(), self.get_file_index())
+        new_file_index = file_index.copy()
+        for nf in new_files:
+            if nf not in new_files:
+                new_files.append(nf)
+        if len(new_file_index) == len(file_index):
+            return
+        self._make_file_index(new_files)
+        self.cache_file_index()
     
     def cache_file_index(
             self, 
