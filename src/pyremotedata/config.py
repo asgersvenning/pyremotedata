@@ -113,6 +113,7 @@ def create_default_config(interactive: bool = True) -> None:
     """
     remote_username, remote_uri, local_directory, remote_directory = get_environment_variables(interactive)
 
+    indent = "\n        "
     yaml_content = f"""
 # IMPORTANT: If you want to change this config manually and permanently, set this to 'false'
 validate: true
@@ -126,7 +127,7 @@ implicit_mount:
 
     # Lftp configuration (Can be left as-is)
     lftp:
-        {"      ".join([f"'{k}': {escape_str(v)} # {LFTP_CONFIG_COMMENTS.get(k, '')}" for k, v in DEFAULT_LFTP_CONFIG.items()])}
+        {indent.join([f"'{k}': {escape_str(v)} # {LFTP_CONFIG_COMMENTS.get(k, '')}" for k, v in DEFAULT_LFTP_CONFIG.items()])}
 
 """
     
@@ -185,7 +186,7 @@ def get_config(validate: bool = True) -> dict | None:
         if interactive:
             return get_config()
         else:
-            raise RuntimeError(f'Aborted due to invalid config.')
+            raise RuntimeError('Aborted due to invalid config.')
 
     return config_data
 
