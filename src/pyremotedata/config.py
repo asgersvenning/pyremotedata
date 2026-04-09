@@ -151,6 +151,7 @@ def get_config(validate: bool = True) -> dict | None:
         The loaded configuration dictionary, or None if parsing
         fails.
     """
+    interactive = False
     if not os.path.exists(CONFIG_PATH):
         interactive = os.getenv("PYREMOTEDATA_AUTO", "no").lower().strip() != "yes"
         if not interactive or ask_user("Config file not found. Create default config file? (y/n): ", interactive).lower().strip() == 'y':
@@ -204,15 +205,13 @@ def get_this_config(this: str, **kwargs):
         raise TypeError("Expected string, got {}".format(type(this)))
     # Load config
     cfg = get_config(**kwargs)
+    assert cfg is not None
     if this not in cfg:
         raise ValueError("Key {} not found in config".format(this))
     return cfg[this]
 
 def get_mount_config(**kwargs):
     return get_this_config('mount', **kwargs)
-
-def get_dataloader_config(**kwargs):
-    return get_this_config('dataloader', **kwargs)
 
 def get_implicit_mount_config(**kwargs):
     return get_this_config('implicit_mount', **kwargs)

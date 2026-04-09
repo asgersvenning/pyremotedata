@@ -1,30 +1,38 @@
 # `pyRemoteData`
+
 `pyRemoteData` is a module developed for scientific computation using the remote storage platform [ERDA](https://erda.au.dk/) (Electronic Research Data Archive) provided by Aarhus University IT, as part of my PhD at the Department of Ecoscience at Aarhus University.
 
 It can be used with **any** storage facility that supports SFTP and LFTP, but is only tested on a minimal SFTP server found at [atmoz/sftp](https://hub.docker.com/r/atmoz/sftp) and on the live AU ERDA service which runs on MiG (Minimum intrusion Grid - [SourceForge](https://sourceforge.net/projects/migrid/)/[GitHub](https://github.com/ucphhpc/migrid-sync)) developed by [SCIENCE HPC Centre at Copenhagen University](https://science.ku.dk/english/research/research-e-infrastructure/science-hpc-centre/).
 
 ## Capabilities
+
 In order to facility high-throughput computation in a cross-platform setting, `pyRemoteData` handles data transfer with multithreading and asynchronous data streaming using thread-safe buffers.
 
 ## Use-cases
+
 If your storage facility supports SFTP and LFTP, and you need high-bandwidth data streaming for analysis, data migration or other purposes such as model-training, then this module may be of use to you.
 Experience with SFTP or LFTP is not necessary, but you must be able to setup the required SSH configurations.
 
 See **Automated** for details on how to avoid having to set up SSH configuration.
 
 ## Setup
+
 A more user-friendly setup process, which facilitates both automated as well as interactive setup is currently in development. (**TODO**: Finish and describe the setup process)
 
 ### Installation
+
 The package is available on PyPI, and can be installed using pip:
+
 ```bash
 pip install pyremotedata
 ```
 
 ### Interactive
+
 Simply follow the popup instructions that appear once you load the package for the first time.
 
 ### Automated
+
 The automatic configuration setup relies on setting the correct environment variables **BEFORE LOADING THE PACKAGE**:
 
 * `PYREMOTEDATA_REMOTE_USERNAME` : Should be set to your username on your remote service.
@@ -33,17 +41,21 @@ The automatic configuration setup relies on setting the correct environment vari
 * `PYREMOTEDATA_AUTO` : Should be **set to "yes"** to disable interactive mode. If this is not set, or set to anything other than "yes" (not case-sensitive), while any of the prior environment variables are unset an error will be thrown.
 
 The recommended way to avoid any SSH or environment variables setup is to use:
+
 ```py
 from pyremotedata.implicit_mount import IOHandler
 with IOHandler(lftp_settings = {'sftp:connect-program' : 'ssh -a -x -i <keyfile>'}, user = <USER>, remote = <REMOTE>) as io:
     ...
 ```
-Here `keyfile` is probably something like `~/.ssh/id_rsa`. 
+
+Here `keyfile` is probably something like `~/.ssh/id_rsa`.
 
 ### Example
+
 If you want to test against a mock server simply follow the instructions in tests/README.
 
 If you have a remote storage facility that supports SFTP and LFTP, then you can use the following example to test the functionality of the module:
+
 ```python
 # Set the environment variables (only necessary in a non-interactive setting)
 # If you are simply running this as a Python script, 
@@ -68,4 +80,5 @@ remove_config()
 ```
 
 ## Issues
+
 This module is certainly not maximally efficient, and you may run into network- or OS-specific issues. Any and all feedback and contributions is highly appreciated.

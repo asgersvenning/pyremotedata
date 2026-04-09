@@ -49,7 +49,7 @@ console_handler = MStreamHandler()
 console_handler.setLevel(logging.DEBUG)
 
 try:
-    import colorlog  # `pip install colorlog` for extra goodies.
+    import colorlog  # type: ignore # `pip install colorlog` for extra goodies.
 
     stream_formatter = colorlog.ColoredFormatter(
         '%(log_color)s%(asctime)s %(levelname)-6s %(cyan)s%(name)-10s %(white)s%(message)s',
@@ -68,7 +68,7 @@ console_handler.setFormatter(stream_formatter)
 
 package_timestamp = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
 if os.path.isdir('logs'):
-    file_handler = MFileHandler(os.path.join('logs', f'{__name__}_{package_timestamp}.log'), mode='a')
+    file_handler = MFileHandler(os.path.join('logs', f'{__name__}_{package_timestamp}.log'))
     file_handler.setLevel(logging.INFO if not os.environ.get('DEBUG') else logging.DEBUG)
     file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(name)s %(message)s'))
     module_logger.addHandler(file_handler)
