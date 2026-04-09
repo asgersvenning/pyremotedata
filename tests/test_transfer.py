@@ -6,12 +6,16 @@
 
 
 ## PSA: This test has external dependencies 'wrapt_timeout_decorator' and 'unittest' ##
-import wrapt_timeout_decorator
+import os
+import time
 import unittest
+import uuid
 from unittest.mock import patch
-import os, time, uuid
+
+import wrapt_timeout_decorator  # type: ignore
 
 from pyremotedata import module_logger
+
 
 class TestImplicitMount(unittest.TestCase):
     @wrapt_timeout_decorator.timeout(10)
@@ -56,7 +60,7 @@ class TestImplicitMount(unittest.TestCase):
                 for _ in range(n_exp_err):
                     try:
                         print(io.cd(str(uuid.uuid4())))
-                    except:
+                    except Exception:
                         n_err += 1
                         pass
                     io.ls()

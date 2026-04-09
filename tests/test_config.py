@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 from pyremotedata import module_logger
 
+
 class TestConfig(unittest.TestCase):
     def test_config(self):
         module_logger.info("Running config test.")

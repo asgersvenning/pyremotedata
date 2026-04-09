@@ -2,6 +2,7 @@
 import re
 from pathlib import Path
 
+
 def bump_version():
     pyproject_path = Path('pyproject.toml')
     pyproject = pyproject_path.read_text()
