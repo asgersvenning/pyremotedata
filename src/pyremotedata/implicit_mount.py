@@ -99,6 +99,7 @@ class RemoteType(int, Enum):
     MISSING = 0
     FILE = 1
     DIRECTORY = 2
+    NONE = -1
     @classmethod
     def _missing_(cls, value):
         if value is None:
@@ -274,6 +275,9 @@ class ImplicitMount:
         return ''.join(errors)
     
     def _check_error(self, strict : bool=True):
+        if self.lftp_shell is None:
+            raise RuntimeError('`lftp` shell is not active.')
+        assert self.lftp_shell.stderr is not None
         self.lftp_shell.stderr.flush()
         err = self._read_stderr()
         if err:
@@ -311,9 +315,8 @@ class ImplicitMount:
         """
         if output and not blocking:
             raise ValueError("Non-blocking output is not supported.")
-        if uuid_str is None and (blocking or output):
+        if uuid_str is None:
             uuid_str = str(uuid.uuid4())
-            # raise ValueError("uuid_str must be specified if output is True.")
         if not command.endswith("\n"):
             command += "\n"
         with self.lock: 
@@ -331,6 +334,9 @@ class ImplicitMount:
                 self.stderr_queue.queue.clear()
             with self.stdout_queue.mutex:
                 self.stdout_queue.queue.clear()
+            if self.lftp_shell is None:
+                raise RuntimeError('`lftp` shell is not active.')
+            assert self.lftp_shell.stdin is not None
             self.lftp_shell.stdin.write(command)
             self.lftp_shell.stdin.flush()
             # Read output
@@ -391,22 +397,22 @@ class ImplicitMount:
         else:
             cmd, other = command, ""
         full_command = f"{cmd} {formatted_args} {other}" if formatted_args else command
-        if output:
-            if uuid_str is None:
-                uuid_str = str(uuid.uuid4())
         if not blocking:
             full_command += " &"
 
         if not execute:
             return full_command
         else:
-            output = self._execute_command(full_command, output=output, blocking=blocking, uuid_str=uuid_str)
-            if isinstance(output, list):
-                return output
-            elif output is None:
+            if uuid_str is None:
+                uuid_str = str(uuid.uuid4())
+            assert isinstance(uuid_str, str)
+            retval = self._execute_command(full_command, output=output, blocking=blocking, uuid_str=uuid_str)
+            if isinstance(retval, list):
+                return retval
+            elif retval is None:
                 return []
             else:
-                raise TypeError("Expected list or None, got {}".format(type(output)))
+                raise TypeError("Expected list or None, got {}".format(type(retval)))
 
     def mount(self, lftp_settings : dict | None=None) -> None:
         """Open a persistent LFTP session and connect to the remote host.
@@ -425,7 +431,7 @@ class ImplicitMount:
         # Password connect:
         if isinstance(self.password, str) and len(self.password) > 0 and self.password != "":
             if "sftp:connect-program" in lftp_settings:
-                raise KeyError(f"LFTP setting 'sftp:connect-program' cannot be used with password connection!")
+                raise KeyError("LFTP setting 'sftp:connect-program' cannot be used with password connection!")
             lftp_settings["sftp:connect-program"] = "ssh -a -x -o PreferredAuthentications=password -o PubkeyAuthentication=no"
 
         # Format settings
@@ -437,7 +443,7 @@ class ImplicitMount:
         # "Mount" the remote directory using an lftp shell with the sftp protocol and the specified user and remote, and the specified lftp settings
         lftp_mount_cmd = f'open -u {self.user},{self.password} -p {self.port} sftp://{self.remote};{lftp_settings_str}'
         if self.verbose:
-            main_logger.info(f"Executing command: lftp")
+            main_logger.info("Executing command: lftp")
         # Start the lftp shell
         try:
             self.lftp_shell = subprocess.Popen(
@@ -493,6 +499,8 @@ class ImplicitMount:
             timeout: Maximum time to wait before forcefully
                 terminating the process.
         """
+        if self.lftp_shell is None:
+            raise RuntimeError('`lftp` shell is not active')
         # Close Popen streams explicitly
         self.execute_command("exit kill top", output=False, blocking=False)
         waited = 0
@@ -504,6 +512,9 @@ class ImplicitMount:
             if waited > timeout:
                 self.lftp_shell.terminate()
                 break
+        assert self.lftp_shell.stdout is not None
+        assert self.lftp_shell.stdin is not None
+        assert self.lftp_shell.stderr is not None
         self.lftp_shell.stdout.close()
         self.lftp_shell.stdin.close()
         self.lftp_shell.stderr.close()
@@ -554,6 +565,8 @@ class ImplicitMount:
                 type_arg = "-f"
             case "directory":
                 type_arg = "-d"
+            case _:
+                type_arg = "-a"
         # Check if file is hidden, needs special handling: https://en.wikipedia.org/wiki/Glob_(programming)#Origin
         hidden = parts[-1].startswith(".")
         exist_glob = f'{"/".join(parts[:-1])}/{"." if hidden else ""}*{parts[-1].removeprefix(".")}'
@@ -612,12 +625,14 @@ class ImplicitMount:
         if len(remote_path) == 0:
             return rettype()
         if len(remote_path) > 1:
-            retorder = {rp : None for rp in remote_path}
+            retorder : dict[str, str | None] = {rp : None for rp in remote_path}
             cmds = []
             local_destination_dirs = [os.sep.join(lp.split(os.sep)[:-1]) or "." for lp in local_path]
             for local_destination_dir in set(local_destination_dirs):
                 dir_remote_paths = [rp for rp, ldd in zip(remote_path, local_destination_dirs) if ldd == local_destination_dir]
                 dir_retval = self.mget(dir_remote_paths, local_destination_dir=local_destination_dir, execute=execute, **kwargs)
+                assert dir_retval is not None
+                assert not isinstance(dir_retval, str)
                 if not execute:
                     cmds.append(dir_retval)
                     continue
@@ -625,7 +640,11 @@ class ImplicitMount:
                     retorder[rp] = rv
             if not execute:
                 return cmds
-            retval = [retorder[rp] for rp in remote_path]
+            retval : list[str] = []
+            for rp in remote_path:
+                rv = retorder[rp]
+                assert rv is not None, f'Missing local path ({rv}) for remote file: {rp}'
+                retval.append(rv)
             return rettype(retval)
         kwargs.pop("P", None)
         remote_path, local_path = remote_path[0], local_path[0]
@@ -639,10 +658,10 @@ class ImplicitMount:
         )
         if not execute:
             return exec_output
-        retval = local_path if local_path.startswith("/") else f'{self.lpwd()}/{local_path}'
-        if rettype != str:
-            return rettype([retval])
-        return retval
+        retval1 = local_path if local_path.startswith("/") else f'{self.lpwd()}/{local_path}'
+        if rettype is not str:
+            return rettype([retval1])
+        return retval1
     
     def mget(
         self,
@@ -711,6 +730,7 @@ class ImplicitMount:
             **kwargs
         )
         if not execute:
+            assert not isinstance(exec_output, list)
             return exec_output
         
         return local_path if local_path.startswith("/") else f'{self.lpwd()}/{local_path}'
@@ -748,12 +768,14 @@ class ImplicitMount:
         if len(local_path) == 0:
             return rettype()
         if len(local_path) > 1:
-            retorder = {lp : None for lp in local_path}
+            retorder : dict[str, str | None] = {lp : None for lp in local_path}
             cmds = []
             remote_destination_dirs = ["/".join(rp.split("/")[:-1]) or "." for rp in remote_path]
             for remote_destination_dir in set(remote_destination_dirs):
                 dir_local_paths = [lp for lp, rdd in zip(local_path, remote_destination_dirs) if rdd == remote_destination_dir]
                 dir_retval = self.mput(dir_local_paths, remote_destination_dir=remote_destination_dir, execute=execute, **kwargs)
+                assert dir_retval is not None
+                assert not isinstance(dir_retval, str)
                 if not execute:
                     cmds.append(dir_retval)
                     continue
@@ -761,7 +783,11 @@ class ImplicitMount:
                     retorder[lp] = rv
             if not execute:
                 return cmds
-            retval = [retorder[lp] for lp in local_path]
+            retval : list[str] = []
+            for lp in local_path:
+                rv = retorder[lp]
+                assert rv is not None, f'Missing remote destination ({rv}) for local file: {lp}'
+                retval.append(rv)
             return rettype(retval)
         remote_path, local_path = remote_path[0], local_path[0]
         remote_dir = "/".join(remote_path.split("/")[:-1])
@@ -775,10 +801,10 @@ class ImplicitMount:
         )
         if not execute:
             return exec_output
-        retval = remote_path if remote_path.startswith("/") else f'{self.pwd()}/{remote_path}'
-        if rettype != str:
-            return rettype([retval])
-        return retval
+        retval1 = remote_path if remote_path.startswith("/") else f'{self.pwd()}/{remote_path}'
+        if rettype is not str:
+            return rettype([retval1])
+        return retval1
     
     def mput(
         self,
@@ -831,6 +857,7 @@ class ImplicitMount:
             args.pop("f", None)
         kwargs = {**kwargs, **args}
         retval = self.execute_command('rm ' + ' & rm '.join(path), blocking=blocking, execute=execute, output=False, **kwargs)
+        assert not isinstance(retval, list)
         if not execute:
             return retval
         
@@ -904,14 +931,14 @@ class ImplicitMount:
         # It is quite inefficient, but it is only used for the ls command, which is not performance critical?
         # Folder index files should be used instead of ls in most cases, 
         # but this function is still useful for debugging and for creating the folder index files
-        def sanitize_path(l, path) -> None:
+        def sanitize_path(l : list[str], path):
             # Empty case (base case 1)
             if not path:
                 pass
             # Single path case (base case 2)
             elif isinstance(path, str):
                 # Skip "." and ".." paths and folder index files (these are created by the folder index command, and should be treated as hidden files)
-                if len(path) >= 2 and not "folder_index.txt" in path:
+                if len(path) >= 2 and "folder_index.txt" not in path:
                     # Remove leading "./" from paths
                     if path.startswith("./"):
                         path = path[2:]
@@ -934,11 +961,13 @@ class ImplicitMount:
                 main_logger.info(f"{CLEAR_LINE}Retrieving file list{'.'*pbar}{ESC_EOL}")
             this_level = self.execute_command(f'{recls}cls "{path}" -1 --perm')
             # If the directory contains one or no files
-            if isinstance(this_level, str) or this_level is None:
-                this_level = sanitize_path([], this_level)
+            if isinstance(this_level, str):
+                this_level = [this_level]
+            elif this_level is None:
+                this_level = []
             output = []
             for perm_path in this_level:
-                if not " " in perm_path:
+                if " " not in perm_path:
                     continue
                 perm, path = perm_path.split(" ", 1)
                 if perm.startswith("d"):
@@ -960,7 +989,7 @@ class ImplicitMount:
         
         return output
     
-    def lls(self, local_path: str = ".", **kwargs) -> list[str] | str | None:
+    def lls(self, local_path: str = ".", **kwargs):
         """List files in a local directory via the LFTP shell.
 
         Args:
@@ -971,9 +1000,9 @@ class ImplicitMount:
             consistency and debugging through the same LFTP session.
         """
         if os.name != "posix":
-            raise NotImplementedError("IOHandler.lls() is not supported in non-Unix-like OSs (Windows)")
+            raise NotImplementedError("IOHandler.lls() is not supported in non-Unix-like OSs (i.e. Windows)")
         recursive = kwargs.pop("R", kwargs.pop("recursive", False))
-        if not (recursive is False):
+        if recursive is not False:
             if local_path == "":
                 local_path = "."
             output = self.execute_command(f'!find "{local_path}" -type f -exec realpath --relative-to="{local_path}" {{}} \\; | cat', **kwargs)
@@ -998,7 +1027,7 @@ class ImplicitMount:
         else:
             raise TypeError("Expected list of length 1, got {}: {}".format(type(output), output))
 
-    def lcd(self, local_path : str) -> str:
+    def lcd(self, local_path : str):
         """Change the current local directory (LFTP ``lcd``).
 
         Args:
@@ -1026,7 +1055,7 @@ class ImplicitMount:
             execute : bool=True,
             default_args : dict | None=None,
             **kwargs
-        ) -> list[str] | None:
+        ) -> list[str] | str | None:
         """Mirror a remote directory to a local destination (LFTP ``mirror``).
 
         Args:
@@ -1039,7 +1068,7 @@ class ImplicitMount:
            List of newly downloaded files or following `ImplicitMount.execute_command`.
         """
         if "R" in kwargs:
-            raise RuntimeError(f'Passing `R` to IOHandler.mirror is not supported, please use `reverse` instead.')
+            raise RuntimeError('Passing `R` to IOHandler.mirror is not supported, please use `reverse` instead.')
         # Infer default destination
         if reverse:
             kwargs["R"] = None
@@ -1058,6 +1087,7 @@ class ImplicitMount:
         while local.endswith("/"):
             local = local.removesuffix("/")
         # Capture the state of the directory before the operation
+        pre_existing_files = set()
         if output:
             if reverse:
                 pre_existing_files = [] if not self.exists(remote) else [f'{remote}/{p}' for p in self.ls(remote, recursive=True)]
@@ -1077,6 +1107,7 @@ class ImplicitMount:
             **kwargs
         )
         if not execute:
+            assert isinstance(exec_output, str)
             return exec_output
         
         # Capture the state of the directory after the operation
@@ -1208,7 +1239,7 @@ class IOHandler(ImplicitMount):
                 case RemoteType.MISSING:
                     raise RuntimeError("Missing download target: " + remote_path)
                 case RemoteType.DIRECTORY:
-                    if not (isinstance(local_destination, str) or local_destination is None):
+                    if not isinstance(local_destination, str) or local_destination is None:
                         raise ValueError("Downloading directories should have a single destination!")
                     return self.mirror(remote_path, local_destination, blocking=blocking, P=n, **kwargs)
                 case RemoteType.FILE:
@@ -1256,7 +1287,7 @@ class IOHandler(ImplicitMount):
             if not os.path.exists(local_path):
                 raise RuntimeError("Missing upload target: " + local_path)
             if os.path.isdir(local_path):
-                if not (isinstance(remote_destination, str) or remote_destination is None):
+                if not isinstance(remote_destination, str) or remote_destination is None:
                     raise ValueError("Uploading directories should have a single destination!")
                 return self.mirror(remote_destination, local_path, reverse=True, blocking=blocking, P=n, **kwargs)
             if os.path.isfile(local_path):
@@ -1343,6 +1374,7 @@ class IOHandler(ImplicitMount):
                         if os.path.exists(ld):
                             os.remove(ld)
                 lres = self.download(down_files[bs:be], ldir[bs:be], **kwargs)
+                assert lres is not None
                 if isinstance(lres, str):
                     lres = [lres]
                 for r, e, f in zip(lres, ldest[bs:be], down_files[bs:be]):
@@ -1353,13 +1385,14 @@ class IOHandler(ImplicitMount):
             up_files = self.lls(local_destination, R=True)
             if not isinstance(up_files, list):
                 raise RuntimeError(f'Unexpected return value: {up_files}')
-            skippers = set([os.path.join(f.split("/")) for f in down_files])
+            skippers = set([os.path.join(*f.split("/")) for f in down_files])
             up_files = [f for f in up_files if f not in skippers]
             rdest = [f'{self.pwd()}/{f}' for f in up_files]
             rdir = ["/".join(f.split("/")[:-1]) for f in rdest]
             for bi in trange(-(-len(up_files)//batch_size), desc=f"Synchronizing up: ({self.pwd()}) ==> ({local_destination}) ...", unit="file", unit_scale=batch_size, disable=not progress, dynamic_ncols=True):
                 bs, be = bi*batch_size, min((bi+1)*batch_size, len(up_files))
                 rres = self.upload([f'{local_destination}/{f}' for f in up_files[bs:be]], rdir[bs:be], **kwargs)
+                assert rres is not None
                 if isinstance(rres, str):
                     rres = [rres]
                 for r, e, f in zip(rres, rdest[bs:be], up_files[bs:be]):
@@ -1396,14 +1429,15 @@ class IOHandler(ImplicitMount):
             file_index_exists = self._check_old_file_index()
         # If the file index does not exist or we override, create it and return early
         if not file_index_exists or override:
-            main_logger.debug("Creating folder index...")
+            main_logger.debug("Cresating folder index...")
             # Traverse the remote directory and write the file index to a file
             files = self.ls(recursive=True, use_cache=False, pbar=True)
             if store:
                 self._make_file_index(files)
-            return files
+            del files
         # Otherwise download and read the index
         file_index_path = self.download(".folder_index.txt")
+        assert isinstance(file_index_path, str), f'Unexpected {file_index_path=} ({type(file_index_path)})'
         file_index = []
         with open(file_index_path, "r") as f:
             for i, line in enumerate(f):
@@ -1578,7 +1612,7 @@ class RemotePathIterator:
             raise RuntimeError("Cannot shuffle while iterating.")
         shuffle(self.remote_paths)
 
-    def subset(self, indices : list[int]) -> None:
+    def subset(self, indices : list[int] | int | slice) -> None:
         """Restrict the iterator to a subset of indices (in-place).
 
         Args:
@@ -1640,6 +1674,8 @@ class RemotePathIterator:
             indices = [[] for _ in range(len(proportion))]
             for i, a in enumerate(allocation):
                 indices[a].append(i)
+        else:
+            raise RuntimeError('Unexpected error should never occur.')
 
         if indices is not None:
             if not isinstance(indices, list):
@@ -1652,6 +1688,8 @@ class RemotePathIterator:
                 raise ValueError("indices must be a list of lists of ints in the range [0, len(remote_paths)).")
             if any([len(i) == 0 for i in indices]):
                 raise ValueError("All indices must be non-empty.")
+        else:
+            raise RuntimeError('Unexpected error should never occur.')
 
         iterators = []
         for i in indices:
@@ -1671,15 +1709,14 @@ class RemotePathIterator:
         start = time.monotonic()
         attempt = 0
         delay = self.retry_base_delay
-        last_exc : BaseException | None = None
         while True:
             try:
                 local_paths = self.io_handler.download(batch, n=self.batch_parallel)
+                assert local_paths is not None, f'No files downloaded for batch: {batch}'
                 if not isinstance(local_paths, (list, tuple)) or len(local_paths) != len(batch):
                     raise RuntimeError(f"Downloader returned invalid result length ({len(local_paths)}) for batch of size {len(batch)}")
                 return list(local_paths)
             except Exception as e:
-                last_exc = e
                 attempt += 1
                 elapsed = time.monotonic() - start
                 remaining = self.retry_timeout - elapsed
@@ -1758,7 +1795,7 @@ class RemotePathIterator:
                 
                 # wait here until we either get an item or detect a dead producer
                 while True:
-                    if self.download_queue.empty() and not self.download_thread.is_alive():
+                    if self.download_queue.empty() and (self.download_thread is None or not self.download_thread.is_alive()):
                         self.stop_requested = True
                         if self._error is not None:
                             raise self._error
@@ -1768,7 +1805,7 @@ class RemotePathIterator:
                         break  # got an item
                     except queue.Empty:
                         # producer may just be slow; only error if the thread has died
-                        if not self.download_thread or not self.download_thread.is_alive():
+                        if not self.download_thread or (self.download_thread is None or not self.download_thread.is_alive()):
                             self.stop_requested = True
                             if self._error is not None:
                                 raise self._error
