@@ -23,6 +23,8 @@ import time
 import urllib.parse
 import uuid
 from enum import Enum
+from io import TextIOWrapper
+from itertools import islice
 from queue import Queue
 from random import choices, shuffle
 
@@ -1400,58 +1402,59 @@ class IOHandler(ImplicitMount):
                         raise RuntimeError(f'Unexpected upload location for {f}, expected {e}, but got {r}?!')
             self._update_file_index(rdest)
         return list(set(down_files).union(set(up_files)))
-    
+
     def get_file_index(
             self, 
-            skip : int=0, 
-            nmax : int | None=None,
-            override : bool=False, 
-            store : bool=True,
-            pattern : str | None=None
+            skip: int = 0, 
+            nmax: int | None = None,
+            override: bool = False, 
+            store: bool = True,
+            pattern: str | None = None
         ) -> list[str]:
         """
         Get a list of files in the current remote directory.
 
         Args:
-            skip: The number of files to skip.
+            skip: The number of valid files to skip.
             nmax: The maximum number of files to include.
             override: If True, the file index will be overridden if it already exists.
             store: If True, the file index will be stored on the remote directory.
-            pattern: A regular expression pattern to filter the file names by, e.g. "\\.txt$" to only include files with the ".txt" extension.
+            pattern: A regular expression pattern to filter the file names by, e.g. "\\.txt$".
         Returns:
            A list of files in the current remote directory.
         """
         if override and not store:
-            raise ValueError("override cannot be 'True' if store is 'False'!")
-        # Check if file index exists
-        file_index_exists = self.exists(".folder_index.txt")
-        if not file_index_exists:
-            file_index_exists = self._check_old_file_index()
-        # If the file index does not exist or we override, create it and return early
-        if not file_index_exists or override:
-            main_logger.debug("Cresating folder index...")
-            # Traverse the remote directory and write the file index to a file
-            files = self.ls(recursive=True, use_cache=False, pbar=True)
-            if store:
-                self._make_file_index(files)
-            del files
-        # Otherwise download and read the index
-        file_index_path = self.download(".folder_index.txt")
-        assert isinstance(file_index_path, str), f'Unexpected {file_index_path=} ({type(file_index_path)})'
-        file_index = []
-        with open(file_index_path, "r") as f:
-            for i, line in enumerate(f):
-                if i < skip:
-                    continue
-                if nmax is not None and i >= (skip + nmax):
-                    break
-                if len(line) < 3 or "folder_index.txt" == line[:17]:
-                    continue
-                if pattern is not None and re.search(pattern, line) is None:
-                    continue
-                file_index.append(line.strip())
-        os.remove(file_index_path)
-        return file_index
+            raise ValueError("override cannot be True if store is False!")
+
+        regex = re.compile(pattern) if pattern else None
+        excludes = {"folder_index.txt", ".folder_index.txt"}
+
+        # Determine data source
+        if override or not (self.exists(".folder_index.txt") or self._check_old_file_index()):
+            main_logger.debug("Creating folder index...")
+            source = self.ls(recursive=True, use_cache=False, pbar=True)
+            if store: 
+                self._make_file_index(source)
+            file_path = None
+        else:
+            file_path = self.download(".folder_index.txt")
+            assert isinstance(file_path, str)
+            source = open(file_path, "r")
+
+        # Lazy filter
+        def valid_items():
+            for item in source:
+                clean = item.strip()
+                if len(clean) >= 2 and clean not in excludes and (not regex or regex.search(clean)):
+                    yield clean
+
+        try:
+            stop = skip + nmax if nmax is not None else None
+            return list(islice(valid_items(), skip, stop))
+        finally:
+            getattr(source, "close", lambda: None)()
+            if file_path and os.path.exists(file_path):
+                os.remove(file_path)
     
     def _check_old_file_index(self):
         # Backwards compatibility check for folder index with old naming convention (non-hidden)
