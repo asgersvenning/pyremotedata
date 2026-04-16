@@ -1,6 +1,6 @@
 [project]
 name = "pyremotedata"
-version = "0.1.12"
+version = "0.1.13"
 authors = [
   { name="Asger Svenning", email="asgersvenning@gmail.com" },
 ]
