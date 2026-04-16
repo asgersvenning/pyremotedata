@@ -3,6 +3,7 @@
 [![Python version](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Tests](https://github.com/asgersvenning/pyremotedata/actions/workflows/python-tests.yml/badge.svg)](https://github.com/asgersvenning/pyremotedata/actions)
+[![codecov](https://codecov.io/github/asgersvenning/pyremotedata/graph/badge.svg)](https://codecov.io/github/asgersvenning/pyremotedata)
 
 ---
 

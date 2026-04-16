@@ -37,7 +37,6 @@ jobs:
     - name: Install dependencies
       run: uv sync --extra full
 
-    # Added a lightning-fast linting step using Ruff
     - name: Lint with Ruff
       run: uv run ruff check .
 
@@ -70,8 +69,14 @@ jobs:
     - name: Test LFTP connection
       run: lftp -e "open -u foo, -p 2222 sftp://0.0.0.0; ls; bye"
 
-    - name: Run tests
-      run: uv run python -m unittest discover tests
+    - name: Run tests with coverage
+      run: uv run pytest --cov=src/pyremotedata --cov-report=xml --cov-report=term tests/
+
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v6
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        slug: asgersvenning/pyremotedata
 
     - name: Print Docker SFTP Server Logs
       if: always() 

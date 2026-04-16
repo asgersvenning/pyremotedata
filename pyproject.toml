@@ -38,8 +38,8 @@ full = [
 [tool.uv]
 dev-dependencies = [
     "pytest>=8.0.0",
+    "pytest-cov>=5.0.0",
     "ruff>=0.3.0",
-    "mypy>=1.9.0",
 ]
 
 [tool.ruff]
