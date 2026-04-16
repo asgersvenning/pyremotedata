@@ -96,7 +96,7 @@ class TestUploadDownload(unittest.TestCase):
                 n_rep = 10
                 generate_test_file_command = (
                     f"bash -c 'openssl rand -out {os.path.join(handler.lpwd(), 'localfile.txt')} "
-                    "-base64 {int(test_file_size * (10**6) * 3/4)}'"
+                    f"-base64 {int(test_file_size * (10**6) * 3/4)}'"
                 )
                 module_logger.info(f'Generating test file with command: {generate_test_file_command}')
                 os.system(generate_test_file_command)
