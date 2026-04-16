@@ -25,7 +25,7 @@ class MStreamHandler(logging.StreamHandler):
     else:
        return super().emit(record)
     
-class MFileHandler(logging.StreamHandler):
+class MFileHandler(logging.FileHandler):
   """Handler that controls the writing of the newline character"""
 
   def emit(self, record) -> None:

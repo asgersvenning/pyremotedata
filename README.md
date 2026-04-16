@@ -27,9 +27,18 @@ A more user-friendly setup process, which facilitates both automated as well as 
 
 ### Installation
 
-The package is available on PyPI, and can be installed using pip:
+The package is available on PyPI. The recommended way to install and manage dependencies is using the lightning-fast [`uv`](https://docs.astral.sh/uv/) package manager:
 
 ```bash
+# Add to your current project
+uv add pyremotedata
+```
+
+Alternatively, you can use the `uv pip` interface or standard `pip`:
+
+```bash
+uv pip install pyremotedata
+# or just
 pip install pyremotedata
 ```
 
@@ -48,7 +57,7 @@ The automatic configuration setup relies on setting the correct environment vari
 
 The recommended way to avoid any SSH or environment variables setup is to use:
 
-```py
+```python
 from pyremotedata.implicit_mount import IOHandler
 with IOHandler(lftp_settings = {'sftp:connect-program' : 'ssh -a -x -i <keyfile>'}, user = <USER>, remote = <REMOTE>) as io:
     ...

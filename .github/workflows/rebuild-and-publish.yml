@@ -6,11 +6,20 @@ on:
     types: [completed]
     branches: [master]
 
-  
 jobs:
   deploy:
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'master' && !contains(github.event.workflow_run.head_commit.message, '[skip ci]') }}
+
+    # 1. Set the environment name to match your PyPI Trusted Publisher config
+    environment:
+      name: pypi 
+
+    # 2. Grant OIDC permissions for passwordless publishing
+    permissions:
+      id-token: write   # MANDATORY: Allows uv to authenticate with PyPI
+      contents: write   # MANDATORY: Allows the bot to push the version commit
+      pages: write      # OPTIONAL: Needed if deploying docs requires token access
 
     concurrency:
       group: ci-${{ github.event.workflow_run.head_branch }}
@@ -18,65 +27,57 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         ref: ${{ github.event.workflow_run.head_sha }}
+        fetch-depth: 0 
     
-    - name: Set up Python
-      uses: actions/setup-python@v5
+    - name: Install uv and set up Python
+      uses: astral-sh/setup-uv@v8.0.0
       with:
+        enable-cache: true
         python-version: '3.10'
-        cache: 'pip'
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install hatch
-        pip install setuptools wheel twine
-        pip install build
-        pip install sphinx sphinx_immaterial
-        pip install sphinx-autodoc-typehints
-
-    - name: Install package in editable mode
-      run: |
-        pip install -e .
-    
+    # 3. Use uv's native version bumping (assuming static versioning in pyproject.toml)
     - name: Bump version
+      id: bump_version
       run: |
-        python bump_version.py
-    
-    - name: Get new version
-      id: get_new_version
-      run: |
-        echo "new_version=$(cat new_version.txt)" >> $GITHUB_ENV
-        rm new_version.txt
-    
+        # Natively bump the patch version (updates pyproject.toml AND uv.lock)
+        uv version --bump patch
+        
+        # Extract the new version to use in the commit message using a quick ephemeral script
+        NEW_VERSION=$(uv run --with tomli python -c "import tomli, sys; print(tomli.load(sys.stdin.buffer)['project']['version'])" < pyproject.toml)
+        echo "new_version=$NEW_VERSION" >> $GITHUB_ENV
+
     - name: Commit new version to main branch
       run: |
         git config --global user.name 'github-actions[bot]'
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-        git fetch origin
         git checkout master
-        git add pyproject.toml
+        
+        # Commit the native uv updates
+        git add pyproject.toml uv.lock
         git commit -m "Bump version to ${{ env.new_version }} and update documentation [skip ci]"
         git push origin master
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Build the package
-      run: |
-        python -m build
+      run: uv build
 
+    # 4. Optional but recommended: Smoke test the built wheel before publishing
+    - name: Smoke test (wheel)
+      run: uv run --isolated --no-project --with dist/*.whl python -c "import pyremotedata"
+
+    # 5. Publish with ZERO credentials! uv detects the id-token natively.
     - name: Publish to PyPI
-      env:
-        PYPI_USERNAME: ${{ secrets.PYPI_USERNAME }}
-        PYPI_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-      run: |
-        twine upload dist/* -u $PYPI_USERNAME -p $PYPI_PASSWORD
-    
+      run: uv publish
+
     - name: Build Sphinx documentation
       run: |
-        cd docs && make -f Makefile html && cd ..
+        cd docs
+        uv run --with sphinx --with sphinx_immaterial --with sphinx-autodoc-typehints --with .. make -f Makefile html
+        cd ..
 
     - name: Deploy documentation to gh-pages branch
       uses: peaceiris/actions-gh-pages@v4
