@@ -67,7 +67,10 @@ class TestImplicitMount(unittest.TestCase):
                 module_logger.info("Output after stress test:")
                 module_logger.info(io.ls())
             
-            assert abs(n_err - n_exp_err)/n_exp_err <= 0.01, f"Invalid number of errors generated: {n_err}, expected: {n_exp_err}"
+            if not abs(n_err - n_exp_err)/n_exp_err <= 0.01:
+                raise RuntimeError(
+                    f"Invalid number of errors generated: {n_err}, expected: {n_exp_err}"
+                )
             
             from pyremotedata.config import remove_config
             remove_config()
@@ -91,17 +94,24 @@ class TestUploadDownload(unittest.TestCase):
                 # Upload a test file to the mock SFTP server
                 test_file_size = 10 # MB
                 n_rep = 10
-                generate_test_file_command = f"bash -c 'openssl rand -out {os.path.join(handler.lpwd(), 'localfile.txt')} -base64 {int(test_file_size * (10**6) * 3/4)}'"
+                generate_test_file_command = (
+                    f"bash -c 'openssl rand -out {os.path.join(handler.lpwd(), 'localfile.txt')} "
+                    "-base64 {int(test_file_size * (10**6) * 3/4)}'"
+                )
                 module_logger.info(f'Generating test file with command: {generate_test_file_command}')
                 os.system(generate_test_file_command)
                 start_upload = time.time()
                 upload_result = handler.put("localfile.txt", "testfile.txt", execute=False)
-                upload_result = handler.execute_command(f'repeat -c {n_rep} -d 0.01 "rm -f testfile.txt && {upload_result}"')
+                upload_result = handler.execute_command(
+                    f'repeat -c {n_rep} -d 0.01 "rm -f testfile.txt && {upload_result}"'
+                )
                 end_upload = time.time()
                 # Download the test file from the mock SFTP server
                 start_download = time.time()
                 download_result = handler.download("testfile.txt", execute=False)
-                download_result = handler.execute_command(f'repeat -c {n_rep} -d 0.01 "(!rm -f testfile.txt) && {download_result}"')
+                download_result = handler.execute_command(
+                    f'repeat -c {n_rep} -d 0.01 "(!rm -f testfile.txt) && {download_result}"'
+                )
                 end_download = time.time()
                 # Get the local directory where the file should be downloaded to
                 local_directory = handler.lpwd()
@@ -112,7 +122,10 @@ class TestUploadDownload(unittest.TestCase):
                     raise RuntimeError("Something went wrong with the download. The file does not exist locally.")
                 # Enforce a +/- 10% tolerance on the file size
                 if not (local_file_size > (0.9 * test_file_size) and local_file_size < (1.1 * test_file_size)):
-                    raise RuntimeError(f"Something went wrong with the download. The file size (~{local_file_size:.2f} MB) is not correct.")
+                    raise RuntimeError(
+                        "Something went wrong with the download. "
+                        f"The file size (~{local_file_size:.2f} MB) is not correct."
+                    )
             
                 # Cleanup
                 os.remove(os.path.join(handler.lpwd(), "localfile.txt"))
@@ -125,7 +138,9 @@ class TestUploadDownload(unittest.TestCase):
         upload_time = (end_upload - start_upload) / n_rep - 0.01
         download_time = (end_download - start_download) / n_rep - 0.01
         upload_speed, download_speed = 100/upload_time, 100/download_time
-        module_logger.info(f'Upload/download test passed with upload {upload_speed:.1f} MB/s and download {download_speed:.1f} MB/s.') 
+        module_logger.info(
+            f'Upload/download test passed with upload {upload_speed:.1f} MB/s and download {download_speed:.1f} MB/s.'
+        ) 
 
 if __name__ == "__main__":
     unittest.main()

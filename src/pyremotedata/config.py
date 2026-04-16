@@ -46,10 +46,25 @@ def get_environment_variables(interactive: bool = True) -> tuple[str, str, str, 
     Returns:
         Tuple of (remote_username, remote_uri, local_directory, remote_directory).
     """
-    remote_username = os.getenv(ENVIRONMENT_VARIABLES[0], None) or ask_user(f"{ENVIRONMENT_VARIABLES[0]} not set. Enter your remote name: ", interactive)
-    remote_uri = os.getenv(ENVIRONMENT_VARIABLES[1], None) or (ask_user(f"{ENVIRONMENT_VARIABLES[1]} not set. Enter your remote URI (leave empty for 'io.erda.au.dk'): ", interactive) or 'io.erda.au.dk')
+    remote_username = (
+        os.getenv(ENVIRONMENT_VARIABLES[0], None) or 
+        ask_user(f"{ENVIRONMENT_VARIABLES[0]} not set. Enter your remote name: ", interactive)
+    )
+    remote_uri = (
+        os.getenv(ENVIRONMENT_VARIABLES[1], None) or 
+        (
+            ask_user(
+                f"{ENVIRONMENT_VARIABLES[1]} not set. Enter your remote URI (leave empty for 'io.erda.au.dk'): ",
+                interactive
+            ) or 
+            'io.erda.au.dk'
+        )
+    )
     local_directory = os.getenv(ENVIRONMENT_VARIABLES[2], "")
-    remote_directory = os.getenv(ENVIRONMENT_VARIABLES[3], None) or ask_user(f"{ENVIRONMENT_VARIABLES[3]} not set. Enter your remote directory: ", interactive)
+    remote_directory = (
+        os.getenv(ENVIRONMENT_VARIABLES[3], None) or 
+        ask_user(f"{ENVIRONMENT_VARIABLES[3]} not set. Enter your remote directory: ", interactive)
+    )
 
     return remote_username, remote_uri, local_directory, remote_directory
 
@@ -59,17 +74,17 @@ def remove_config() -> None:
     """Delete the stored configuration file, if present."""
     if os.path.exists(CONFIG_PATH):
         os.remove(CONFIG_PATH)
-        module_logger.info("Removed config file at {}".format(CONFIG_PATH))
+        module_logger.info(f"Removed config file at {CONFIG_PATH}")
     else:
-        module_logger.info("No config file found at {}".format(CONFIG_PATH))
+        module_logger.info(f"No config file found at {CONFIG_PATH}")
 
 DEFAULT_LFTP_CONFIG = {
-    # 'mirror:use-pget-n': 1, # Enable this to split a single file into multiple chunks and download them in parallel, when using mirror
+    # 'mirror:use-pget-n': 1, # Enable this to split a single file into multiple chunks and download them in parallel, when using mirror  # noqa: E501
     'net:limit-rate': 0,  # No limit on transfer rate, maximizing throughput.
     'xfer:parallel': 5,  # Enable this to split a single file into multiple chunks and download them in parallel
     'mirror:parallel-directories': "on",  # Enable this to download multiple directories in parallel
-    'ftp:sync-mode': 'off',  # Enable this to disable synchronization mode, which is used to prevent data corruption when downloading multiple files in parallel
-    'cmd:parallel': 1,  # If you write bespoke scripts that execute multiple commands in parallel, you can increase this value.
+    'ftp:sync-mode': 'off',  # Enable this to disable synchronization mode, which is used to prevent data corruption when downloading multiple files in parallel  # noqa: E501
+    'cmd:parallel': 1,  # If you write bespoke scripts that execute multiple commands in parallel, you can increase this value.  # noqa: E501
     'net:connection-limit': 0,  # No limit on connections, maximizing throughput.
     'cmd:verify-path': "on",  # To reduce latency, we skip path verification.
     'cmd:verify-host': "on",  # For initial security, it's good to verify the host.
@@ -83,12 +98,12 @@ DEFAULT_LFTP_CONFIG = {
     'xfer:clobber': "true",  # Overwrite existing files.
 }
 LFTP_CONFIG_COMMENTS = {
-    # 'mirror:use-pget-n': "Enable this to split a single file into multiple chunks and download them in parallel, when using mirror",
+    # 'mirror:use-pget-n': "Enable this to split a single file into multiple chunks and download them in parallel, when using mirror",  # noqa: E501
     'net:limit-rate': "No limit on transfer rate, maximizing throughput.",
     'xfer:parallel': "Enable this to split a single file into multiple chunks and download them in parallel",
     'mirror:parallel-directories': "Enable this to download multiple directories in parallel",
-    'ftp:sync-mode': "Enable this to disable synchronization mode, which is used to prevent data corruption when downloading multiple files in parallel",
-    'cmd:parallel': "If you write bespoke scripts that execute multiple commands in parallel, you can increase this value.",
+    'ftp:sync-mode': "Enable this to disable synchronization mode, which is used to prevent data corruption when downloading multiple files in parallel",  # noqa: E501
+    'cmd:parallel': "If you write bespoke scripts that execute multiple commands in parallel, you can increase this value.",  # noqa: E501
     'net:connection-limit': "No limit on connections, maximizing throughput.",
     'cmd:verify-path': "To reduce latency, we skip path verification.",
     'cmd:verify-host': "For initial security, it's good to verify the host.",
@@ -129,13 +144,16 @@ implicit_mount:
     lftp:
         {indent.join([f"'{k}': {escape_str(v)} # {LFTP_CONFIG_COMMENTS.get(k, '')}" for k, v in DEFAULT_LFTP_CONFIG.items()])}
 
-"""
+"""  # noqa: E501
     
     with open(CONFIG_PATH, "w") as config_file:
         config_file.write(yaml_content)
     
-    module_logger.info("Created default config file at {}".format(CONFIG_PATH))
-    module_logger.info("OBS: It is **strongly** recommended that you **check the config file** and make sure that it is correct before using pyRemoteData.")
+    module_logger.info(f"Created default config file at {CONFIG_PATH}")
+    module_logger.info(
+        "OBS: It is **strongly** recommended that you **check the config file** "
+        "and make sure that it is correct before using pyRemoteData."
+    )
 
 def get_config(validate: bool = True) -> dict | None:
     """Load configuration from disk, optionally validating against environment.
@@ -154,12 +172,15 @@ def get_config(validate: bool = True) -> dict | None:
     interactive = False
     if not os.path.exists(CONFIG_PATH):
         interactive = os.getenv("PYREMOTEDATA_AUTO", "no").lower().strip() != "yes"
-        if not interactive or ask_user("Config file not found. Create default config file? (y/n): ", interactive).lower().strip() == 'y':
+        if (
+            not interactive or 
+            ask_user("Config file not found. Create default config file? (y/n): ", interactive).lower().strip() == 'y'
+        ):
             create_default_config(interactive)
         else:
-            raise FileNotFoundError("Config file not found at {}".format(CONFIG_PATH))
+            raise FileNotFoundError(f"Config file not found at {CONFIG_PATH}")
 
-    with open(CONFIG_PATH, 'r') as stream:
+    with open(CONFIG_PATH) as stream:
         try:
             config_data = yaml.safe_load(stream)
         except yaml.YAMLError as exc:
@@ -179,7 +200,10 @@ def get_config(validate: bool = True) -> dict | None:
     ):
         expected = config_data["implicit_mount"][k]
         if expected != v and not (expected is None and v == ""):
-            module_logger.warning(f"Invalid config detected, auto regenerating from scratch: Expected '{expected}' for '{k}' ({ek}), but got '{v}'.")
+            module_logger.warning(
+                "Invalid config detected, auto regenerating from scratch: "
+                f"Expected '{expected}' for '{k}' ({ek}), but got '{v}'."
+            )
             invalid = True
     
     if invalid:
@@ -202,12 +226,12 @@ def get_this_config(this: str, **kwargs):
         The sub-configuration value.
     """
     if not isinstance(this, str):
-        raise TypeError("Expected string, got {}".format(type(this)))
+        raise TypeError(f"Expected string, got {type(this)}")
     # Load config
     cfg = get_config(**kwargs)
     assert cfg is not None
     if this not in cfg:
-        raise ValueError("Key {} not found in config".format(this))
+        raise ValueError(f"Key {this} not found in config")
     return cfg[this]
 
 def get_mount_config(**kwargs):
@@ -227,26 +251,26 @@ def deparse_args(config: dict, what: str) -> str:
         Space-separated option string.
     """
     if not isinstance(what, str):
-        raise TypeError("Expected string, got {}".format(type(what)))
+        raise TypeError(f"Expected string, got {type(what)}")
     if what not in config:
-        raise ValueError("Key {} not found in config".format(what))
+        raise ValueError(f"Key {what} not found in config")
     args = config[what]
     if not isinstance(args, dict):
-        raise TypeError("Expected dict, got {}".format(type(args)))
+        raise TypeError(f"Expected dict, got {type(args)}")
     
     try:
         arg_str = ""
         for key, value in args.items():
             if not isinstance(key, str):
-                raise TypeError("Expected string, got {}".format(type(key)))
+                raise TypeError(f"Expected string, got {type(key)}")
             if isinstance(value, bool):
-                arg_str += " --{}".format(key)
+                arg_str += f" --{key}"
             elif isinstance(value, str) or isinstance(value, int) or isinstance(value, float):
-                arg_str += " --{} {}".format(key, value)
+                arg_str += f" --{key} {value}"
             else:
-                raise TypeError("Expected string, int, float or bool, got {}".format(type(value)))
+                raise TypeError(f"Expected string, int, float or bool, got {type(value)}")
     except Exception as e:
-        raise yaml.YAMLError("Error while parsing args: {}".format(e))
+        raise yaml.YAMLError(f"Error while parsing args: {e}")
     
     return arg_str
 
