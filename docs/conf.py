@@ -3,7 +3,10 @@
 # For the full list of built-in configuration values, see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
-import os, sys, re
+import os
+import re
+import sys
+
 sys.path.insert(0, os.path.abspath('../'))
 
 # -- Project information -----------------------------------------------------
@@ -12,7 +15,9 @@ sys.path.insert(0, os.path.abspath('../'))
 project = 'PyRemoteData'
 copyright = '2024, Asger Svenning'
 author = 'Asger Svenning'
-release = [re.search(r'version\s*=\s*\"([^\"]*)\"', line).group(1) for line in open('../pyproject.toml') if 'version' in line][0]
+release = [
+    re.search(r'version\s*=\s*\"([^\"]*)\"', line).group(1) for line in open('../pyproject.toml') if 'version' in line # type: ignore
+][0]
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -114,7 +119,7 @@ html_theme_options = {
     "version_dropdown": True,
     # Additional theme options
     'social': [
-        {'link': 'https://github.com/asgersvenning/pyremotedata', 'name': 'Source on GitHub', 'icon': 'fontawesome/brands/github'},
+        {'link': 'https://github.com/asgersvenning/pyremotedata', 'name': 'Source on GitHub', 'icon': 'fontawesome/brands/github'},  # noqa: E501
         {'icon': 'fontawesome/brands/python', 'link': "https://pypi.org/project/pyremotedata/"}
     ],
 }
@@ -122,9 +127,6 @@ html_theme_options = {
 python_type_aliases = {}
 
 ### Custom code to remove custom Sphinx comments from docstrings
-
-import re
-
 def preprocess_docstring(app, what, name, obj, options, lines):
     START_TAG = ".. <Sphinx comment"
     END_TAG = ".. Sphinx comment>"

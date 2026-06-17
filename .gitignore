@@ -4,3 +4,5 @@ perf/sample.txt
 **/__pycache__/
 docs/_build/**
 src/pyremotedata/pyremotedata_config.yaml
+.vscode
+test.ipynb

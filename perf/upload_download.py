@@ -1,7 +1,8 @@
-from pyremotedata.implicit_mount import *
-import time
-import tempfile
 import os
+import tempfile
+import time
+
+from pyremotedata.implicit_mount import *  # noqa: F403
 
 test_size = 3 * 10**6
     
@@ -15,7 +16,7 @@ def perf_test(share_link_id : str | None):
         mock_files = [make_mock_file(upload_dir, test_size) for _ in range(32)]
         total_data = test_size * len(mock_files)
 
-        with IOHandler(user=share_link_id, password=share_link_id, verbose=True) as io:
+        with IOHandler(user=share_link_id, password=share_link_id, verbose=True) as io:  # noqa: F405
             if not io.exists("testing", "directory"):
                 io.execute_command("mkdir testing")
             io.cd("testing")
@@ -38,11 +39,11 @@ def perf_test(share_link_id : str | None):
         download_time = end_download - start_download
         delete_time = end_delete - start_delete
         
-        upload_speed, download_speed, delete_speed = total_data/upload_time, total_data/download_time, total_data/delete_time
+        upload_speed, download_speed, delete_speed = total_data/upload_time, total_data/download_time, total_data/delete_time  # noqa: E501
 
-        print("Upload speed: {} MB/s".format(upload_speed/10**6))
-        print("Download speed: {} MB/s".format(download_speed/10**6))
-        print("Delete speed: {} MB/s".format(delete_speed/10**6))
+        print(f"Upload speed: {upload_speed/10**6} MB/s")
+        print(f"Download speed: {download_speed/10**6} MB/s")
+        print(f"Delete speed: {delete_speed/10**6} MB/s")
 
 if __name__ == "__main__":
     import argparse

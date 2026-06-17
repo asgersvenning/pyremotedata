@@ -7,7 +7,6 @@ from math import floor, log10
 
 from tqdm.auto import trange
 
-from pyremotedata.config import ask_user
 from pyremotedata.implicit_mount import IOHandler
 
 units = {
