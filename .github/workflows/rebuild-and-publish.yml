@@ -1,35 +1,32 @@
 name: Rebuild and Publish to PyPI
 
 on:
-  workflow_run:
-    workflows: ['Python Unit Tests']
-    types: [completed]
-    branches: [master]
+  release:
+    types: [published]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'master' && !contains(github.event.workflow_run.head_commit.message, '[skip ci]') }}
 
     # 1. Set the environment name to match your PyPI Trusted Publisher config
     environment:
       name: pypi 
 
-    # 2. Grant OIDC permissions for passwordless publishing
+    # 2. Grant OIDC permissions for passwordless publishing and issue/contents updates
     permissions:
       id-token: write   # MANDATORY: Allows uv to authenticate with PyPI
-      contents: write   # MANDATORY: Allows the bot to push the version commit
+      contents: write   # MANDATORY: Allows the bot to push the version commit and force tag
       pages: write      # OPTIONAL: Needed if deploying docs requires token access
+      issues: write     # MANDATORY: Allows helper script to create issues on failure
 
     concurrency:
-      group: ci-${{ github.event.workflow_run.head_branch }}
+      group: ci-publish
       cancel-in-progress: true
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v6
       with:
-        ref: ${{ github.event.workflow_run.head_sha }}
         fetch-depth: 0 
     
     - name: Install uv and set up Python
@@ -38,18 +35,20 @@ jobs:
         enable-cache: true
         python-version: '3.10'
 
-    # 3. Use uv's native version bumping (assuming static versioning in pyproject.toml)
-    - name: Bump version
-      id: bump_version
+    - name: Check version and parse bump flag
+      id: check_version
       run: |
-        # Natively bump the patch version (updates pyproject.toml AND uv.lock)
-        uv version --bump patch
-        
-        # Extract the new version to use in the commit message using a quick ephemeral script
-        NEW_VERSION=$(uv run --with tomli python -c "import tomli, sys; print(tomli.load(sys.stdin.buffer)['project']['version'])" < pyproject.toml)
-        echo "new_version=$NEW_VERSION" >> $GITHUB_ENV
+        uv run python scripts/release_helper.py
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Commit new version to main branch
+    - name: Bump version
+      if: steps.check_version.outputs.bump_needed == 'true'
+      run: |
+        uv version --bump ${{ steps.check_version.outputs.bump_type }}
+
+    - name: Commit new version to main branch and update tag
+      if: steps.check_version.outputs.bump_needed == 'true'
       run: |
         git config --global user.name 'github-actions[bot]'
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
@@ -57,8 +56,12 @@ jobs:
         
         # Commit the native uv updates
         git add pyproject.toml uv.lock
-        git commit -m "Bump version to ${{ env.new_version }} and update documentation [skip ci]"
+        git commit -m "Bump version to ${{ steps.check_version.outputs.new_version }} and update documentation [skip ci]"
         git push origin master
+
+        # Force update tag to point to the new commit on master
+        git tag -f ${{ github.event.release.tag_name }}
+        git push origin ${{ github.event.release.tag_name }} --force
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -85,5 +88,5 @@ jobs:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_branch: gh-pages
         publish_dir: docs/_build/html
-        commit_message: "Update documentation for version ${{ env.new_version }} [skip ci]"
+        commit_message: "Update documentation for version ${{ steps.check_version.outputs.new_version }} [skip ci]"
         force_orphan: true
